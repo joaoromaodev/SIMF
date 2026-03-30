@@ -10,7 +10,7 @@ The MVP will start from six known CSV files:
 - `2025_DLOB.csv`
 - `2026_DLOB.csv`
 
-The `2023_2024` and `2025` files are static historical loads. The `2026` files are mutable and may be re-uploaded until the end of the year.
+The `2023_2024` and `2025` files are static historical loads. The `2026` files are active operational datasets and will be uploaded daily, with each new valid upload fully replacing the prior `2026` dataset of the same report type.
 
 ## What Changes
 
@@ -21,14 +21,15 @@ The `2023_2024` and `2025` files are static historical loads. The `2026` files a
 - Consolidate imported rows into a BI-oriented dataset using the hierarchy `Processo > NE > DL > OB`.
 - Use `documento_liquidacao` as the primary cross-report consolidation key between `NE+DL` and `DL+OB`.
 - Treat `numero_processo` as the top-level traceability key across the lineage.
-- Support historical static imports for `2023_2024` and `2025`, and controlled replacement of the `2026` yearly datasets.
+- Support historical static imports for `2023_2024` and `2025`, and daily replacement of the active `2026` datasets.
+- Materialize the consolidated BI dataset into a table used directly by BI consumers.
 - Reject unsupported file types and malformed files with actionable validation feedback for operators.
 
 ## Capabilities
 
 ### New Capabilities
 - `siafe-report-import`: Upload, validate, normalize, and register metadata for SIAFE `NE+DL` and `DL+OB` CSV imports.
-- `siafe-report-consolidation`: Build a consolidated dataset keyed by `Processo > NE > DL > OB` from the normalized SIAFE imports for BI consumption.
+- `siafe-report-consolidation`: Build and materialize a consolidated dataset keyed by `Processo > NE > DL > OB` from the normalized SIAFE imports for BI consumption.
 
 ### Modified Capabilities
 
@@ -38,5 +39,5 @@ None.
 
 - Affects backend import endpoints, CSV parsing and validation logic, normalization rules, and persistence for import metadata and normalized rows.
 - Introduces or expands storage for upload batches, validation results, normalized report rows, and consolidated lineage records.
-- Establishes the source contract that BI consumers will use instead of raw uploaded files.
-- Requires test coverage for file validation, normalization mapping, relationship consolidation, year-based import rules, and duplicate or partial-import handling.
+- Establishes the materialized source contract that BI consumers will use instead of raw uploaded files.
+- Requires test coverage for file validation, normalization mapping, relationship consolidation, year-based import rules, daily active-year replacement, and partial-import handling.

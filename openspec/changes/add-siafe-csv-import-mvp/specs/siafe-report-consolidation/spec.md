@@ -51,12 +51,12 @@ The system SHALL represent the business lineage according to the known relations
 - **WHEN** multiple normalized rows reference the same `documento_liquidacao` but different `ordem_bancaria`
 - **THEN** the system links them to one DL and multiple OBs
 
-### Requirement: Expose a BI-ready consolidated dataset
-The system SHALL provide a consolidated dataset that BI consumers can query without needing to understand report-specific schemas.
+### Requirement: Expose a materialized BI-ready consolidated dataset
+The system SHALL provide a materialized consolidated dataset that BI consumers can query without needing to understand report-specific schemas.
 
 #### Scenario: BI consumer reads consolidated data
 - **WHEN** a BI process requests SIAFE import output
-- **THEN** the system returns canonical fields and hierarchy relationships derived from the consolidated dataset
+- **THEN** the system returns canonical fields and hierarchy relationships derived from the materialized consolidated dataset
 
 #### Scenario: Source lineage remains traceable
 - **WHEN** a consolidated record is inspected for troubleshooting
@@ -70,5 +70,16 @@ The system SHALL consolidate historical static batches and active-year batches w
 - **THEN** they are kept as historical reference data in the consolidated source
 
 #### Scenario: Refresh active-year lineage for 2026
-- **WHEN** a new valid `2026` batch supersedes the prior active-year import
+- **WHEN** a new valid `2026` batch supersedes the prior active-year import for the same report type
 - **THEN** the consolidated dataset reflects the newest active-year records while preserving batch lineage
+
+### Requirement: Rebuild materialized consolidated data after successful active-year import
+The system SHALL refresh the materialized consolidated table after successful `2026` replacement imports.
+
+#### Scenario: Refresh after new 2026 NEDL import
+- **WHEN** a new valid `2026_NEDL.csv` replaces the active `NE+DL` dataset
+- **THEN** the system rebuilds or refreshes the materialized consolidated table to reflect the new active-year state
+
+#### Scenario: Refresh after new 2026 DLOB import
+- **WHEN** a new valid `2026_DLOB.csv` replaces the active `DL+OB` dataset
+- **THEN** the system rebuilds or refreshes the materialized consolidated table to reflect the new active-year state

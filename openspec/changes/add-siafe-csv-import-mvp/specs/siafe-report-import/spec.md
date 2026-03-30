@@ -87,26 +87,26 @@ The system SHALL translate report-specific source headers into a canonical field
   - `numero_processo`
   - `documento_liquidacao`
   - `ordem_bancaria`
-  - `credor_documento`
-  - `credor_nome`
-  - `documento_credor`
-  - `nome_credor`
+  - `ob_credor_documento`
+  - `ob_credor_nome`
+  - `dl_documento_credor`
+  - `dl_nome_credor`
   - `data_pagamento`
   - `codigo_fonte_recurso`
   - `codigo_detalhamento_fr`
   - `codigo_unidade_gestora`
   - `valor`
 
-### Requirement: Preserve ambiguous source fields until business meaning is confirmed
-The system SHALL preserve semantically ambiguous source fields as distinct canonical fields until business rules explicitly define a merge or collapse strategy.
+### Requirement: Preserve distinct DL and OB creditor fields
+The system SHALL preserve creditor-related source fields as distinct canonical attributes because they refer to different hierarchy levels.
 
-#### Scenario: Preserve duplicated-looking value fields from NE+DL
-- **WHEN** an `NE+DL` file contains both `Valor Liquido` and `Valor Liquido2`
-- **THEN** the system stores them separately as `valor_liquido` and `valor_liquido_2`
+#### Scenario: Preserve OB creditor fields separately
+- **WHEN** a `DL+OB` file contains `CredorDocumento` and `Credor_Nome`
+- **THEN** the system stores them as `ob_credor_documento` and `ob_credor_nome`
 
-#### Scenario: Preserve duplicated-looking creditor fields from DL+OB
-- **WHEN** a `DL+OB` file contains both `CredorDocumento` and `DocumentoCredor`, or both `Credor_Nome` and `NomeCredor`
-- **THEN** the system stores them separately as `credor_documento`, `documento_credor`, `credor_nome`, and `nome_credor`
+#### Scenario: Preserve DL creditor fields separately
+- **WHEN** a `DL+OB` file contains `DocumentoCredor` and `NomeCredor`
+- **THEN** the system stores them as `dl_documento_credor` and `dl_nome_credor`
 
 ### Requirement: Record import metadata for every upload attempt
 The system SHALL persist metadata for each upload attempt, including report type, original filename, import timestamp, reference year scope, validation status, and record counts.
@@ -130,6 +130,10 @@ The system SHALL apply different import behavior depending on the yearly scope o
 - **WHEN** an operator attempts to replace a locked historical dataset for `2023_2024` or `2025`
 - **THEN** the system rejects the operation or requires an explicit administrative override outside normal MVP flow
 
-#### Scenario: Allow active-year replacement for 2026
-- **WHEN** an operator uploads a new `2026` file for `NE+DL` or `DL+OB`
-- **THEN** the system accepts the upload as an updated active-year batch according to the configured replacement policy
+#### Scenario: Allow daily active-year replacement for 2026 NEDL
+- **WHEN** an operator uploads a new valid `2026_NEDL.csv`
+- **THEN** the system fully replaces the previously active `2026` `NE+DL` dataset and records the new batch as active
+
+#### Scenario: Allow daily active-year replacement for 2026 DLOB
+- **WHEN** an operator uploads a new valid `2026_DLOB.csv`
+- **THEN** the system fully replaces the previously active `2026` `DL+OB` dataset and records the new batch as active

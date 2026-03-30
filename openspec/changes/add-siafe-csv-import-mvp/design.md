@@ -10,9 +10,9 @@ The initial operating model includes six CSV files:
 - `2025_DLOB.csv`
 - `2026_DLOB.csv`
 
-The `2023_2024` and `2025` files are historical and static after import. The `2026` files are the active yearly datasets and may be re-uploaded until the year closes.
+The `2023_2024` and `2025` files are historical and static after import. The `2026` files are active operational datasets and are expected to be uploaded daily, with each new valid upload fully replacing the previously active `2026` dataset for the same report type.
 
-Because BI consumers need a stable dataset, the import path should separate raw upload concerns from canonical storage and from the final consolidated view.
+Because BI consumers need a stable dataset, the import path should separate raw upload concerns from canonical storage and from the final consolidated materialized table.
 
 The current repository has no existing OpenSpec capabilities for this workflow, so the design should minimize coupling and make future report types additive. The MVP should prioritize correctness, traceability, and deterministic consolidation over advanced reconciliation or repair tooling.
 
@@ -26,7 +26,8 @@ The current repository has no existing OpenSpec capabilities for this workflow, 
 - Consolidate normalized data into a BI-ready dataset based on `Processo > NE > DL > OB`.
 - Use `documento_liquidacao` as the primary join key between `NE+DL` and `DL+OB`.
 - Allow partial coverage across reports while keeping lineage explicit, such as a `DL` without an `OB` yet.
-- Enforce the year-batch rule: `2023_2024` and `2025` are static; `2026` is replaceable until year end.
+- Enforce the year-batch rule: `2023_2024` and `2025` are static; `2026` is active and fully replaceable by daily uploads.
+- Materialize the consolidated dataset after successful imports.
 
 **Non-Goals:**
 - Supporting spreadsheets, PDFs, or additional SIAFE report families in the MVP.
@@ -102,44 +103,54 @@ File-level validation will reject uploads missing mandatory headers for the decl
 
 Rationale:
 - Missing headers mean the file cannot be interpreted safely.
-- Incomplete row relationships are expected in the domain and still provide usable information.
+- Incomplete row relationships are expected in the domain and still provide usable information, such as `DL` records without generated `OB` yet.
 
 Alternatives considered:
 - Reject any row without the full hierarchy. Rejected because it would drop legitimate intermediate data.
 - Accept files with missing required headers and guess column intent. Rejected because it undermines data quality.
 
-### 6. Preserve ambiguous source fields separately until business meaning is confirmed
+### 6. Treat similar-looking DLOB fields as distinct business attributes
 
-The importer must preserve semantically ambiguous fields as separate canonical fields when their business meaning is not yet fully validated.
-
-Known cases:
-- `Valor Liquido` vs `Valor Liquido2`
-- `CredorDocumento` vs `DocumentoCredor`
-- `Credor_Nome` vs `NomeCredor`
+The importer must preserve the following fields as separate business attributes because they refer to different hierarchy levels:
+- `CredorDocumento` and `Credor_Nome` refer to the `OrdemBancaria`
+- `DocumentoCredor` and `NomeCredor` refer to the `DocumentodeLiquidacao`
 
 Rationale:
-- Premature collapsing of these fields may lose information.
-- The MVP should preserve source fidelity while still enabling BI use.
+- These fields are not unresolved duplicates.
+- Collapsing them would lose important business meaning across DL and OB levels.
 
 Alternatives considered:
-- Merge ambiguous fields immediately. Rejected because the semantic meaning has not yet been confirmed.
-- Drop one of the duplicate-looking fields. Rejected because this may destroy relevant source data.
+- Treat them as ambiguous duplicates. Rejected because business semantics are already known.
+- Drop one pair. Rejected because both pairs are required to preserve source meaning.
 
-### 7. Use year-scoped import policy
+### 7. Use year-scoped import policy with full replacement for active year
 
 The importer will classify uploads by report family and reference year scope:
 - `2023_2024`: static historical load
 - `2025`: static historical load
-- `2026`: mutable active-year load
+- `2026`: active-year load with full replacement of the prior dataset of the same report type
 
 Rationale:
 - This reflects the operating rule defined by the team.
 - Historical batches should not be overwritten accidentally.
-- The active year needs controlled refresh capability.
+- The active year must support daily operational refresh.
 
 Alternatives considered:
-- Treat every upload as a new immutable batch forever. Rejected because the active-year dataset must evolve during the year.
+- Treat every upload as a new immutable batch forever. Rejected because the active-year dataset must evolve daily.
 - Allow unrestricted replacement for all years. Rejected because historical data should remain locked once loaded.
+
+### 8. Materialize the BI-facing consolidated dataset
+
+The system will build a materialized consolidated table for BI consumption after successful imports, rather than exposing only a dynamic view.
+
+Rationale:
+- BI will consume a stable, ready-to-query table.
+- Materialization simplifies downstream access and isolates BI from normalization and join complexity.
+- Daily 2026 refresh can rebuild the materialized table in a controlled way.
+
+Alternatives considered:
+- Use only a database view. Rejected because the chosen BI contract is a materialized consolidated dataset.
+- Let BI query normalized source tables directly. Rejected because it pushes source complexity downstream.
 
 ## Canonical Schemas
 
@@ -199,14 +210,14 @@ Alternatives considered:
 ### Canonical field mapping for DL+OB
 
 - `OrdemBancaria` -> `ordem_bancaria`
-- `CredorDocumento` -> `credor_documento`
-- `Credor_Nome` -> `credor_nome`
+- `CredorDocumento` -> `ob_credor_documento`
+- `Credor_Nome` -> `ob_credor_nome`
 - `DatadoPagamento` -> `data_pagamento`
 - `CodigoFonteDeRecurso` -> `codigo_fonte_recurso`
 - `CodigoDetalhamentoFr` -> `codigo_detalhamento_fr`
 - `DocumentodeLiquidacao` -> `documento_liquidacao`
-- `DocumentoCredor` -> `documento_credor`
-- `NomeCredor` -> `nome_credor`
+- `DocumentoCredor` -> `dl_documento_credor`
+- `NomeCredor` -> `dl_nome_credor`
 - `NUMERO_PROCESSO` -> `numero_processo`
 - `CodigoUnidadeGestora` -> `codigo_unidade_gestora`
 - `Valor` -> `valor`
@@ -220,29 +231,31 @@ Alternatives considered:
 - `notas_empenho`
 - `documentos_liquidacao`
 - `ordens_bancarias`
-- `consolidated_siafe_lineage` (table or view)
+- `consolidated_siafe_lineage`
+
+`consolidated_siafe_lineage` is a materialized consolidated table rebuilt or refreshed after successful import workflows.
 
 ## Risks / Trade-offs
 
-- [Conflicting uploads for the same identifiers] -> Keep import batch lineage and use deterministic upsert rules so conflicts can be inspected and corrected later.
+- [Conflicting uploads for the same identifiers] -> Keep import batch lineage and use deterministic replacement rules so conflicts can be inspected later.
 - [Header variability across SIAFE exports] -> Centralize the exact known headers and canonical mappings in schema definitions.
 - [Partial hierarchies may confuse BI consumers] -> Persist explicit nulls and lineage flags so downstream models can distinguish missing data from failed processing.
 - [Large files may increase import latency] -> Process rows in a streaming or chunked manner if supported by the implementation stack, and persist batch progress metadata.
 - [Static historical years accidentally overwritten] -> Enforce year-scope rules at upload validation time.
-- [Ambiguous source columns interpreted incorrectly] -> Preserve ambiguous fields separately until business validation confirms canonical collapse rules.
+- [Daily 2026 replacement may leave stale consolidated data] -> Rebuild or refresh the materialized consolidated table atomically after successful active-year imports.
 
 ## Migration Plan
 
 1. Introduce storage for import batches, normalized report rows, and canonical lineage entities.
 2. Add the CSV ingestion workflow for `NE+DL` and `DL+OB` with exact header validation and normalization.
 3. Enforce year-scope rules for `2023_2024`, `2025`, and `2026`.
-4. Add consolidation logic that materializes or exposes the BI-ready `Processo > NE > DL > OB` dataset.
-5. Backfill by importing the historical files `2023_2024` and `2025`, then load the active `2026` files.
-6. Roll back by disabling the upload entry point and ignoring new batches; batch-linked records allow targeted cleanup if needed.
+4. Implement full replacement behavior for active-year `2026` uploads by report type.
+5. Add consolidation logic that materializes the BI-ready `Processo > NE > DL > OB` dataset into `consolidated_siafe_lineage`.
+6. Backfill by importing the historical files `2023_2024` and `2025`, then load the active `2026` files.
+7. Roll back by disabling the upload entry point and ignoring new batches; batch-linked records allow targeted cleanup if needed.
 
 ## Open Questions
 
 - What is the final business meaning of `valor_liquido` versus `valor_liquido_2`?
-- What is the final business meaning of `credor_documento` versus `documento_credor`, and `credor_nome` versus `nome_credor`?
-- Should repeated `2026` uploads replace the prior active-year dataset atomically or create a superseded batch history with one active version?
-- Does BI need a fully materialized table, or is a database view over normalized and canonical entities sufficient for the MVP?
+- Should the daily `2026` replacement rebuild the full materialized table after each report import or after both daily files are successfully received?
+- Should the active-year replacement keep prior batch history only for audit, with a single active version per report type?

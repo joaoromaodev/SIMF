@@ -9,8 +9,8 @@
 - [ ] 1.3 Define the year-scope import policy for:
   - `2023_2024` static historical load
   - `2025` static historical load
-  - `2026` mutable active-year load
-- [ ] 1.4 Add storage structures for import batches, validation outcomes, normalized `NE+DL` rows, normalized `DL+OB` rows, and canonical lineage entities
+  - `2026` active-year daily load with full replacement by report type
+- [ ] 1.4 Add storage structures for import batches, validation outcomes, normalized `NE+DL` rows, normalized `DL+OB` rows, canonical lineage entities, and the materialized consolidated table
 - [ ] 1.5 Implement the upload entry point that accepts `.csv` files and routes them through the appropriate report schema
 
 ## 2. Validation And Normalization
@@ -47,10 +47,11 @@
   - `CodigoUnidadeGestora`
   - `Valor`
 - [ ] 2.4 Implement row parsing and header normalization into the canonical SIAFE field schema
-- [ ] 2.5 Preserve ambiguous source fields separately:
-  - `valor_liquido` and `valor_liquido_2`
-  - `credor_documento` and `documento_credor`
-  - `credor_nome` and `nome_credor`
+- [ ] 2.5 Preserve DLOB business fields separately:
+  - `ob_credor_documento`
+  - `ob_credor_nome`
+  - `dl_documento_credor`
+  - `dl_nome_credor`
 - [ ] 2.6 Persist import metadata for both successful and failed upload attempts
 
 ## 3. Consolidation
@@ -58,18 +59,19 @@
 - [ ] 3.1 Implement deterministic merging of normalized rows into the `Processo > NE > DL > OB` hierarchy
 - [ ] 3.2 Join `NE+DL` and `DL+OB` primarily by `documento_liquidacao`
 - [ ] 3.3 Preserve `numero_processo` as the top-level traceability key throughout the lineage
-- [ ] 3.4 Support partial lineage persistence so incomplete relationships remain available for future enrichment
-- [ ] 3.5 Expose the consolidated BI-facing dataset from canonical records rather than raw report schemas
-- [ ] 3.6 Implement the active-year refresh policy for `2026` while preserving historical batch lineage
+- [ ] 3.4 Support partial lineage persistence so incomplete relationships remain available for future enrichment, including DL records without OB
+- [ ] 3.5 Build and expose the materialized BI-facing consolidated table from canonical records rather than raw report schemas
+- [ ] 3.6 Implement the active-year daily replacement policy for `2026`, fully replacing the prior dataset of the same report type
+- [ ] 3.7 Rebuild or refresh the materialized consolidated table after each successful `2026` replacement import
 
 ## 4. Verification
 
 - [ ] 4.1 Add automated tests for supported report validation, missing-column failures, and header normalization
-- [ ] 4.2 Add automated tests for hierarchy consolidation across `NE+DL` and `DL+OB` imports, including partial matches
+- [ ] 4.2 Add automated tests for hierarchy consolidation across `NE+DL` and `DL+OB` imports, including partial matches and DL without OB
 - [ ] 4.3 Add automated tests for year-scope behavior:
   - static historical import acceptance
   - historical overwrite rejection
-  - active-year `2026` replacement behavior
+  - active-year `2026` full replacement behavior
 - [ ] 4.4 Validate the end-to-end MVP flow with representative SIAFE CSV samples:
   - `2023_2024_NEDL.csv`
   - `2025_NEDL.csv`
@@ -79,5 +81,4 @@
   - `2026_DLOB.csv`
 - [ ] 4.5 Document unresolved semantic questions for follow-up:
   - `valor_liquido` vs `valor_liquido_2`
-  - `credor_documento` vs `documento_credor`
-  - `credor_nome` vs `nome_credor`
+  - whether the materialized consolidated table refresh runs after each active-year upload or only after both daily files are loaded
