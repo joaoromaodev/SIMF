@@ -1,27 +1,27 @@
 ## 1. Import Foundations
 
-- [ ] 1.1 Define the supported SIAFE report types, exact required columns, and canonical field mappings for `NE+DL` and `DL+OB`
-- [ ] 1.2 Define the canonical identifiers and business hierarchy:
+- [x] 1.1 Define the supported SIAFE report types, exact required columns, and canonical field mappings for `NE+DL` and `DL+OB`
+- [x] 1.2 Define the canonical identifiers and business hierarchy:
   - `numero_processo`
   - `codigo_nota_empenho`
   - `documento_liquidacao`
   - `ordem_bancaria`
-- [ ] 1.3 Define the year-scope import policy for:
+- [x] 1.3 Define the year-scope import policy for:
   - `2023_2024` static historical load
   - `2025` static historical load
   - `2026` active-year daily load with full replacement by report type
-- [ ] 1.4 Define the MVP technical stack and implementation boundaries:
+- [x] 1.4 Define the MVP technical stack and implementation boundaries:
   - `Next.js` frontend
   - `Supabase Postgres` persistence
   - `Supabase Storage` for original CSV files
   - server-side functions for import and consolidation workflows
-- [ ] 1.5 Add storage structures for import batches, validation outcomes, normalized `NE+DL` rows, normalized `DL+OB` rows, canonical lineage entities, and the materialized consolidated table
-- [ ] 1.6 Implement the upload entry point in the Next.js application and route files through the appropriate server-side import flow
+- [x] 1.5 Add storage structures for `import_batches`, validation outcomes, normalized `NE+DL` rows, and normalized `DL+OB` rows
+- [x] 1.6 Implement the upload entry point in the Next.js application and route files through the appropriate server-side import flow
 
 ## 2. Validation And Normalization
 
-- [ ] 2.1 Implement file-level validation for extension, report type, filename/year-scope rule, and required columns with actionable error messages
-- [ ] 2.2 Implement exact header validation for `NE+DL` using:
+- [x] 2.1 Implement file-level validation for extension, report type, filename/year-scope rule, and required columns with actionable error messages
+- [x] 2.2 Implement exact header validation for `NE+DL` using:
   - `DocumentodeLiquidacao`
   - `CodigoNotadeEmpenho`
   - `CodigoPlanoInterno`
@@ -38,7 +38,7 @@
   - `Valor Pago`
   - `Valor Liquidado a Pagar`
   - `Valor Liquido2`
-- [ ] 2.3 Implement exact header validation for `DL+OB` using:
+- [x] 2.3 Implement exact header validation for `DL+OB` using:
   - `OrdemBancaria`
   - `CredorDocumento`
   - `Credor_Nome`
@@ -51,14 +51,14 @@
   - `NUMERO_PROCESSO`
   - `CodigoUnidadeGestora`
   - `Valor`
-- [ ] 2.4 Implement row parsing and header normalization into the canonical SIAFE field schema
-- [ ] 2.5 Preserve DLOB business fields separately:
+- [x] 2.4 Implement row parsing and header normalization into the canonical SIAFE field schema
+- [x] 2.5 Preserve DLOB business fields separately:
   - `ob_credor_documento`
   - `ob_credor_nome`
   - `dl_documento_credor`
   - `dl_nome_credor`
-- [ ] 2.6 Persist import metadata for both successful and failed upload attempts
-- [ ] 2.7 Persist original uploaded CSV files to Supabase Storage and link them to their import batches
+- [x] 2.6 Persist import metadata for both successful and failed upload attempts
+- [x] 2.7 Persist original uploaded CSV files to Supabase Storage and link them to their import batches
 
 ## 3. Consolidation
 
@@ -67,14 +67,14 @@
 - [ ] 3.3 Preserve `numero_processo` as the top-level traceability key throughout the lineage
 - [ ] 3.4 Support partial lineage persistence so incomplete relationships remain available for future enrichment, including DL records without OB
 - [ ] 3.5 Build and expose the materialized BI-facing consolidated table from canonical records rather than raw report schemas
-- [ ] 3.6 Implement the active-year daily replacement policy for `2026`, fully replacing the prior dataset of the same report type
+- [x] 3.6 Implement the active-year daily replacement policy for `2026`, fully replacing the prior dataset of the same report type
 - [ ] 3.7 Rebuild or refresh the materialized consolidated table after each successful `2026` replacement import
 
 ## 4. Verification
 
-- [ ] 4.1 Add automated tests for supported report validation, missing-column failures, and header normalization
+- [x] 4.1 Add automated tests for supported report validation, missing-column failures, and header normalization
 - [ ] 4.2 Add automated tests for hierarchy consolidation across `NE+DL` and `DL+OB` imports, including partial matches and DL without OB
-- [ ] 4.3 Add automated tests for year-scope behavior:
+- [x] 4.3 Add automated tests for year-scope behavior:
   - static historical import acceptance
   - historical overwrite rejection
   - active-year `2026` full replacement behavior
