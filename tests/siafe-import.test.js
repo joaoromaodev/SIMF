@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { parseCsv } from "../lib/siafe/csv.js";
+import { finalizeBatchSuccess, processSiafeUpload } from "../lib/siafe/importer.js";
 import { normalizeRows } from "../lib/siafe/normalize.js";
 import { REPORT_TYPES, getExpectedFileName } from "../lib/siafe/schemas.js";
 import {
@@ -122,3 +123,187 @@ test("static scopes reject replacement when an active batch already exists", () 
   assert.doesNotThrow(() => ensureStaticScopeCanImport({ id: "existing-batch" }, "2026"));
 });
 
+function createMockFile(name, contents, type = "text/csv") {
+  return {
+    name,
+    type,
+    async arrayBuffer() {
+      return Buffer.from(contents, "utf-8");
+    }
+  };
+}
+
+function createFailedBatchSupabaseMock(state) {
+  return {
+    storage: {
+      from() {
+        return {
+          async upload() {
+            state.storageUploads += 1;
+            return { error: null };
+          }
+        };
+      }
+    },
+    from(table) {
+      assert.equal(table, "import_batches");
+
+      return {
+        insert(payload) {
+          state.insertedBatches.push(payload);
+          return {
+            select() {
+              return {
+                async single() {
+                  return {
+                    data: { id: `batch-${state.insertedBatches.length}`, ...payload },
+                    error: null
+                  };
+                }
+              };
+            }
+          };
+        }
+      };
+    }
+  };
+}
+
+test("structural validation fails before storage upload and still records a failed batch", async () => {
+  const state = {
+    insertedBatches: [],
+    storageUploads: 0
+  };
+
+  const file = createMockFile("2026_NEDL.csv", "Wrong,Header\n1,2");
+
+  await assert.rejects(
+    () =>
+      processSiafeUpload({
+        file,
+        reportType: REPORT_TYPES.NE_DL,
+        yearScope: "2026",
+        supabaseClient: createFailedBatchSupabaseMock(state)
+      }),
+    ImportValidationError
+  );
+
+  assert.equal(state.storageUploads, 0);
+  assert.equal(state.insertedBatches.length, 1);
+  assert.equal(state.insertedBatches[0].status, "failed");
+  assert.deepEqual(state.insertedBatches[0].source_headers, ["Wrong", "Header"]);
+});
+
+test("finalizeBatchSuccess uses the active-year database finalizer for 2026 replacements", async () => {
+  const state = {
+    rpcCalls: [],
+    fetchedIds: []
+  };
+
+  const supabase = {
+    async rpc(name, payload) {
+      state.rpcCalls.push({ name, payload });
+      return { data: { active_batch_id: payload.p_new_batch_id }, error: null };
+    },
+    from(table) {
+      assert.equal(table, "import_batches");
+
+      return {
+        select() {
+          return this;
+        },
+        eq(field, value) {
+          if (field === "id") {
+            state.fetchedIds.push(value);
+          }
+
+          return this;
+        },
+        async single() {
+          return {
+            data: {
+              id: "batch-2026",
+              status: "success",
+              report_type: REPORT_TYPES.NE_DL,
+              year_scope: "2026",
+              normalized_row_count: 12,
+              is_active: true
+            },
+            error: null
+          };
+        }
+      };
+    }
+  };
+
+  const batch = await finalizeBatchSuccess({
+    supabase,
+    batchId: "batch-2026",
+    reportType: REPORT_TYPES.NE_DL,
+    yearScope: "2026",
+    header: ["DocumentodeLiquidacao"],
+    processedRowCount: 12,
+    normalizedRowCount: 12
+  });
+
+  assert.equal(state.rpcCalls[0].name, "finalize_siafe_active_import");
+  assert.equal(state.rpcCalls[0].payload.p_new_batch_id, "batch-2026");
+  assert.equal(state.rpcCalls[0].payload.p_report_type, REPORT_TYPES.NE_DL);
+  assert.equal(state.rpcCalls[0].payload.p_year_scope, "2026");
+  assert.deepEqual(state.fetchedIds, ["batch-2026"]);
+  assert.equal(batch.is_active, true);
+  assert.equal(batch.status, "success");
+});
+
+test("finalizeBatchSuccess keeps the non-2026 path simple for historical scopes", async () => {
+  const state = {
+    updatedPayloads: []
+  };
+
+  const supabase = {
+    from(table) {
+      assert.equal(table, "import_batches");
+
+      return {
+        update(payload) {
+          state.updatedPayloads.push(payload);
+          return {
+            eq() {
+              return {
+                select() {
+                  return {
+                    async single() {
+                      return {
+                        data: {
+                          id: "batch-2025",
+                          report_type: REPORT_TYPES.DL_OB,
+                          year_scope: "2025",
+                          ...payload
+                        },
+                        error: null
+                      };
+                    }
+                  };
+                }
+              };
+            }
+          };
+        }
+      };
+    }
+  };
+
+  const batch = await finalizeBatchSuccess({
+    supabase,
+    batchId: "batch-2025",
+    reportType: REPORT_TYPES.DL_OB,
+    yearScope: "2025",
+    header: ["OrdemBancaria"],
+    processedRowCount: 4,
+    normalizedRowCount: 4
+  });
+
+  assert.equal(state.updatedPayloads[0].status, "success");
+  assert.equal(state.updatedPayloads[0].is_active, true);
+  assert.equal(batch.year_scope, "2025");
+});

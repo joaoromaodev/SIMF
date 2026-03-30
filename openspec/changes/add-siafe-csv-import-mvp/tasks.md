@@ -59,6 +59,7 @@
   - `dl_nome_credor`
 - [x] 2.6 Persist import metadata for both successful and failed upload attempts
 - [x] 2.7 Persist original uploaded CSV files to Supabase Storage and link them to their import batches
+- [x] 2.8 Reassess and finalize the order of structural validation vs original file persistence to Storage, keeping traceability and failure handling consistent
 
 ## 3. Consolidation
 
@@ -67,7 +68,7 @@
 - [ ] 3.3 Preserve `numero_processo` as the top-level traceability key throughout the lineage
 - [ ] 3.4 Support partial lineage persistence so incomplete relationships remain available for future enrichment, including DL records without OB
 - [ ] 3.5 Build and expose the materialized BI-facing consolidated table from canonical records rather than raw report schemas
-- [x] 3.6 Implement the active-year daily replacement policy for `2026`, fully replacing the prior dataset of the same report type
+- [x] 3.6 Harden the active-year daily replacement policy for `2026`, ensuring safe and consistent full replacement of the prior dataset of the same report type
 - [ ] 3.7 Rebuild or refresh the materialized consolidated table after each successful `2026` replacement import
 
 ## 4. Verification
@@ -78,6 +79,9 @@
   - static historical import acceptance
   - historical overwrite rejection
   - active-year `2026` full replacement behavior
+  - prior active batch deactivation
+  - prior normalized row removal/replacement
+  - single active batch guarantee per report type/year
 - [ ] 4.4 Validate the end-to-end MVP flow with representative SIAFE CSV samples:
   - `2023_2024_NEDL.csv`
   - `2025_NEDL.csv`
