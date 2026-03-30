@@ -19,10 +19,15 @@ export function UploadForm() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    
+    // 1. Salva a referência do formulário antes do await
+    const form = event.currentTarget; 
+    
     setSubmitting(true);
     setStatus(null);
 
-    const formData = new FormData(event.currentTarget);
+    // 2. Usa a referência salva
+    const formData = new FormData(form);
 
     try {
       const response = await fetch("/api/imports", {
@@ -38,7 +43,9 @@ export function UploadForm() {
       }
 
       setStatus({ kind: "success", payload });
-      event.currentTarget.reset();
+      
+      // 3. Usa a referência salva para resetar os campos
+      form.reset(); 
     } catch (error) {
       setStatus({
         kind: "error",
