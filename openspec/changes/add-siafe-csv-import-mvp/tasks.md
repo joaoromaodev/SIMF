@@ -1,0 +1,83 @@
+## 1. Import Foundations
+
+- [ ] 1.1 Define the supported SIAFE report types, exact required columns, and canonical field mappings for `NE+DL` and `DL+OB`
+- [ ] 1.2 Define the canonical identifiers and business hierarchy:
+  - `numero_processo`
+  - `codigo_nota_empenho`
+  - `documento_liquidacao`
+  - `ordem_bancaria`
+- [ ] 1.3 Define the year-scope import policy for:
+  - `2023_2024` static historical load
+  - `2025` static historical load
+  - `2026` mutable active-year load
+- [ ] 1.4 Add storage structures for import batches, validation outcomes, normalized `NE+DL` rows, normalized `DL+OB` rows, and canonical lineage entities
+- [ ] 1.5 Implement the upload entry point that accepts `.csv` files and routes them through the appropriate report schema
+
+## 2. Validation And Normalization
+
+- [ ] 2.1 Implement file-level validation for extension, report type, filename/year-scope rule, and required columns with actionable error messages
+- [ ] 2.2 Implement exact header validation for `NE+DL` using:
+  - `DocumentodeLiquidacao`
+  - `CodigoNotadeEmpenho`
+  - `CodigoPlanoInterno`
+  - `CodigoProjetoAtividade`
+  - `CodigoNaturezaDaDespesa`
+  - `CodigoFonteDeRecurso`
+  - `CodigoDetalhamentoFr`
+  - `NUMERO_PROCESSO`
+  - `InstituicaoCodigoUnidadeGestora`
+  - `Valor Original`
+  - `Valor Liquido`
+  - `Valor Bruto`
+  - `Valor Retido`
+  - `Valor Pago`
+  - `Valor Liquidado a Pagar`
+  - `Valor Liquido2`
+- [ ] 2.3 Implement exact header validation for `DL+OB` using:
+  - `OrdemBancaria`
+  - `CredorDocumento`
+  - `Credor_Nome`
+  - `DatadoPagamento`
+  - `CodigoFonteDeRecurso`
+  - `CodigoDetalhamentoFr`
+  - `DocumentodeLiquidacao`
+  - `DocumentoCredor`
+  - `NomeCredor`
+  - `NUMERO_PROCESSO`
+  - `CodigoUnidadeGestora`
+  - `Valor`
+- [ ] 2.4 Implement row parsing and header normalization into the canonical SIAFE field schema
+- [ ] 2.5 Preserve ambiguous source fields separately:
+  - `valor_liquido` and `valor_liquido_2`
+  - `credor_documento` and `documento_credor`
+  - `credor_nome` and `nome_credor`
+- [ ] 2.6 Persist import metadata for both successful and failed upload attempts
+
+## 3. Consolidation
+
+- [ ] 3.1 Implement deterministic merging of normalized rows into the `Processo > NE > DL > OB` hierarchy
+- [ ] 3.2 Join `NE+DL` and `DL+OB` primarily by `documento_liquidacao`
+- [ ] 3.3 Preserve `numero_processo` as the top-level traceability key throughout the lineage
+- [ ] 3.4 Support partial lineage persistence so incomplete relationships remain available for future enrichment
+- [ ] 3.5 Expose the consolidated BI-facing dataset from canonical records rather than raw report schemas
+- [ ] 3.6 Implement the active-year refresh policy for `2026` while preserving historical batch lineage
+
+## 4. Verification
+
+- [ ] 4.1 Add automated tests for supported report validation, missing-column failures, and header normalization
+- [ ] 4.2 Add automated tests for hierarchy consolidation across `NE+DL` and `DL+OB` imports, including partial matches
+- [ ] 4.3 Add automated tests for year-scope behavior:
+  - static historical import acceptance
+  - historical overwrite rejection
+  - active-year `2026` replacement behavior
+- [ ] 4.4 Validate the end-to-end MVP flow with representative SIAFE CSV samples:
+  - `2023_2024_NEDL.csv`
+  - `2025_NEDL.csv`
+  - `2026_NEDL.csv`
+  - `2023_2024_DLOB.csv`
+  - `2025_DLOB.csv`
+  - `2026_DLOB.csv`
+- [ ] 4.5 Document unresolved semantic questions for follow-up:
+  - `valor_liquido` vs `valor_liquido_2`
+  - `credor_documento` vs `documento_credor`
+  - `credor_nome` vs `nome_credor`
