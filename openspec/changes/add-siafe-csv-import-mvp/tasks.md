@@ -10,8 +10,13 @@
   - `2023_2024` static historical load
   - `2025` static historical load
   - `2026` active-year daily load with full replacement by report type
-- [ ] 1.4 Add storage structures for import batches, validation outcomes, normalized `NE+DL` rows, normalized `DL+OB` rows, canonical lineage entities, and the materialized consolidated table
-- [ ] 1.5 Implement the upload entry point that accepts `.csv` files and routes them through the appropriate report schema
+- [ ] 1.4 Define the MVP technical stack and implementation boundaries:
+  - `Next.js` frontend
+  - `Supabase Postgres` persistence
+  - `Supabase Storage` for original CSV files
+  - server-side functions for import and consolidation workflows
+- [ ] 1.5 Add storage structures for import batches, validation outcomes, normalized `NE+DL` rows, normalized `DL+OB` rows, canonical lineage entities, and the materialized consolidated table
+- [ ] 1.6 Implement the upload entry point in the Next.js application and route files through the appropriate server-side import flow
 
 ## 2. Validation And Normalization
 
@@ -53,6 +58,7 @@
   - `dl_documento_credor`
   - `dl_nome_credor`
 - [ ] 2.6 Persist import metadata for both successful and failed upload attempts
+- [ ] 2.7 Persist original uploaded CSV files to Supabase Storage and link them to their import batches
 
 ## 3. Consolidation
 

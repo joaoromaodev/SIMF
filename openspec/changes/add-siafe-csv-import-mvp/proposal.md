@@ -12,6 +12,15 @@ The MVP will start from six known CSV files:
 
 The `2023_2024` and `2025` files are static historical loads. The `2026` files are active operational datasets and will be uploaded daily, with each new valid upload fully replacing the prior `2026` dataset of the same report type.
 
+The initial MVP stack will use:
+- `Next.js` for the frontend application
+- `Supabase` as the backend platform
+- `Postgres` for persistence
+- `Supabase Storage` for original CSV files
+- server-side functions for ingestion, validation, normalization, and materialized consolidated table refresh
+
+This stack prioritizes rapid implementation while preserving a strong path for evolution into a stable administrative platform.
+
 ## What Changes
 
 - Add an MVP flow to upload SIAFE `.csv` files for the `NE+DL` and `DL+OB` report formats.
@@ -23,6 +32,7 @@ The `2023_2024` and `2025` files are static historical loads. The `2026` files a
 - Treat `numero_processo` as the top-level traceability key across the lineage.
 - Support historical static imports for `2023_2024` and `2025`, and daily replacement of the active `2026` datasets.
 - Materialize the consolidated BI dataset into a table used directly by BI consumers.
+- Implement the MVP on `Next.js + Supabase`, using Postgres, Storage, and server-side functions as the primary technical foundation.
 - Reject unsupported file types and malformed files with actionable validation feedback for operators.
 
 ## Capabilities
@@ -37,7 +47,8 @@ None.
 
 ## Impact
 
-- Affects backend import endpoints, CSV parsing and validation logic, normalization rules, and persistence for import metadata and normalized rows.
-- Introduces or expands storage for upload batches, validation results, normalized report rows, and consolidated lineage records.
+- Affects the Next.js application layer, server-side upload and import flows, Supabase persistence, CSV parsing and validation logic, normalization rules, and persistence for import metadata and normalized rows.
+- Introduces or expands Postgres storage for upload batches, validation results, normalized report rows, and consolidated lineage records.
+- Uses Supabase Storage for preserving original uploaded CSV files.
 - Establishes the materialized source contract that BI consumers will use instead of raw uploaded files.
 - Requires test coverage for file validation, normalization mapping, relationship consolidation, year-based import rules, daily active-year replacement, and partial-import handling.

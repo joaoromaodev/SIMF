@@ -12,6 +12,13 @@ The initial operating model includes six CSV files:
 
 The `2023_2024` and `2025` files are historical and static after import. The `2026` files are active operational datasets and are expected to be uploaded daily, with each new valid upload fully replacing the previously active `2026` dataset for the same report type.
 
+The MVP stack is:
+- `Next.js` as the frontend application
+- `Supabase` as the backend platform
+- `Postgres` as the main persistence layer
+- `Supabase Storage` for original CSV file retention
+- server-side functions for ingestion, validation, normalization, replacement policy enforcement, and materialized consolidated table refresh
+
 Because BI consumers need a stable dataset, the import path should separate raw upload concerns from canonical storage and from the final consolidated materialized table.
 
 The current repository has no existing OpenSpec capabilities for this workflow, so the design should minimize coupling and make future report types additive. The MVP should prioritize correctness, traceability, and deterministic consolidation over advanced reconciliation or repair tooling.
@@ -28,6 +35,7 @@ The current repository has no existing OpenSpec capabilities for this workflow, 
 - Allow partial coverage across reports while keeping lineage explicit, such as a `DL` without an `OB` yet.
 - Enforce the year-batch rule: `2023_2024` and `2025` are static; `2026` is active and fully replaceable by daily uploads.
 - Materialize the consolidated dataset after successful imports.
+- Implement the MVP using `Next.js + Supabase` with Postgres, Storage, and server-side import functions.
 
 **Non-Goals:**
 - Supporting spreadsheets, PDFs, or additional SIAFE report families in the MVP.
@@ -35,6 +43,26 @@ The current repository has no existing OpenSpec capabilities for this workflow, 
 - Performing advanced deduplication across semantically similar but conflicting uploads beyond basic import identity rules.
 - Designing final BI dashboards or analytics models beyond the consolidated source dataset.
 - Supporting arbitrary year/version lifecycle rules beyond the explicitly defined `2023_2024`, `2025`, and `2026` behavior.
+
+## Technical Architecture
+
+### Application layer
+- `Next.js` will provide the operator-facing web application.
+- Upload flows, operational status pages, and future administrative screens will be implemented in the Next.js app.
+
+### Backend platform
+- `Supabase Postgres` will persist import batches, normalized rows, canonical lineage entities, and the materialized consolidated table.
+- `Supabase Storage` will retain the original uploaded CSV files for traceability and reprocessing support.
+- Server-side functions will handle:
+  - file intake orchestration
+  - report-type validation
+  - exact header validation
+  - canonical normalization
+  - year-scope replacement logic
+  - rebuild or refresh of the consolidated materialized table
+
+### BI contract
+- BI consumers will read from a materialized consolidated table in Postgres rather than from raw CSV files or raw normalized tables.
 
 ## Decisions
 
@@ -243,16 +271,18 @@ Alternatives considered:
 - [Large files may increase import latency] -> Process rows in a streaming or chunked manner if supported by the implementation stack, and persist batch progress metadata.
 - [Static historical years accidentally overwritten] -> Enforce year-scope rules at upload validation time.
 - [Daily 2026 replacement may leave stale consolidated data] -> Rebuild or refresh the materialized consolidated table atomically after successful active-year imports.
+- [Stack coupling decisions delayed] -> Explicitly constrain the MVP to Next.js + Supabase so implementation does not drift across incompatible patterns.
 
 ## Migration Plan
 
-1. Introduce storage for import batches, normalized report rows, and canonical lineage entities.
-2. Add the CSV ingestion workflow for `NE+DL` and `DL+OB` with exact header validation and normalization.
-3. Enforce year-scope rules for `2023_2024`, `2025`, and `2026`.
-4. Implement full replacement behavior for active-year `2026` uploads by report type.
-5. Add consolidation logic that materializes the BI-ready `Processo > NE > DL > OB` dataset into `consolidated_siafe_lineage`.
-6. Backfill by importing the historical files `2023_2024` and `2025`, then load the active `2026` files.
-7. Roll back by disabling the upload entry point and ignoring new batches; batch-linked records allow targeted cleanup if needed.
+1. Introduce storage for import batches, normalized report rows, and canonical lineage entities in Supabase Postgres.
+2. Add CSV file retention using Supabase Storage.
+3. Add the CSV ingestion workflow for `NE+DL` and `DL+OB` with exact header validation and normalization through server-side functions.
+4. Enforce year-scope rules for `2023_2024`, `2025`, and `2026`.
+5. Implement full replacement behavior for active-year `2026` uploads by report type.
+6. Add consolidation logic that materializes the BI-ready `Processo > NE > DL > OB` dataset into `consolidated_siafe_lineage`.
+7. Backfill by importing the historical files `2023_2024` and `2025`, then load the active `2026` files.
+8. Roll back by disabling the upload entry point and ignoring new batches; batch-linked records allow targeted cleanup if needed.
 
 ## Open Questions
 
