@@ -81,6 +81,13 @@ export function UploadForm() {
       {status && (
         <div className={`p-4 rounded border text-xs font-bold uppercase tracking-wider ${status.kind === "success" ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-para-red"}`}>
           {status.payload.message}
+          {Array.isArray(status.payload.errors) && status.payload.errors.length > 0 && (
+            <ul className="mt-3 list-disc pl-5 text-left normal-case tracking-normal font-medium">
+              {status.payload.errors.map((error) => (
+                <li key={error}>{error}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </form>

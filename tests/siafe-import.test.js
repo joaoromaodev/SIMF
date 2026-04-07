@@ -1,10 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { parseCsv } from "../lib/siafe/csv.js";
+import { detectCsvDelimiter, parseCsv } from "../lib/siafe/csv.js";
 import { finalizeBatchSuccess, processSiafeUpload } from "../lib/siafe/importer.js";
 import { normalizeRows } from "../lib/siafe/normalize.js";
-import { REPORT_TYPES, getExpectedFileName } from "../lib/siafe/schemas.js";
+import {
+  REPORT_SCHEMAS,
+  REPORT_TYPES,
+  getExpectedFileName,
+  normalizeReportType
+} from "../lib/siafe/schemas.js";
 import {
   ImportValidationError,
   ensureStaticScopeCanImport,
@@ -21,6 +26,18 @@ test("validate upload selection enforces exact filename contract", () => {
 
   assert.equal(result.ok, true);
   assert.equal(getExpectedFileName(REPORT_TYPES.NE_DL, "2026"), "2026_NEDL.csv");
+});
+
+test("validate upload selection accepts domain report labels from the upload form", () => {
+  const result = validateUploadSelection({
+    fileName: "2026_NEDL.csv",
+    reportType: "NE+DL",
+    yearScope: "2026"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(normalizeReportType("NE+DL"), REPORT_TYPES.NE_DL);
+  assert.equal(getExpectedFileName("NE+DL", "2026"), "2026_NEDL.csv");
 });
 
 test("validate upload selection rejects wrong filename and extension", () => {
@@ -68,6 +85,54 @@ test("parse csv handles quoted commas", () => {
 
   assert.deepEqual(parsed.header, ["ColA", "ColB"]);
   assert.deepEqual(parsed.rows, [["value, one", "two"]]);
+});
+
+test("parse csv detects semicolon-delimited SIAFE exports", () => {
+  const header = REPORT_SCHEMAS[REPORT_TYPES.NE_DL].headers;
+  const row = header.map((column) => {
+    const values = {
+      DocumentodeLiquidacao: "DL-1",
+      CodigoNotadeEmpenho: "NE-1",
+      "Valor Original": "10,00",
+      "Valor Liquido": "10,00",
+      "Valor Bruto": "10,00",
+      "Valor Retido": "0,00",
+      "Valor Pago": "10,00",
+      "Valor Liquidado a Pagar": "0,00",
+      "Valor Liquido2": "10,00"
+    };
+
+    return values[column] ?? `${column}-value`;
+  });
+  const csvText = `${header.join(";")}\r\n${row.join(";")}`;
+  const parsed = parseCsv(csvText);
+
+  assert.equal(detectCsvDelimiter(csvText), ";");
+  assert.deepEqual(parsed.header, header);
+  assert.equal(parsed.rows[0][9], "10,00");
+  assert.equal(validateHeaders("NE+DL", parsed.header).ok, true);
+});
+
+test("parse csv strips UTF-8 BOM from the first header", () => {
+  const header = REPORT_SCHEMAS[REPORT_TYPES.DL_OB].headers;
+  const csvText = `\ufeff${header.join(",")}\r\n${header.map((column) => `${column}-value`).join(",")}`;
+  const parsed = parseCsv(csvText);
+
+  assert.deepEqual(parsed.header, header);
+  assert.equal(validateHeaders("DL+OB", parsed.header).ok, true);
+});
+
+test("validate headers reports the received and expected header contracts", () => {
+  assert.throws(
+    () => validateHeaders("NE+DL", ["DocumentodeLiquidacao;CodigoNotadeEmpenho"]),
+    (error) => {
+      assert.equal(error instanceof ImportValidationError, true);
+      assert.match(error.details.join("\n"), /Expected header count: 16\. Received header count: 1\./);
+      assert.match(error.details.join("\n"), /Expected headers:/);
+      assert.match(error.details.join("\n"), /Received headers: DocumentodeLiquidacao;CodigoNotadeEmpenho/);
+      return true;
+    }
+  );
 });
 
 test("normalize rows preserves distinct DL and OB creditor fields", () => {
@@ -192,6 +257,118 @@ test("structural validation fails before storage upload and still records a fail
   assert.equal(state.insertedBatches.length, 1);
   assert.equal(state.insertedBatches[0].status, "failed");
   assert.deepEqual(state.insertedBatches[0].source_headers, ["Wrong", "Header"]);
+});
+
+function createSuccessfulImportSupabaseMock(state) {
+  let batch = null;
+
+  function createImportBatchQuery() {
+    return {
+      select() {
+        return this;
+      },
+      eq() {
+        return this;
+      },
+      async maybeSingle() {
+        return { data: null, error: null };
+      },
+      async single() {
+        return { data: batch, error: null };
+      }
+    };
+  }
+
+  return {
+    storage: {
+      from(bucket) {
+        state.storageBuckets.push(bucket);
+
+        return {
+          async upload(path) {
+            state.storageUploads.push(path);
+            return { error: null };
+          }
+        };
+      }
+    },
+    from(table) {
+      if (table === "normalized_ne_dl_rows") {
+        return {
+          async insert(rows) {
+            state.normalizedRows.push(...rows);
+            return { error: null };
+          }
+        };
+      }
+
+      assert.equal(table, "import_batches");
+
+      return {
+        insert(payload) {
+          batch = { id: "batch-success", ...payload };
+          state.insertedBatches.push(payload);
+
+          return createImportBatchQuery();
+        },
+        update(payload) {
+          state.updatedBatches.push(payload);
+          batch = { ...batch, ...payload };
+
+          return {
+            eq() {
+              return createImportBatchQuery();
+            }
+          };
+        },
+        select() {
+          return createImportBatchQuery();
+        }
+      };
+    }
+  };
+}
+
+test("processSiafeUpload accepts form labels and semicolon-delimited SIAFE exports", async () => {
+  const header = REPORT_SCHEMAS[REPORT_TYPES.NE_DL].headers;
+  const row = header.map((column) => {
+    const values = {
+      DocumentodeLiquidacao: "DL-1",
+      CodigoNotadeEmpenho: "NE-1",
+      NUMERO_PROCESSO: "PROC-1",
+      "Valor Original": "10,00",
+      "Valor Liquido": "10,00",
+      "Valor Bruto": "10,00",
+      "Valor Retido": "0,00",
+      "Valor Pago": "10,00",
+      "Valor Liquidado a Pagar": "0,00",
+      "Valor Liquido2": "10,00"
+    };
+
+    return values[column] ?? `${column}-value`;
+  });
+
+  const state = {
+    insertedBatches: [],
+    normalizedRows: [],
+    storageBuckets: [],
+    storageUploads: [],
+    updatedBatches: []
+  };
+
+  const result = await processSiafeUpload({
+    file: createMockFile("2025_NEDL.csv", `${header.join(";")}\n${row.join(";")}`),
+    reportType: "NE+DL",
+    yearScope: "2025",
+    supabaseClient: createSuccessfulImportSupabaseMock(state)
+  });
+
+  assert.equal(state.insertedBatches[0].report_type, REPORT_TYPES.NE_DL);
+  assert.equal(state.storageBuckets[0], "siafe-imports");
+  assert.equal(state.normalizedRows[0].codigo_nota_empenho, "NE-1");
+  assert.equal(state.normalizedRows[0].valor_original, 10);
+  assert.equal(result.reportType, "NE+DL");
+  assert.equal(result.status, "success");
 });
 
 test("finalizeBatchSuccess uses the active-year database finalizer for 2026 replacements", async () => {

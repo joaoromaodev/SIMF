@@ -7,9 +7,6 @@ export async function POST(request) {
   const reportType = formData.get("reportType");
   const yearScope = formData.get("yearScope");
 
-  // LOG DE DEPURAÇÃO: Verifique o terminal do VS Code após clicar no botão
-  console.log("DADOS RECEBIDOS PELO BACKEND:", { reportType, yearScope });
-
   if (!(file instanceof File)) {
     return NextResponse.json({ message: "Arquivo CSV é obrigatório." }, { status: 400 });
   }
@@ -18,10 +15,9 @@ export async function POST(request) {
     const result = await processSiafeUpload({ file, reportType, yearScope });
     return NextResponse.json({ message: "Relatório processado com sucesso.", batch: result });
   } catch (error) {
-    console.error("ERRO NO PROCESSAMENTO:", error);
     return NextResponse.json({ 
       message: error?.publicMessage ?? "Erro ao processar o upload.", 
-      errors: [error.message] 
+      errors: Array.isArray(error?.details) ? error.details : [error.message]
     }, { status: error?.statusCode ?? 500 });
   }
 }
