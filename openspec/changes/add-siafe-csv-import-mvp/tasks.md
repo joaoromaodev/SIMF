@@ -1,3 +1,4 @@
+
 ## 1. Import Foundations
 
 - [x] 1.1 Define the supported SIAFE report types, exact required columns, and canonical field mappings for `NE+DL` and `DL+OB`
@@ -63,13 +64,13 @@
 
 ## 3. Consolidation
 
-- [ ] 3.1 Implement deterministic merging of normalized rows into the `Processo > NE > DL > OB` hierarchy
-- [ ] 3.2 Join `NE+DL` and `DL+OB` primarily by `documento_liquidacao`
-- [ ] 3.3 Preserve `numero_processo` as the top-level traceability key throughout the lineage
-- [ ] 3.4 Support partial lineage persistence so incomplete relationships remain available for future enrichment, including DL records without OB
-- [ ] 3.5 Build and expose the materialized BI-facing consolidated table from canonical records rather than raw report schemas
+- [x] 3.1 Implement deterministic merging of normalized rows into the `Processo > NE > DL > OB` hierarchy
+- [x] 3.2 Join `NE+DL` and `DL+OB` primarily by `documento_liquidacao`
+- [x] 3.3 Preserve `numero_processo` as the top-level traceability key throughout the lineage
+- [x] 3.4 Support partial lineage persistence so incomplete relationships remain available for future enrichment, including DL records without OB
+- [x] 3.5 Build and expose the materialized BI-facing consolidated table from canonical records rather than raw report schemas
 - [x] 3.6 Harden the active-year daily replacement policy for `2026`, ensuring safe and consistent full replacement of the prior dataset of the same report type
-- [ ] 3.7 Rebuild or refresh the materialized consolidated table after each successful `2026` replacement import
+- [x] 3.7 Rebuild or refresh the materialized consolidated table after each successful `2026` replacement import
 
 ## 4. Verification
 
