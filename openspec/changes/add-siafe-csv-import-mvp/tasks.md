@@ -75,7 +75,7 @@
 ## 4. Verification
 
 - [x] 4.1 Add automated tests for supported report validation, missing-column failures, and header normalization
-- [ ] 4.2 Add automated tests for hierarchy consolidation across `NE+DL` and `DL+OB` imports, including partial matches and DL without OB
+- [x] 4.2 Add automated tests for hierarchy consolidation across `NE+DL` and `DL+OB` imports, including partial matches and DL without OB
 - [x] 4.3 Add automated tests for year-scope behavior:
   - static historical import acceptance
   - historical overwrite rejection
@@ -83,13 +83,13 @@
   - prior active batch deactivation
   - prior normalized row removal/replacement
   - single active batch guarantee per report type/year
-- [ ] 4.4 Validate the end-to-end MVP flow with representative SIAFE CSV samples:
+- [x] 4.4 Validate the end-to-end MVP flow with representative SIAFE CSV samples:
   - `2023_2024_NEDL.csv`
   - `2025_NEDL.csv`
   - `2026_NEDL.csv`
   - `2023_2024_DLOB.csv`
   - `2025_DLOB.csv`
   - `2026_DLOB.csv`
-- [ ] 4.5 Document unresolved semantic questions for follow-up:
+- [x] 4.5 Document unresolved semantic questions for follow-up:
   - `valor_liquido` vs `valor_liquido_2`
   - whether the materialized consolidated table refresh runs after each active-year upload or only after both daily files are loaded
