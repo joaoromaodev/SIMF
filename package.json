@@ -11,8 +11,15 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.101.0",
+    "@tailwindcss/postcss": "^4.2.2",
+    "init": "^0.1.2",
     "next": "^15.3.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.2"
   }
 }

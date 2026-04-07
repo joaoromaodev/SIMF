@@ -3,14 +3,14 @@
 import { useState } from "react";
 
 const REPORT_OPTIONS = [
-  { value: "NE_DL", label: "NE+DL" },
-  { value: "DL_OB", label: "DL+OB" }
+  { value: "NE+DL", label: "NE+DL" },
+  { value: "DL+OB", label: "DL+OB" }
 ];
 
 const YEAR_SCOPE_OPTIONS = [
-  { value: "2023_2024", label: "2023_2024 (historical static)" },
-  { value: "2025", label: "2025 (historical static)" },
-  { value: "2026", label: "2026 (active replacement)" }
+  { value: "2023_2024", label: "2023_2024 (Histórico)" },
+  { value: "2025", label: "2025 (Histórico)" },
+  { value: "2026", label: "2026 (Ativo)" }
 ];
 
 export function UploadForm() {
@@ -19,14 +19,10 @@ export function UploadForm() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    
-    // 1. Salva a referência do formulário antes do await
     const form = event.currentTarget; 
-    
     setSubmitting(true);
     setStatus(null);
 
-    // 2. Usa a referência salva
     const formData = new FormData(form);
 
     try {
@@ -43,15 +39,13 @@ export function UploadForm() {
       }
 
       setStatus({ kind: "success", payload });
-      
-      // 3. Usa a referência salva para resetar os campos
       form.reset(); 
     } catch (error) {
       setStatus({
         kind: "error",
         payload: {
-          message: "The upload request failed before the server could complete the import.",
-          errors: [error instanceof Error ? error.message : "Unknown network error"]
+          message: "A requisição falhou antes de completar a importação.",
+          errors: [error instanceof Error ? error.message : "Erro de rede desconhecido"]
         }
       });
     } finally {
@@ -60,70 +54,35 @@ export function UploadForm() {
   }
 
   return (
-    <form className="upload-form" onSubmit={handleSubmit}>
-      <div className="field-grid">
-        <div className="field">
-          <label htmlFor="reportType">Report type</label>
-          <select id="reportType" name="reportType" defaultValue="NE_DL" required>
-            {REPORT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
+    <form className="space-y-8" onSubmit={handleSubmit}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="flex flex-col space-y-2">
+          <label htmlFor="reportType" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tipo de Relatório</label>
+          <select id="reportType" name="reportType" defaultValue="NE+DL" required className="w-full p-3 bg-white border border-slate-300 rounded text-sm font-medium focus:border-para-blue outline-none transition-all">
+            {REPORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
-          <small>Choose the import schema to validate against.</small>
         </div>
-
-        <div className="field">
-          <label htmlFor="yearScope">Year scope</label>
-          <select id="yearScope" name="yearScope" defaultValue="2026" required>
-            {YEAR_SCOPE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
+        <div className="flex flex-col space-y-2">
+          <label htmlFor="yearScope" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ano de Referência</label>
+          <select id="yearScope" name="yearScope" defaultValue="2026" required className="w-full p-3 bg-white border border-slate-300 rounded text-sm font-medium focus:border-para-blue outline-none transition-all">
+            {YEAR_SCOPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
-          <small>Historical years are locked after the first successful load.</small>
         </div>
       </div>
-
-      <div className="field">
-        <label htmlFor="file">CSV file</label>
-        <input id="file" name="file" type="file" accept=".csv,text/csv" required />
-        <small>
-          Expected filenames follow the fixed import contract, for example
-          `2026_NEDL.csv` or `2023_2024_DLOB.csv`.
-        </small>
+      <div className="flex flex-col space-y-2">
+        <label htmlFor="file" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Arquivo CSV (SIAFE)</label>
+        <div className="p-8 border border-slate-200 rounded bg-slate-50">
+          <input id="file" name="file" type="file" accept=".csv,text/csv" required className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-6 file:rounded file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-para-blue file:text-white hover:file:bg-blue-800 cursor-pointer transition-all" />
+        </div>
       </div>
-
-      <div className="submit-row">
-        <button type="submit" disabled={submitting}>
-          {submitting ? "Uploading and importing..." : "Upload SIAFE CSV"}
-        </button>
-      </div>
-
-      {status ? (
-        <section className={`status-card ${status.kind}`}>
-          <h2>{status.kind === "success" ? "Import completed" : "Import failed"}</h2>
-          <p>{status.payload.message}</p>
-          {status.payload.batch ? (
-            <ul>
-              <li>Batch ID: {status.payload.batch.id}</li>
-              <li>Status: {status.payload.batch.status}</li>
-              <li>Report type: {status.payload.batch.reportType}</li>
-              <li>Year scope: {status.payload.batch.yearScope}</li>
-              <li>Rows: {status.payload.batch.normalizedRowCount}</li>
-            </ul>
-          ) : null}
-          {Array.isArray(status.payload.errors) && status.payload.errors.length > 0 ? (
-            <ul>
-              {status.payload.errors.map((error) => (
-                <li key={error}>{error}</li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
-      ) : null}
+      <button type="submit" disabled={submitting} className={`w-full py-4 text-white text-xs font-black uppercase tracking-widest rounded shadow-md transition-all ${submitting ? 'bg-slate-400' : 'bg-para-blue hover:bg-blue-900'}`}>
+        {submitting ? "Processando..." : "Processar Relatório SIAFE"}
+      </button>
+      {status && (
+        <div className={`p-4 rounded border text-xs font-bold uppercase tracking-wider ${status.kind === "success" ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-para-red"}`}>
+          {status.payload.message}
+        </div>
+      )}
     </form>
   );
 }
