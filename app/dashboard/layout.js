@@ -2,12 +2,21 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import "../globals.css";
 
 export default function DashboardLayout({ children }) {
+  const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const hasInitialized = useRef(false);
+
+  const isActiveLink = (href) => {
+    if (href === "/dashboard/dppc/cpag") {
+      return pathname?.startsWith("/dashboard/dppc");
+    }
+    return pathname === href;
+  };
 
   useEffect(() => {
     if (!hasInitialized.current) {
@@ -102,7 +111,7 @@ export default function DashboardLayout({ children }) {
                 <li>
                   <Link
                     href="/dashboard/dppc/cliq"
-                    className="block p-3 hover:bg-white/10 rounded-md transition-colors"
+                    className={`block p-3 text-white hover:bg-white/10 rounded-md transition-colors ${isActiveLink("/dashboard/dppc/cliq") ? "bg-white/20 border-l-4 border-[#0055A4]" : ""}`}
                   >
                     CLIQ
                   </Link>
@@ -110,7 +119,7 @@ export default function DashboardLayout({ children }) {
                 <li>
                   <Link
                     href="/dashboard/dppc/cpag"
-                    className="block p-3 hover:bg-white/10 rounded-md transition-colors"
+                    className={`block p-3 text-white hover:bg-white/10 rounded-md transition-colors ${isActiveLink("/dashboard/dppc/cpag") ? "bg-white/20 border-l-4 border-[#0055A4]" : ""}`}
                   >
                     CPAG
                   </Link>

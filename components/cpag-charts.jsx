@@ -16,21 +16,6 @@ import {
 
 const COLORS = ["#0066cc", "#334155", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9"];
 
-const MONTHS = [
-  "Jan",
-  "Fev",
-  "Mar",
-  "Abr",
-  "Mai",
-  "Jun",
-  "Jul",
-  "Ago",
-  "Set",
-  "Out",
-  "Nov",
-  "Dez",
-];
-
 function formatCurrency(value) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -61,7 +46,7 @@ function CustomBarTooltip({ active, payload }) {
     const data = payload[0];
     return (
       <div className="bg-white p-3 rounded shadow-lg border border-slate-200">
-        <p className="text-xs font-bold text-slate-800">{data.payload.month}</p>
+        <p className="text-xs font-bold text-slate-800">{data.payload.name}</p>
         <p className="text-sm font-black text-para-blue">{formatCurrency(data.value)}</p>
       </div>
     );
@@ -69,16 +54,16 @@ function CustomBarTooltip({ active, payload }) {
   return null;
 }
 
-export default function CpagCharts({ sourceData = [], monthlyData = [] }) {
+export default function CpagCharts({ sourceData = [], categoryData = [] }) {
   const sourceDataWithTotal = sourceData.map((item) => ({
     ...item,
     _total: sourceData.reduce((sum, d) => sum + d.value, 0),
   }));
 
-  const monthlyDataComplete = MONTHS.map((month, index) => {
-    const existing = monthlyData.find((d) => d.month === month);
-    return existing || { month, value: 0 };
-  });
+  const categoryDataWithTotal = categoryData.map((item) => ({
+    ...item,
+    _total: categoryData.reduce((sum, d) => sum + d.value, 0),
+  }));
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -109,18 +94,21 @@ export default function CpagCharts({ sourceData = [], monthlyData = [] }) {
         </ResponsiveContainer>
       </div>
 
-      {/* Bar Chart - Evolução Mensal */}
+      {/* Bar Chart - Distribuição por Categoria */}
       <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
         <h3 className="text-lg font-black uppercase tracking-wider text-slate-800 mb-6">
-          Evolução Mensal de Pagamentos
+          Distribuição por Categoria
         </h3>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={monthlyDataComplete} margin={{ top: 20, right: 30, left: 0, bottom: 60 }}>
+          <BarChart data={categoryDataWithTotal} margin={{ top: 20, right: 30, left: 0, bottom: 60 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
             <XAxis
-              dataKey="month"
+              dataKey="name"
               tick={{ fill: "#334155", fontSize: 12 }}
               axisLine={{ stroke: "#cbd5e1" }}
+              angle={-45}
+              textAnchor="end"
+              height={80}
             />
             <YAxis
               tick={{ fill: "#334155", fontSize: 12 }}

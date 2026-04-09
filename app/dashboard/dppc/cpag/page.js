@@ -14,34 +14,188 @@ function formatDate(dateString) {
   return date.toLocaleDateString("pt-BR");
 }
 
-async function fetchCpagData() {
-  const supabase = getSupabaseAdminClient();
-
-  try {
-    const { data, error } = await supabase
-      .from("normalized_dl_ob_rows")
-      .select("*")
-      .eq("year_scope", "2026")
-      .order("data_pagamento", { ascending: false });
-
-    if (error) throw error;
-
-    return data || [];
-  } catch (error) {
-    console.error("Erro ao buscar dados CPAG:", error);
-    return [];
+// Mock Data - Temporário até o back-end implementar os novos campos
+const mockCpagData = [
+  {
+    ordem_bancaria: "OB-2026-001",
+    contrato: "015/2026",
+    categoria: "ALUGUEL DE IMÓVEIS",
+    credor: "IMOBILIÁRIA PARAENSE LTDA",
+    data: "2026-01-15",
+    valor: 25000.00,
+    descricao: "Pagamento referente a medição 03",
+    fonte_recurso: "TESOURO ESTADUAL"
+  },
+  {
+    ordem_bancaria: "OB-2026-002",
+    contrato: "022/2026",
+    categoria: "DIÁRIAS",
+    credor: "JOÃO SILVA",
+    data: "2026-01-20",
+    valor: 1200.00,
+    descricao: "Diárias de viagem para capacitação",
+    fonte_recurso: "FUNDEB"
+  },
+  {
+    ordem_bancaria: "OB-2026-003",
+    contrato: "008/2026",
+    categoria: "CONVÊNIOS",
+    credor: "ASSOCIAÇÃO DE PROFESSORES",
+    data: "2026-01-25",
+    valor: 45000.00,
+    descricao: "Repasse mensal conforme convênio",
+    fonte_recurso: "TESOURO ESTADUAL"
+  },
+  {
+    ordem_bancaria: "OB-2026-004",
+    contrato: "031/2026",
+    categoria: "TERCEIRIZADAS",
+    credor: "LIMPEZA E SERVIÇOS LTDA",
+    data: "2026-02-01",
+    valor: 18000.00,
+    descricao: "Serviços de limpeza mensal",
+    fonte_recurso: "TESOURO ESTADUAL"
+  },
+  {
+    ordem_bancaria: "OB-2026-005",
+    contrato: "045/2026",
+    categoria: "OBRAS",
+    credor: "CONSTRUTORA PARAENSE S.A.",
+    data: "2026-02-10",
+    valor: 125000.00,
+    descricao: "Pagamento de medição obra escola",
+    fonte_recurso: "FUNDEB"
+  },
+  {
+    ordem_bancaria: "OB-2026-006",
+    contrato: "016/2026",
+    categoria: "ALUGUEL DE IMÓVEIS",
+    credor: "IMOBILIÁRIA CENTRAL LTDA",
+    data: "2026-02-15",
+    valor: 32000.00,
+    descricao: "Aluguel prédio administrativo",
+    fonte_recurso: "TESOURO ESTADUAL"
+  },
+  {
+    ordem_bancaria: "OB-2026-007",
+    contrato: "023/2026",
+    categoria: "DIÁRIAS",
+    credor: "MARIA SOUZA",
+    data: "2026-02-20",
+    valor: 800.00,
+    descricao: "Diárias participação em evento",
+    fonte_recurso: "TESOURO ESTADUAL"
+  },
+  {
+    ordem_bancaria: "OB-2026-008",
+    contrato: "009/2026",
+    categoria: "CONVÊNIOS",
+    credor: "ONG EDUCAÇÃO PARAENSE",
+    data: "2026-03-01",
+    valor: 35000.00,
+    descricao: "Repasse para projeto educacional",
+    fonte_recurso: "FUNDEB"
+  },
+  {
+    ordem_bancaria: "OB-2026-009",
+    contrato: "032/2026",
+    categoria: "TERCEIRIZADAS",
+    credor: "SEGURANÇA PATRIMONIAL LTDA",
+    data: "2026-03-05",
+    valor: 22000.00,
+    descricao: "Serviços de segurança mensal",
+    fonte_recurso: "TESOURO ESTADUAL"
+  },
+  {
+    ordem_bancaria: "OB-2026-010",
+    contrato: "046/2026",
+    categoria: "OBRAS",
+    credor: "ENGENHARIA CIVIL PARAENSE",
+    data: "2026-03-15",
+    valor: 98000.00,
+    descricao: "Pagamento medição reforma",
+    fonte_recurso: "TESOURO ESTADUAL"
+  },
+  {
+    ordem_bancaria: "OB-2026-011",
+    contrato: "017/2026",
+    categoria: "ALUGUEL DE IMÓVEIS",
+    credor: "IMOBILIÁRIA NORTE LTDA",
+    data: "2026-03-20",
+    valor: 28000.00,
+    descricao: "Aluguel salas de aula",
+    fonte_recurso: "FUNDEB"
+  },
+  {
+    ordem_bancaria: "OB-2026-012",
+    contrato: "024/2026",
+    categoria: "DIÁRIAS",
+    credor: "CARLOS OLIVEIRA",
+    data: "2026-03-25",
+    valor: 1500.00,
+    descricao: "Diárias missão técnica",
+    fonte_recurso: "TESOURO ESTADUAL"
+  },
+  {
+    ordem_bancaria: "OB-2026-013",
+    contrato: "010/2026",
+    categoria: "CONVÊNIOS",
+    credor: "FEDERAÇÃO DE PAIS",
+    data: "2026-04-01",
+    valor: 25000.00,
+    descricao: "Repasse mensal convênio",
+    fonte_recurso: "FUNDEB"
+  },
+  {
+    ordem_bancaria: "OB-2026-014",
+    contrato: "033/2026",
+    categoria: "TERCEIRIZADAS",
+    credor: "MANUTENÇÃO TÉCNICA LTDA",
+    data: "2026-04-05",
+    valor: 15000.00,
+    descricao: "Manutenção equipamentos",
+    fonte_recurso: "TESOURO ESTADUAL"
+  },
+  {
+    ordem_bancaria: "OB-2026-015",
+    contrato: "047/2026",
+    categoria: "OBRAS",
+    credor: "CONSTRUÇÕES MODERNAS S.A.",
+    data: "2026-04-10",
+    valor: 145000.00,
+    descricao: "Pagamento medição construção",
+    fonte_recurso: "TESOURO ESTADUAL"
   }
-}
+];
+
+// async function fetchCpagData() {
+//   const supabase = getSupabaseAdminClient();
+
+//   try {
+//     const { data, error } = await supabase
+//       .from("normalized_dl_ob_rows")
+//       .select("*")
+//       .eq("year_scope", "2026")
+//       .order("data_pagamento", { ascending: false });
+
+//     if (error) throw error;
+
+//     return data || [];
+//   } catch (error) {
+//     console.error("Erro ao buscar dados CPAG:", error);
+//     return [];
+//   }
+// }
 
 function calculateKPIs(data) {
   const totalPago = data.reduce((sum, row) => sum + (parseFloat(row.valor) || 0), 0);
   const volume = data.length;
-  const ticketMedio = volume > 0 ? totalPago / volume : 0;
+  const totalLiquidacoesPagar = 5430000.00; // Hardcoded - virá de outra tabela no futuro
 
   return {
     totalPago,
     volume,
-    ticketMedio,
+    totalLiquidacoesPagar,
   };
 }
 
@@ -49,11 +203,28 @@ function processSourceData(data) {
   const grouped = {};
 
   data.forEach((row) => {
-    const source = row.codigo_fonte_recurso || "Não Informado";
+    const source = row.fonte_recurso || "Não Informado";
     if (!grouped[source]) {
       grouped[source] = 0;
     }
     grouped[source] += parseFloat(row.valor) || 0;
+  });
+
+  return Object.entries(grouped).map(([name, value]) => ({
+    name,
+    value: Math.round(value * 100) / 100,
+  }));
+}
+
+function processCategoryData(data) {
+  const grouped = {};
+
+  data.forEach((row) => {
+    const category = row.categoria || "Não Informado";
+    if (!grouped[category]) {
+      grouped[category] = 0;
+    }
+    grouped[category] += parseFloat(row.valor) || 0;
   });
 
   return Object.entries(grouped).map(([name, value]) => ({
@@ -80,9 +251,9 @@ function processMonthlyData(data) {
   const grouped = {};
 
   data.forEach((row) => {
-    if (!row.data_pagamento) return;
+    if (!row.data) return;
 
-    const date = new Date(row.data_pagamento);
+    const date = new Date(row.data);
     const monthIndex = date.getMonth();
     const month = MONTHS[monthIndex];
 
@@ -99,10 +270,11 @@ function processMonthlyData(data) {
 }
 
 export default async function CpagDashboardPage() {
-  const data = await fetchCpagData();
+  // const data = await fetchCpagData();
+  const data = mockCpagData; // Usando mock data temporário
   const kpis = calculateKPIs(data);
   const sourceData = processSourceData(data);
-  const monthlyData = processMonthlyData(data);
+  const categoryData = processCategoryData(data);
   const lastOrders = data.slice(0, 10);
 
   return (
@@ -129,45 +301,51 @@ export default async function CpagDashboardPage() {
           </p>
         </div>
 
-        {/* Volume de OBs Emitidas */}
+        {/* Quantidade de Ordem Bancárias */}
         <div className="bg-white rounded-lg shadow-md border-l-4 border-para-blue p-6">
           <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
-            Volume de OBs Emitidas
+            Quantidade de Ordem Bancárias
           </p>
           <p className="text-3xl font-black text-para-blue">
             {kpis.volume.toLocaleString("pt-BR")}
           </p>
         </div>
 
-        {/* Ticket Médio */}
+        {/* Total de Liquidações a Pagar */}
         <div className="bg-white rounded-lg shadow-md border-l-4 border-para-blue p-6">
           <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
-            Ticket Médio
+            Total de Liquidações a Pagar
           </p>
           <p className="text-3xl font-black text-para-blue break-words">
-            {formatCurrency(kpis.ticketMedio)}
+            {formatCurrency(kpis.totalLiquidacoesPagar)}
           </p>
         </div>
       </div>
 
       {/* Charts */}
-      <CpagCharts sourceData={sourceData} monthlyData={monthlyData} />
+      <CpagCharts sourceData={sourceData} categoryData={categoryData} />
 
       {/* Latest Orders Table */}
       <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
         <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
           <h2 className="text-lg font-black uppercase tracking-wider text-slate-800">
-            Últimas Ordens Bancárias
+            Visão Geral de Ordens Bancárias
           </h2>
         </div>
 
         {lastOrders.length > 0 ? (
-          <div className="overflow-x-auto">
+          <div className="max-h-[400px] overflow-y-auto relative">
             <table className="w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 bg-slate-50 z-10">
                 <tr className="border-b border-slate-200 bg-slate-50">
                   <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
                     Ordem Bancária
+                  </th>
+                  <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                    Contrato
+                  </th>
+                  <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                    Categoria
                   </th>
                   <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
                     Credor
@@ -175,18 +353,18 @@ export default async function CpagDashboardPage() {
                   <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
                     Data
                   </th>
-                  <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                    Fonte
-                  </th>
                   <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
                     Valor
+                  </th>
+                  <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                    Descrição
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {lastOrders.map((order, index) => (
                   <tr
-                    key={order.id}
+                    key={order.ordem_bancaria}
                     className={`border-b border-slate-100 ${
                       index % 2 === 0 ? "bg-white" : "bg-slate-50"
                     } hover:bg-slate-100 transition-colors`}
@@ -195,16 +373,22 @@ export default async function CpagDashboardPage() {
                       {order.ordem_bancaria || "—"}
                     </td>
                     <td className="px-6 py-3 text-slate-700">
-                      {order.ob_credor_nome || order.dl_nome_credor || "—"}
+                      {order.contrato || "—"}
                     </td>
                     <td className="px-6 py-3 text-slate-700">
-                      {formatDate(order.data_pagamento)}
+                      {order.categoria || "—"}
                     </td>
                     <td className="px-6 py-3 text-slate-700">
-                      {order.codigo_fonte_recurso || "—"}
+                      {order.credor || "—"}
+                    </td>
+                    <td className="px-6 py-3 text-slate-700">
+                      {formatDate(order.data)}
                     </td>
                     <td className="px-6 py-3 text-right font-bold text-para-blue">
                       {formatCurrency(order.valor)}
+                    </td>
+                    <td className="px-6 py-3 text-slate-700">
+                      {order.descricao || "—"}
                     </td>
                   </tr>
                 ))}
