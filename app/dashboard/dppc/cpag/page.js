@@ -17,150 +17,150 @@ function formatDate(dateString) {
 // Mock Data - Temporário até o back-end implementar os novos campos
 const mockCpagData = [
   {
-    ordem_bancaria: "OB-2026-001",
+    ordem_bancaria: "2026160101OB00001",
     contrato: "015/2026",
     categoria: "ALUGUEL DE IMÓVEIS",
-    credor: "IMOBILIÁRIA PARAENSE LTDA",
+    credor: "ENOQUE COSTA DO NASCIMENTO",
     data: "2026-01-15",
     valor: 25000.00,
     descricao: "Pagamento referente a medição 03",
     fonte_recurso: "TESOURO ESTADUAL"
   },
   {
-    ordem_bancaria: "OB-2026-002",
+    ordem_bancaria: "2026160101OB00002",
     contrato: "022/2026",
     categoria: "DIÁRIAS",
-    credor: "JOÃO SILVA",
+    credor: "ALESSANDRA CARVALHO CAVALCANTE",
     data: "2026-01-20",
     valor: 1200.00,
     descricao: "Diárias de viagem para capacitação",
     fonte_recurso: "FUNDEB"
   },
   {
-    ordem_bancaria: "OB-2026-003",
+    ordem_bancaria: "2026160101OB00003",
     contrato: "008/2026",
     categoria: "CONVÊNIOS",
-    credor: "ASSOCIAÇÃO DE PROFESSORES",
+    credor: "PREFEITURA MUNICIPAL DE BUJARU",
     data: "2026-01-25",
     valor: 45000.00,
     descricao: "Repasse mensal conforme convênio",
     fonte_recurso: "TESOURO ESTADUAL"
   },
   {
-    ordem_bancaria: "OB-2026-004",
+    ordem_bancaria: "2026160101OB00004",
     contrato: "031/2026",
     categoria: "TERCEIRIZADAS",
-    credor: "LIMPEZA E SERVIÇOS LTDA",
+    credor: "BELEM RIO SEGURANCA LTDA",
     data: "2026-02-01",
     valor: 18000.00,
     descricao: "Serviços de limpeza mensal",
     fonte_recurso: "TESOURO ESTADUAL"
   },
   {
-    ordem_bancaria: "OB-2026-005",
+    ordem_bancaria: "2026160101OB00005",
     contrato: "045/2026",
     categoria: "OBRAS",
-    credor: "CONSTRUTORA PARAENSE S.A.",
+    credor: "PREFEITURA MUNICIPAL DE SAO G. DO ARAGUAIA",
     data: "2026-02-10",
     valor: 125000.00,
     descricao: "Pagamento de medição obra escola",
     fonte_recurso: "FUNDEB"
   },
   {
-    ordem_bancaria: "OB-2026-006",
+    ordem_bancaria: "2026160101OB00006",
     contrato: "016/2026",
     categoria: "ALUGUEL DE IMÓVEIS",
-    credor: "IMOBILIÁRIA CENTRAL LTDA",
+    credor: "ISANE THEREZINHA ZAHLUTH MONTEIRO",
     data: "2026-02-15",
     valor: 32000.00,
     descricao: "Aluguel prédio administrativo",
     fonte_recurso: "TESOURO ESTADUAL"
   },
   {
-    ordem_bancaria: "OB-2026-007",
+    ordem_bancaria: "2026160101OB00007",
     contrato: "023/2026",
     categoria: "DIÁRIAS",
-    credor: "MARIA SOUZA",
+    credor: "CLAUDIVALDO MARQUES DOS SANTOS",
     data: "2026-02-20",
     valor: 800.00,
     descricao: "Diárias participação em evento",
     fonte_recurso: "TESOURO ESTADUAL"
   },
   {
-    ordem_bancaria: "OB-2026-008",
+    ordem_bancaria: "2026160101OB00008",
     contrato: "009/2026",
     categoria: "CONVÊNIOS",
-    credor: "ONG EDUCAÇÃO PARAENSE",
+    credor: "PREFEITURA MUNICIPAL DE IPIXUNA DO PARA",
     data: "2026-03-01",
     valor: 35000.00,
     descricao: "Repasse para projeto educacional",
     fonte_recurso: "FUNDEB"
   },
   {
-    ordem_bancaria: "OB-2026-009",
+    ordem_bancaria: "2026160101OB00009",
     contrato: "032/2026",
     categoria: "TERCEIRIZADAS",
-    credor: "SEGURANÇA PATRIMONIAL LTDA",
+    credor: "KAPA CAPITAL FACILITIES LTDA",
     data: "2026-03-05",
     valor: 22000.00,
     descricao: "Serviços de segurança mensal",
     fonte_recurso: "TESOURO ESTADUAL"
   },
   {
-    ordem_bancaria: "OB-2026-010",
+    ordem_bancaria: "2026160101OB00010",
     contrato: "046/2026",
     categoria: "OBRAS",
-    credor: "ENGENHARIA CIVIL PARAENSE",
+    credor: "PREFEITURA MUNICIPAL DE TRACUATEUA",
     data: "2026-03-15",
     valor: 98000.00,
     descricao: "Pagamento medição reforma",
     fonte_recurso: "TESOURO ESTADUAL"
   },
   {
-    ordem_bancaria: "OB-2026-011",
+    ordem_bancaria: "2026160101OB00011",
     contrato: "017/2026",
     categoria: "ALUGUEL DE IMÓVEIS",
-    credor: "IMOBILIÁRIA NORTE LTDA",
+    credor: "MARIA DO SOCORRO SOUSA DA SILVA",
     data: "2026-03-20",
     valor: 28000.00,
     descricao: "Aluguel salas de aula",
     fonte_recurso: "FUNDEB"
   },
   {
-    ordem_bancaria: "OB-2026-012",
+    ordem_bancaria: "2026160101OB00012",
     contrato: "024/2026",
     categoria: "DIÁRIAS",
-    credor: "CARLOS OLIVEIRA",
+    credor: "ESMERINO JOSE DE MATOS BARREIRA",
     data: "2026-03-25",
     valor: 1500.00,
     descricao: "Diárias missão técnica",
     fonte_recurso: "TESOURO ESTADUAL"
   },
   {
-    ordem_bancaria: "OB-2026-013",
+    ordem_bancaria: "2026160101OB00013",
     contrato: "010/2026",
     categoria: "CONVÊNIOS",
-    credor: "FEDERAÇÃO DE PAIS",
+    credor: "PREFEITURA MUNICIPAL DE JACAREACANGA",
     data: "2026-04-01",
     valor: 25000.00,
     descricao: "Repasse mensal convênio",
     fonte_recurso: "FUNDEB"
   },
   {
-    ordem_bancaria: "OB-2026-014",
+    ordem_bancaria: "2026160101OB00014",
     contrato: "033/2026",
     categoria: "TERCEIRIZADAS",
-    credor: "MANUTENÇÃO TÉCNICA LTDA",
+    credor: "E B CARDOSO LTDA",
     data: "2026-04-05",
     valor: 15000.00,
     descricao: "Manutenção equipamentos",
     fonte_recurso: "TESOURO ESTADUAL"
   },
   {
-    ordem_bancaria: "OB-2026-015",
+    ordem_bancaria: "2026160101OB00015",
     contrato: "047/2026",
     categoria: "OBRAS",
-    credor: "CONSTRUÇÕES MODERNAS S.A.",
+    credor: "PREFEITURA MUNICIPAL DE MOJU",
     data: "2026-04-10",
     valor: 145000.00,
     descricao: "Pagamento medição construção",
@@ -296,7 +296,7 @@ export default async function CpagDashboardPage() {
           <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
             Total Efetivamente Pago
           </p>
-          <p className="text-3xl font-black text-para-blue break-words">
+          <p className="text-3xl font-black text-para-blue wrap-break-word">
             {formatCurrency(kpis.totalPago)}
           </p>
         </div>
@@ -316,7 +316,7 @@ export default async function CpagDashboardPage() {
           <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
             Total de Liquidações a Pagar
           </p>
-          <p className="text-3xl font-black text-para-blue break-words">
+          <p className="text-3xl font-black text-para-blue wrap-break-word">
             {formatCurrency(kpis.totalLiquidacoesPagar)}
           </p>
         </div>
@@ -334,7 +334,7 @@ export default async function CpagDashboardPage() {
         </div>
 
         {lastOrders.length > 0 ? (
-          <div className="max-h-[400px] overflow-y-auto relative">
+          <div className="max-h-100 overflow-y-auto relative">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-slate-50 z-10">
                 <tr className="border-b border-slate-200 bg-slate-50">

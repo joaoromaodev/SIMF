@@ -15,7 +15,7 @@ export default function HomePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
         
         {/* Card DFIN */}
-        <a href="/dashboard/dfin" className="group bg-white p-10 rounded shadow-lg border-b-4 border-slate-300 hover:border-para-blue transition-all flex flex-col justify-center min-h-[220px]">
+        <a href="/dashboard/dfin" className="group bg-white p-10 rounded shadow-lg border-b-4 border-slate-300 hover:border-para-blue transition-all flex flex-col justify-center min-h-55">
           <h2 className="text-para-blue font-black text-[10px] uppercase tracking-[0.2em] mb-4">
             Diretoria de Finanças
           </h2>
@@ -23,7 +23,7 @@ export default function HomePage() {
         </a>
 
         {/* Card DPPC */}
-        <a href="/dashboard/dppc" className="group bg-white p-10 rounded shadow-lg border-b-4 border-slate-300 hover:border-para-blue transition-all flex flex-col justify-center min-h-[220px]">
+        <a href="/dashboard/dppc" className="group bg-white p-10 rounded shadow-lg border-b-4 border-slate-300 hover:border-para-blue transition-all flex flex-col justify-center min-h-55">
           <h2 className="text-para-blue font-black text-[10px] uppercase tracking-[0.2em] mb-4">
             Pagamento e Prestação de Contas
           </h2>
@@ -31,7 +31,7 @@ export default function HomePage() {
         </a>
 
         {/* Card GESTÃO/IMPORT - Azul para Destaque */}
-        <a href="/dashboard/import" className="group bg-para-blue p-10 rounded shadow-lg border-b-4 border-blue-900 hover:bg-blue-800 transition-all text-white flex flex-col justify-center min-h-[220px]">
+        <a href="/dashboard/import" className="group bg-para-blue p-10 rounded shadow-lg border-b-4 border-blue-900 hover:bg-blue-800 transition-all text-white flex flex-col justify-center min-h-55">
           <h2 className="text-blue-200 font-black text-[10px] uppercase tracking-[0.2em] mb-4">
             Gestão de Dados
           </h2>
