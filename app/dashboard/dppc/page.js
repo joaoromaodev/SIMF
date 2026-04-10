@@ -71,8 +71,8 @@ export default function DPPCHubPage() {
 
           {/* Badge */}
           <div className="inline-block mb-4">
-            <span className="px-3 py-1 bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest rounded-full">
-              Módulo em Desenvolvimento
+            <span className="px-3 py-1 bg-blue-100 text-para-blue text-xs font-black uppercase tracking-widest rounded-full">
+              Módulo Operacional
             </span>
           </div>
 

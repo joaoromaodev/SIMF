@@ -12,9 +12,6 @@ export default function DashboardLayout({ children }) {
   const hasInitialized = useRef(false);
 
   const isActiveLink = (href) => {
-    if (href === "/dashboard/dppc/cpag") {
-      return pathname?.startsWith("/dashboard/dppc");
-    }
     return pathname === href;
   };
 
