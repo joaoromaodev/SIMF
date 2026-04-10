@@ -93,3 +93,5 @@
 - [x] 4.5 Document unresolved semantic questions for follow-up:
   - `valor_liquido` vs `valor_liquido_2`
   - whether the materialized consolidated table refresh runs after each active-year upload or only after both daily files are loaded
+
+

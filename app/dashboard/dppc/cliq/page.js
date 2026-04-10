@@ -306,7 +306,7 @@ export default async function CliqDashboardPage() {
           <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
             Total (R$) de Empenhos em Liquidação
           </p>
-          <p className="text-3xl font-black text-para-blue break-words">
+          <p className="text-3xl font-black text-para-blue wrap-break-word">
             {formatCurrency(kpis.totalEmLiquidacao)}
           </p>
         </div>

@@ -1,5 +1,3 @@
-import { getSupabaseAdminClient } from "../../../../lib/supabase/server.js";
-import CpagCharts from "../../../../components/cpag-charts.jsx";
 import Link from "next/link";
 
 function formatCurrency(value) {
@@ -10,277 +8,134 @@ function formatCurrency(value) {
 }
 
 function formatDate(dateString) {
-  if (!dateString) return "—";
   const date = new Date(dateString);
   return date.toLocaleDateString("pt-BR");
 }
 
-// Mock Data - Temporário até o back-end implementar os novos campos
-const mockCpagData = [
+const mockLiquidados = [
   {
-    ordem_bancaria: "2026160101OB00001",
-    contrato: "015/2026",
-    categoria: "ALUGUEL DE IMÓVEIS",
-    credor: "ENOQUE COSTA DO NASCIMENTO",
+    processo: "001/2026",
+    empenho: "20260001",
+    credor: "PREFEITURA MUNICIPAL DE BELÉM",
+    natureza_despesa: "ALUGUEL DE IMÓVEIS",
+    fonte: "TESOURO ESTADUAL",
+    dl: "2026160101DL000001",
     data: "2026-01-15",
-    valor: 25000.00,
-    descricao: "Pagamento referente a medição 03",
-    fonte_recurso: "TESOURO ESTADUAL"
+    valor_liquido: 22500.00,
+    valor_bruto: 25000.00,
+    valor_imposto: 2500.00
   },
   {
-    ordem_bancaria: "2026160101OB00002",
-    contrato: "022/2026",
-    categoria: "DIÁRIAS",
-    credor: "ALESSANDRA CARVALHO CAVALCANTE",
-    data: "2026-01-20",
-    valor: 1200.00,
-    descricao: "Diárias de viagem para capacitação",
-    fonte_recurso: "FUNDEB"
-  },
-  {
-    ordem_bancaria: "2026160101OB00003",
-    contrato: "008/2026",
-    categoria: "CONVÊNIOS",
-    credor: "PREFEITURA MUNICIPAL DE BUJARU",
-    data: "2026-01-25",
-    valor: 45000.00,
-    descricao: "Repasse mensal conforme convênio",
-    fonte_recurso: "TESOURO ESTADUAL"
-  },
-  {
-    ordem_bancaria: "2026160101OB00004",
-    contrato: "031/2026",
-    categoria: "TERCEIRIZADAS",
-    credor: "BELEM RIO SEGURANCA LTDA",
-    data: "2026-02-01",
-    valor: 18000.00,
-    descricao: "Serviços de limpeza mensal",
-    fonte_recurso: "TESOURO ESTADUAL"
-  },
-  {
-    ordem_bancaria: "2026160101OB00005",
-    contrato: "045/2026",
-    categoria: "OBRAS",
-    credor: "PREFEITURA MUNICIPAL DE SAO G. DO ARAGUAIA",
+    processo: "002/2026",
+    empenho: "20260002",
+    credor: "COMPANHIA DE SANEAMENTO DO PARÁ",
+    natureza_despesa: "SERVIÇOS TERCEIRIZADOS",
+    fonte: "FUNDEB",
+    dl: "2026160101DL000002",
     data: "2026-02-10",
-    valor: 125000.00,
-    descricao: "Pagamento de medição obra escola",
-    fonte_recurso: "FUNDEB"
+    valor_liquido: 162000.00,
+    valor_bruto: 180000.00,
+    valor_imposto: 18000.00
   },
   {
-    ordem_bancaria: "2026160101OB00006",
-    contrato: "016/2026",
-    categoria: "ALUGUEL DE IMÓVEIS",
-    credor: "ISANE THEREZINHA ZAHLUTH MONTEIRO",
-    data: "2026-02-15",
-    valor: 32000.00,
-    descricao: "Aluguel prédio administrativo",
-    fonte_recurso: "TESOURO ESTADUAL"
-  },
-  {
-    ordem_bancaria: "2026160101OB00007",
-    contrato: "023/2026",
-    categoria: "DIÁRIAS",
-    credor: "CLAUDIVALDO MARQUES DOS SANTOS",
-    data: "2026-02-20",
-    valor: 800.00,
-    descricao: "Diárias participação em evento",
-    fonte_recurso: "TESOURO ESTADUAL"
-  },
-  {
-    ordem_bancaria: "2026160101OB00008",
-    contrato: "009/2026",
-    categoria: "CONVÊNIOS",
-    credor: "PREFEITURA MUNICIPAL DE IPIXUNA DO PARA",
-    data: "2026-03-01",
-    valor: 35000.00,
-    descricao: "Repasse para projeto educacional",
-    fonte_recurso: "FUNDEB"
-  },
-  {
-    ordem_bancaria: "2026160101OB00009",
-    contrato: "032/2026",
-    categoria: "TERCEIRIZADAS",
-    credor: "KAPA CAPITAL FACILITIES LTDA",
+    processo: "003/2026",
+    empenho: "20260003",
+    credor: "PREFEITURA MUNICIPAL DE ANANINDEUA",
+    natureza_despesa: "CONVÊNIOS",
+    fonte: "TESOURO ESTADUAL",
+    dl: "2026160101DL000003",
     data: "2026-03-05",
-    valor: 22000.00,
-    descricao: "Serviços de segurança mensal",
-    fonte_recurso: "TESOURO ESTADUAL"
+    valor_liquido: 405000.00,
+    valor_bruto: 450000.00,
+    valor_imposto: 45000.00
   },
   {
-    ordem_bancaria: "2026160101OB00010",
-    contrato: "046/2026",
-    categoria: "OBRAS",
-    credor: "PREFEITURA MUNICIPAL DE TRACUATEUA",
-    data: "2026-03-15",
-    valor: 98000.00,
-    descricao: "Pagamento medição reforma",
-    fonte_recurso: "TESOURO ESTADUAL"
-  },
-  {
-    ordem_bancaria: "2026160101OB00011",
-    contrato: "017/2026",
-    categoria: "ALUGUEL DE IMÓVEIS",
-    credor: "MARIA DO SOCORRO SOUSA DA SILVA",
-    data: "2026-03-20",
-    valor: 28000.00,
-    descricao: "Aluguel salas de aula",
-    fonte_recurso: "FUNDEB"
-  },
-  {
-    ordem_bancaria: "2026160101OB00012",
-    contrato: "024/2026",
-    categoria: "DIÁRIAS",
-    credor: "ESMERINO JOSE DE MATOS BARREIRA",
-    data: "2026-03-25",
-    valor: 1500.00,
-    descricao: "Diárias missão técnica",
-    fonte_recurso: "TESOURO ESTADUAL"
-  },
-  {
-    ordem_bancaria: "2026160101OB00013",
-    contrato: "010/2026",
-    categoria: "CONVÊNIOS",
-    credor: "PREFEITURA MUNICIPAL DE JACAREACANGA",
+    processo: "004/2026",
+    empenho: "20260004",
+    credor: "BELEM RIO SEGURANCA LTDA",
+    natureza_despesa: "SERVIÇOS TERCEIRIZADOS",
+    fonte: "TESOURO ESTADUAL",
+    dl: "2026160101DL000004",
     data: "2026-04-01",
-    valor: 25000.00,
-    descricao: "Repasse mensal convênio",
-    fonte_recurso: "FUNDEB"
+    valor_liquido: 144000.00,
+    valor_bruto: 160000.00,
+    valor_imposto: 16000.00
   },
   {
-    ordem_bancaria: "2026160101OB00014",
-    contrato: "033/2026",
-    categoria: "TERCEIRIZADAS",
-    credor: "E B CARDOSO LTDA",
-    data: "2026-04-05",
-    valor: 15000.00,
-    descricao: "Manutenção equipamentos",
-    fonte_recurso: "TESOURO ESTADUAL"
-  },
-  {
-    ordem_bancaria: "2026160101OB00015",
-    contrato: "047/2026",
-    categoria: "OBRAS",
-    credor: "PREFEITURA MUNICIPAL DE MOJU",
+    processo: "005/2026",
+    empenho: "20260005",
+    credor: "PREFEITURA MUNICIPAL DE MARITUBA",
+    natureza_despesa: "OBRAS",
+    fonte: "FUNDEB",
+    dl: "2026160101DL000005",
     data: "2026-04-10",
-    valor: 145000.00,
-    descricao: "Pagamento medição construção",
-    fonte_recurso: "TESOURO ESTADUAL"
+    valor_liquido: 1125000.00,
+    valor_bruto: 1250000.00,
+    valor_imposto: 125000.00
   }
 ];
 
-// async function fetchCpagData() {
-//   const supabase = getSupabaseAdminClient();
+const mockMonitoramento = [
+  {
+    processo: "001/2026",
+    contrato: "015/2026",
+    credor: "PREFEITURA MUNICIPAL DE BELÉM",
+    objeto: "Locação de Imóveis",
+    mes_referencia: "Janeiro",
+    dl: "2026160101DL000001",
+    ob: "2026160101OB000001",
+    data: "2026-01-15",
+    valor: 25000.00
+  },
+  {
+    processo: "002/2026",
+    contrato: "022/2026",
+    credor: "COMPANHIA DE SANEAMENTO DO PARÁ",
+    objeto: "Terceirizadas",
+    mes_referencia: "Fevereiro",
+    dl: "2026160101DL000002",
+    ob: "2026160101OB000002",
+    data: "2026-02-10",
+    valor: 180000.00
+  },
+  {
+    processo: "003/2026",
+    contrato: "008/2026",
+    credor: "PREFEITURA MUNICIPAL DE ANANINDEUA",
+    objeto: "Convênios",
+    mes_referencia: "Março",
+    dl: "2026160101DL000003",
+    ob: "2026160101OB000003",
+    data: "2026-03-05",
+    valor: 450000.00
+  },
+  {
+    processo: "004/2026",
+    contrato: "031/2026",
+    credor: "BELEM RIO SEGURANCA LTDA",
+    objeto: "Terceirizadas",
+    mes_referencia: "Abril",
+    dl: "2026160101DL000004",
+    ob: "2026160101OB000004",
+    data: "2026-04-01",
+    valor: 160000.00
+  },
+  {
+    processo: "005/2026",
+    contrato: "045/2026",
+    credor: "PREFEITURA MUNICIPAL DE MARITUBA",
+    objeto: "Obras",
+    mes_referencia: "Abril",
+    dl: "2026160101DL000005",
+    ob: "2026160101OB000005",
+    data: "2026-04-10",
+    valor: 1250000.00
+  }
+];
 
-//   try {
-//     const { data, error } = await supabase
-//       .from("normalized_dl_ob_rows")
-//       .select("*")
-//       .eq("year_scope", "2026")
-//       .order("data_pagamento", { ascending: false });
-
-//     if (error) throw error;
-
-//     return data || [];
-//   } catch (error) {
-//     console.error("Erro ao buscar dados CPAG:", error);
-//     return [];
-//   }
-// }
-
-function calculateKPIs(data) {
-  const totalPago = data.reduce((sum, row) => sum + (parseFloat(row.valor) || 0), 0);
-  const volume = data.length;
-  const totalLiquidacoesPagar = 5430000.00; // Hardcoded - virá de outra tabela no futuro
-
-  return {
-    totalPago,
-    volume,
-    totalLiquidacoesPagar,
-  };
-}
-
-function processSourceData(data) {
-  const grouped = {};
-
-  data.forEach((row) => {
-    const source = row.fonte_recurso || "Não Informado";
-    if (!grouped[source]) {
-      grouped[source] = 0;
-    }
-    grouped[source] += parseFloat(row.valor) || 0;
-  });
-
-  return Object.entries(grouped).map(([name, value]) => ({
-    name,
-    value: Math.round(value * 100) / 100,
-  }));
-}
-
-function processCategoryData(data) {
-  const grouped = {};
-
-  data.forEach((row) => {
-    const category = row.categoria || "Não Informado";
-    if (!grouped[category]) {
-      grouped[category] = 0;
-    }
-    grouped[category] += parseFloat(row.valor) || 0;
-  });
-
-  return Object.entries(grouped).map(([name, value]) => ({
-    name,
-    value: Math.round(value * 100) / 100,
-  }));
-}
-
-function processMonthlyData(data) {
-  const MONTHS = [
-    "Jan",
-    "Fev",
-    "Mar",
-    "Abr",
-    "Mai",
-    "Jun",
-    "Jul",
-    "Ago",
-    "Set",
-    "Out",
-    "Nov",
-    "Dez",
-  ];
-  const grouped = {};
-
-  data.forEach((row) => {
-    if (!row.data) return;
-
-    const date = new Date(row.data);
-    const monthIndex = date.getMonth();
-    const month = MONTHS[monthIndex];
-
-    if (!grouped[month]) {
-      grouped[month] = 0;
-    }
-    grouped[month] += parseFloat(row.valor) || 0;
-  });
-
-  return MONTHS.map((month) => ({
-    month,
-    value: Math.round((grouped[month] || 0) * 100) / 100,
-  }));
-}
-
-export default async function CpagDashboardPage() {
-  // const data = await fetchCpagData();
-  const data = mockCpagData; // Usando mock data temporário
-  const kpis = calculateKPIs(data);
-  const sourceData = processSourceData(data);
-  const categoryData = processCategoryData(data);
-  const lastOrders = data.slice(0, 10);
-
+export default function CpagDashboardPage() {
   return (
     <div className="space-y-10">
-      {/* Link de Retorno */}
       <div>
         <Link
           href="/dashboard/dppc"
@@ -302,129 +157,189 @@ export default async function CpagDashboardPage() {
         </Link>
       </div>
 
-      {/* Page Title */}
-      <div>
-        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
-          Dashboard CPAG
-        </h1>
-        <p className="text-slate-500 text-sm font-medium">
-          Pagamento e Prestação de Contas — Exercício Fiscal 2026
-        </p>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Total Efetivamente Pago */}
-        <div className="bg-white rounded-lg shadow-md border-l-4 border-para-blue p-6">
-          <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
-            Total Efetivamente Pago
-          </p>
-          <p className="text-3xl font-black text-para-blue wrap-break-word">
-            {formatCurrency(kpis.totalPago)}
-          </p>
-        </div>
-
-        {/* Quantidade de Ordem Bancárias */}
-        <div className="bg-white rounded-lg shadow-md border-l-4 border-para-blue p-6">
-          <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
-            Quantidade de Ordem Bancárias
-          </p>
-          <p className="text-3xl font-black text-para-blue">
-            {kpis.volume.toLocaleString("pt-BR")}
-          </p>
-        </div>
-
-        {/* Total de Liquidações a Pagar */}
-        <div className="bg-white rounded-lg shadow-md border-l-4 border-para-blue p-6">
-          <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
-            Total de Liquidações a Pagar
-          </p>
-          <p className="text-3xl font-black text-para-blue wrap-break-word">
-            {formatCurrency(kpis.totalLiquidacoesPagar)}
-          </p>
-        </div>
-      </div>
-
-      {/* Charts */}
-      <CpagCharts sourceData={sourceData} categoryData={categoryData} />
-
-      {/* Latest Orders Table */}
-      <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
-          <h2 className="text-lg font-black uppercase tracking-wider text-slate-800">
-            Visão Geral de Ordens Bancárias
-          </h2>
-        </div>
-
-        {lastOrders.length > 0 ? (
-          <div className="max-h-100 overflow-y-auto relative">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-slate-50 z-10">
-                <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                    Ordem Bancária
-                  </th>
-                  <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                    Contrato
-                  </th>
-                  <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                    Categoria
-                  </th>
-                  <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                    Credor
-                  </th>
-                  <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                    Data
-                  </th>
-                  <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
-                    Valor
-                  </th>
-                  <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                    Descrição
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {lastOrders.map((order, index) => (
-                  <tr
-                    key={order.ordem_bancaria}
-                    className={`border-b border-slate-100 ${
-                      index % 2 === 0 ? "bg-white" : "bg-slate-50"
-                    } hover:bg-slate-100 transition-colors`}
-                  >
-                    <td className="px-6 py-3 text-slate-800 font-medium">
-                      {order.ordem_bancaria || "—"}
-                    </td>
-                    <td className="px-6 py-3 text-slate-700">
-                      {order.contrato || "—"}
-                    </td>
-                    <td className="px-6 py-3 text-slate-700">
-                      {order.categoria || "—"}
-                    </td>
-                    <td className="px-6 py-3 text-slate-700">
-                      {order.credor || "—"}
-                    </td>
-                    <td className="px-6 py-3 text-slate-700">
-                      {formatDate(order.data)}
-                    </td>
-                    <td className="px-6 py-3 text-right font-bold text-para-blue">
-                      {formatCurrency(order.valor)}
-                    </td>
-                    <td className="px-6 py-3 text-slate-700">
-                      {order.descricao || "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="px-6 py-12 text-center">
-            <p className="text-slate-500 text-sm font-medium">
-              Nenhuma ordem bancária encontrada para o período.
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
+          <div className="max-w-2xl">
+            <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-3">
+              Controle de Recursos
+            </p>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-3">
+              Dashboard CPAG
+            </h1>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Tela base para monitoramento de pagamentos, liquidações e geração de relatórios.
             </p>
           </div>
-        )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full xl:w-auto">
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+              <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
+                Status de Recursos
+              </p>
+              <p className="text-xl font-black text-slate-900">Em construção</p>
+            </div>
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+              <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
+                Próxima fase
+              </p>
+              <p className="text-xl font-black text-slate-900">Filtros e exportação</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-8">
+        <div className="space-y-8">
+          <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
+            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
+              <h2 className="text-lg font-black uppercase tracking-wider text-slate-800">
+                Liquidados a Pagar
+              </h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50">
+                  <tr className="border-b border-slate-200">
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      Processo
+                    </th>
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      Empenho
+                    </th>
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      Credor
+                    </th>
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      Natureza de Despesa
+                    </th>
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      Fonte
+                    </th>
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      DL
+                    </th>
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      Data
+                    </th>
+                    <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
+                      Valor Líquido
+                    </th>
+                    <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
+                      Valor Bruto
+                    </th>
+                    <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
+                      Valor Imposto
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mockLiquidados.map((item, index) => (
+                    <tr key={item.processo} className={`border-b border-slate-100 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"} hover:bg-slate-100 transition-colors`}>
+                      <td className="px-6 py-4 text-slate-800 font-medium">{item.processo}</td>
+                      <td className="px-6 py-4 text-slate-700">{item.empenho}</td>
+                      <td className="px-6 py-4 text-slate-700">{item.credor}</td>
+                      <td className="px-6 py-4 text-slate-700">{item.natureza_despesa}</td>
+                      <td className="px-6 py-4 text-slate-700">{item.fonte}</td>
+                      <td className="px-6 py-4 text-slate-700">{item.dl}</td>
+                      <td className="px-6 py-4 text-slate-700">{formatDate(item.data)}</td>
+                      <td className="px-6 py-4 text-right font-bold text-para-blue">{formatCurrency(item.valor_liquido)}</td>
+                      <td className="px-6 py-4 text-right font-bold text-para-blue">{formatCurrency(item.valor_bruto)}</td>
+                      <td className="px-6 py-4 text-right font-bold text-para-blue">{formatCurrency(item.valor_imposto)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
+            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
+              <h2 className="text-lg font-black uppercase tracking-wider text-slate-800">
+                Monitoramento de Pagamentos
+              </h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50">
+                  <tr className="border-b border-slate-200">
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      Processo
+                    </th>
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      Contrato
+                    </th>
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      Credor
+                    </th>
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      Objeto
+                    </th>
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      Mês de Referência
+                    </th>
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      DL
+                    </th>
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      OB
+                    </th>
+                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                      Data
+                    </th>
+                    <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
+                      Valor
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mockMonitoramento.map((item, index) => (
+                    <tr key={item.processo} className={`border-b border-slate-100 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"} hover:bg-slate-100 transition-colors`}>
+                      <td className="px-6 py-4 text-slate-800 font-medium">{item.processo}</td>
+                      <td className="px-6 py-4 text-slate-700">{item.contrato}</td>
+                      <td className="px-6 py-4 text-slate-700">{item.credor}</td>
+                      <td className="px-6 py-4 text-slate-700">{item.objeto}</td>
+                      <td className="px-6 py-4 text-slate-700">{item.mes_referencia}</td>
+                      <td className="px-6 py-4 text-slate-700">{item.dl}</td>
+                      <td className="px-6 py-4 text-slate-700">{item.ob}</td>
+                      <td className="px-6 py-4 text-slate-700">{formatDate(item.data)}</td>
+                      <td className="px-6 py-4 text-right font-bold text-para-blue">{formatCurrency(item.valor)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <aside className="space-y-6">
+          <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
+            <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-4">
+              Relatórios
+            </p>
+            <div className="space-y-4">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-black text-slate-900 mb-1">Geração de Relatórios</p>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Área reservada para exportação de arquivos XLSX e PDF na próxima etapa.
+                </p>
+              </div>
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-black text-slate-900 mb-1">Painel de Indicadores</p>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Espaço para mostrar métricas de pago vs a pagar e status de liquidação.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
+            <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-4">
+              Observações
+            </p>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Esta versão apresenta apenas o esqueleto visual. Os dados e filtros serão adicionados na próxima etapa.
+            </p>
+          </div>
+        </aside>
       </div>
     </div>
   );
