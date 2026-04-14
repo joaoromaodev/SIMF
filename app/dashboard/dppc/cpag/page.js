@@ -1,141 +1,79 @@
+import { getSupabaseAdminClient } from "../../../../lib/supabase/server.js";
+import PaymentToggle from "../../../../components/payment-toggle.jsx";
+import CpagExportButtons from "../../../../components/cpag-export-buttons.jsx";
 import Link from "next/link";
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(value);
+  }).format(value ?? 0);
 }
 
 function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("pt-BR");
+  if (!dateString) return "—";
+  return new Date(dateString).toLocaleDateString("pt-BR");
 }
 
-const mockLiquidados = [
-  {
-    processo: "001/2026",
-    empenho: "20260001",
-    credor: "PREFEITURA MUNICIPAL DE BELÉM",
-    natureza_despesa: "ALUGUEL DE IMÓVEIS",
-    fonte: "TESOURO ESTADUAL",
-    dl: "2026160101DL000001",
-    data: "2026-01-15",
-    valor_liquido: 22500.00,
-    valor_bruto: 25000.00,
-    valor_imposto: 2500.00
-  },
-  {
-    processo: "002/2026",
-    empenho: "20260002",
-    credor: "COMPANHIA DE SANEAMENTO DO PARÁ",
-    natureza_despesa: "SERVIÇOS TERCEIRIZADOS",
-    fonte: "FUNDEB",
-    dl: "2026160101DL000002",
-    data: "2026-02-10",
-    valor_liquido: 162000.00,
-    valor_bruto: 180000.00,
-    valor_imposto: 18000.00
-  },
-  {
-    processo: "003/2026",
-    empenho: "20260003",
-    credor: "PREFEITURA MUNICIPAL DE ANANINDEUA",
-    natureza_despesa: "CONVÊNIOS",
-    fonte: "TESOURO ESTADUAL",
-    dl: "2026160101DL000003",
-    data: "2026-03-05",
-    valor_liquido: 405000.00,
-    valor_bruto: 450000.00,
-    valor_imposto: 45000.00
-  },
-  {
-    processo: "004/2026",
-    empenho: "20260004",
-    credor: "BELEM RIO SEGURANCA LTDA",
-    natureza_despesa: "SERVIÇOS TERCEIRIZADOS",
-    fonte: "TESOURO ESTADUAL",
-    dl: "2026160101DL000004",
-    data: "2026-04-01",
-    valor_liquido: 144000.00,
-    valor_bruto: 160000.00,
-    valor_imposto: 16000.00
-  },
-  {
-    processo: "005/2026",
-    empenho: "20260005",
-    credor: "PREFEITURA MUNICIPAL DE MARITUBA",
-    natureza_despesa: "OBRAS",
-    fonte: "FUNDEB",
-    dl: "2026160101DL000005",
-    data: "2026-04-10",
-    valor_liquido: 1125000.00,
-    valor_bruto: 1250000.00,
-    valor_imposto: 125000.00
-  }
-];
+// ─── Queries ──────────────────────────────────────────────────────────────────
 
-const mockMonitoramento = [
-  {
-    processo: "001/2026",
-    contrato: "015/2026",
-    credor: "PREFEITURA MUNICIPAL DE BELÉM",
-    objeto: "Locação de Imóveis",
-    mes_referencia: "Janeiro",
-    dl: "2026160101DL000001",
-    ob: "2026160101OB000001",
-    data: "2026-01-15",
-    valor: 25000.00
-  },
-  {
-    processo: "002/2026",
-    contrato: "022/2026",
-    credor: "COMPANHIA DE SANEAMENTO DO PARÁ",
-    objeto: "Terceirizadas",
-    mes_referencia: "Fevereiro",
-    dl: "2026160101DL000002",
-    ob: "2026160101OB000002",
-    data: "2026-02-10",
-    valor: 180000.00
-  },
-  {
-    processo: "003/2026",
-    contrato: "008/2026",
-    credor: "PREFEITURA MUNICIPAL DE ANANINDEUA",
-    objeto: "Convênios",
-    mes_referencia: "Março",
-    dl: "2026160101DL000003",
-    ob: "2026160101OB000003",
-    data: "2026-03-05",
-    valor: 450000.00
-  },
-  {
-    processo: "004/2026",
-    contrato: "031/2026",
-    credor: "BELEM RIO SEGURANCA LTDA",
-    objeto: "Terceirizadas",
-    mes_referencia: "Abril",
-    dl: "2026160101DL000004",
-    ob: "2026160101OB000004",
-    data: "2026-04-01",
-    valor: 160000.00
-  },
-  {
-    processo: "005/2026",
-    contrato: "045/2026",
-    credor: "PREFEITURA MUNICIPAL DE MARITUBA",
-    objeto: "Obras",
-    mes_referencia: "Abril",
-    dl: "2026160101DL000005",
-    ob: "2026160101OB000005",
-    data: "2026-04-10",
-    valor: 1250000.00
-  }
-];
+async function fetchCpagData(supabase) {
+  const [obAggResult, dlAggResult, liquidadosResult, monitoramentoResult] = await Promise.all([
+    // KPI 1 + KPI 3: OBs — valor pago e contagem
+    supabase
+      .from("vw_monitoramento_pagamentos")
+      .select("valor, confirmado_manualmente"),
 
-export default function CpagDashboardPage() {
+    // KPI 2: total a pagar das DLs sem OB
+    supabase
+      .from("vw_liquidados_a_pagar")
+      .select("valor_liquidado_a_pagar"),
+
+    // Tabela Liquidados a Pagar
+    supabase
+      .from("vw_liquidados_a_pagar")
+      .select("*")
+      .order("updated_at", { ascending: false })
+      .limit(100),
+
+    // Tabela Monitoramento de Pagamentos
+    supabase
+      .from("vw_monitoramento_pagamentos")
+      .select("*")
+      .order("data_pagamento", { ascending: false })
+      .limit(100),
+  ]);
+
+  const obData = obAggResult.data || [];
+  const dlData = dlAggResult.data || [];
+
+  const totalPago = obData
+    .filter((r) => r.confirmado_manualmente)
+    .reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+
+  const totalAPagar = dlData.reduce(
+    (s, r) => s + (parseFloat(r.valor_liquidado_a_pagar) || 0),
+    0
+  );
+
+  const quantidadeOBs = obData.length;
+
+  return {
+    kpis: { totalPago, totalAPagar, quantidadeOBs },
+    liquidados: liquidadosResult.data || [],
+    monitoramento: monitoramentoResult.data || [],
+  };
+}
+
+// ─── Page ────────────────────────────────────────────────────────────────────
+
+export default async function CpagDashboardPage() {
+  const supabase = getSupabaseAdminClient();
+  const { kpis, liquidados, monitoramento } = await fetchCpagData(supabase);
+
   return (
     <div className="space-y-10">
+      {/* Link de Retorno */}
       <div>
         <Link
           href="/dashboard/dppc"
@@ -157,186 +95,294 @@ export default function CpagDashboardPage() {
         </Link>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
-          <div className="max-w-2xl">
-            <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-3">
-              Controle de Recursos
-            </p>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-3">
-              Dashboard CPAG
-            </h1>
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Tela base para monitoramento de pagamentos, liquidações e geração de relatórios.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full xl:w-auto">
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-              <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
-                Status de Recursos
-              </p>
-              <p className="text-xl font-black text-slate-900">Em construção</p>
-            </div>
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-              <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
-                Próxima fase
-              </p>
-              <p className="text-xl font-black text-slate-900">Filtros e exportação</p>
-            </div>
-          </div>
+      {/* Header */}
+      <div>
+        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
+          Dashboard CPAG
+        </h1>
+        <p className="text-slate-500 text-sm font-medium">
+          Controle de Pagamentos — Exercício Fiscal 2026
+        </p>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg shadow-md border-l-4 border-green-500 p-6">
+          <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
+            Total Efetivamente Pago
+          </p>
+          <p className="text-3xl font-black text-green-600 wrap-break-word">
+            {formatCurrency(kpis.totalPago)}
+          </p>
+          <p className="text-xs text-slate-400 mt-1 font-medium">OBs confirmadas manualmente</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md border-l-4 border-amber-400 p-6">
+          <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
+            Total a Pagar
+          </p>
+          <p className="text-3xl font-black text-amber-600 wrap-break-word">
+            {formatCurrency(kpis.totalAPagar)}
+          </p>
+          <p className="text-xs text-slate-400 mt-1 font-medium">DLs sem OB correspondente</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md border-l-4 border-para-blue p-6">
+          <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
+            Ordens Bancarias Emitidas
+          </p>
+          <p className="text-3xl font-black text-para-blue">
+            {kpis.quantidadeOBs.toLocaleString("pt-BR")}
+          </p>
+          <p className="text-xs text-slate-400 mt-1 font-medium">Total de OBs no periodo</p>
         </div>
       </div>
 
+      {/* Conteúdo principal + sidebar */}
       <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-8">
+
+        {/* Coluna principal: duas tabelas */}
         <div className="space-y-8">
+
+          {/* Tabela: Liquidados a Pagar */}
           <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
+            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
               <h2 className="text-lg font-black uppercase tracking-wider text-slate-800">
                 Liquidados a Pagar
               </h2>
+              {liquidados.length > 0 && (
+                <span className="text-xs text-slate-500 font-medium">
+                  {liquidados.length} registro{liquidados.length !== 1 ? "s" : ""}
+                </span>
+              )}
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr className="border-b border-slate-200">
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      Processo
-                    </th>
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      Empenho
-                    </th>
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      Credor
-                    </th>
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      Natureza de Despesa
-                    </th>
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      Fonte
-                    </th>
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      DL
-                    </th>
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      Data
-                    </th>
-                    <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
-                      Valor Líquido
-                    </th>
-                    <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
-                      Valor Bruto
-                    </th>
-                    <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
-                      Valor Imposto
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mockLiquidados.map((item, index) => (
-                    <tr key={item.processo} className={`border-b border-slate-100 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"} hover:bg-slate-100 transition-colors`}>
-                      <td className="px-6 py-4 text-slate-800 font-medium">{item.processo}</td>
-                      <td className="px-6 py-4 text-slate-700">{item.empenho}</td>
-                      <td className="px-6 py-4 text-slate-700">{item.credor}</td>
-                      <td className="px-6 py-4 text-slate-700">{item.natureza_despesa}</td>
-                      <td className="px-6 py-4 text-slate-700">{item.fonte}</td>
-                      <td className="px-6 py-4 text-slate-700">{item.dl}</td>
-                      <td className="px-6 py-4 text-slate-700">{formatDate(item.data)}</td>
-                      <td className="px-6 py-4 text-right font-bold text-para-blue">{formatCurrency(item.valor_liquido)}</td>
-                      <td className="px-6 py-4 text-right font-bold text-para-blue">{formatCurrency(item.valor_bruto)}</td>
-                      <td className="px-6 py-4 text-right font-bold text-para-blue">{formatCurrency(item.valor_imposto)}</td>
+
+            {liquidados.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50">
+                    <tr className="border-b border-slate-200">
+                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                        Processo
+                      </th>
+                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                        Empenho
+                      </th>
+                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                        Credor
+                      </th>
+                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                        Fonte
+                      </th>
+                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                        DL
+                      </th>
+                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                        Atualizado em
+                      </th>
+                      <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
+                        Valor Liquido
+                      </th>
+                      <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
+                        Valor Bruto
+                      </th>
+                      <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
+                        A Pagar
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {liquidados.map((item, index) => (
+                      <tr
+                        key={item.documento_liquidacao}
+                        className={`border-b border-slate-100 ${
+                          index % 2 === 0 ? "bg-white" : "bg-slate-50"
+                        } hover:bg-slate-100 transition-colors`}
+                      >
+                        <td className="px-6 py-4 text-slate-800 font-medium">
+                          {item.numero_processo || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-700 font-mono text-xs">
+                          {item.codigo_nota_empenho || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-700">
+                          {item.credor || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-700">
+                          {item.fonte || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-700 font-mono text-xs">
+                          {item.documento_liquidacao || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-700">
+                          {formatDate(item.updated_at)}
+                        </td>
+                        <td className="px-6 py-4 text-right font-bold text-para-blue">
+                          {formatCurrency(item.valor_liquido)}
+                        </td>
+                        <td className="px-6 py-4 text-right font-bold text-para-blue">
+                          {formatCurrency(item.valor_bruto)}
+                        </td>
+                        <td className="px-6 py-4 text-right font-bold text-amber-600">
+                          {formatCurrency(item.valor_liquidado_a_pagar)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="px-6 py-12 text-center">
+                <p className="text-slate-500 text-sm font-medium">
+                  Nenhum documento de liquidação a pagar encontrado.
+                </p>
+              </div>
+            )}
           </div>
 
+          {/* Tabela: Monitoramento de Pagamentos */}
           <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
+            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
               <h2 className="text-lg font-black uppercase tracking-wider text-slate-800">
                 Monitoramento de Pagamentos
               </h2>
+              {monitoramento.length > 0 && (
+                <span className="text-xs text-slate-500 font-medium">
+                  {monitoramento.length} registro{monitoramento.length !== 1 ? "s" : ""}
+                </span>
+              )}
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr className="border-b border-slate-200">
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      Processo
-                    </th>
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      Contrato
-                    </th>
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      Credor
-                    </th>
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      Objeto
-                    </th>
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      Mês de Referência
-                    </th>
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      DL
-                    </th>
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      OB
-                    </th>
-                    <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                      Data
-                    </th>
-                    <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
-                      Valor
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mockMonitoramento.map((item, index) => (
-                    <tr key={item.processo} className={`border-b border-slate-100 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"} hover:bg-slate-100 transition-colors`}>
-                      <td className="px-6 py-4 text-slate-800 font-medium">{item.processo}</td>
-                      <td className="px-6 py-4 text-slate-700">{item.contrato}</td>
-                      <td className="px-6 py-4 text-slate-700">{item.credor}</td>
-                      <td className="px-6 py-4 text-slate-700">{item.objeto}</td>
-                      <td className="px-6 py-4 text-slate-700">{item.mes_referencia}</td>
-                      <td className="px-6 py-4 text-slate-700">{item.dl}</td>
-                      <td className="px-6 py-4 text-slate-700">{item.ob}</td>
-                      <td className="px-6 py-4 text-slate-700">{formatDate(item.data)}</td>
-                      <td className="px-6 py-4 text-right font-bold text-para-blue">{formatCurrency(item.valor)}</td>
+
+            {monitoramento.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50">
+                    <tr className="border-b border-slate-200">
+                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                        Processo
+                      </th>
+                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                        Credor
+                      </th>
+                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                        Fonte
+                      </th>
+                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                        DL
+                      </th>
+                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                        OB
+                      </th>
+                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
+                        Data Pgto
+                      </th>
+                      <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
+                        Valor
+                      </th>
+                      <th className="px-6 py-3 text-center font-black uppercase text-xs tracking-wider text-slate-700">
+                        Status
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {monitoramento.map((item, index) => (
+                      <tr
+                        key={item.ordem_bancaria}
+                        className={`border-b border-slate-100 ${
+                          index % 2 === 0 ? "bg-white" : "bg-slate-50"
+                        } hover:bg-slate-100 transition-colors`}
+                      >
+                        <td className="px-6 py-4 text-slate-800 font-medium">
+                          {item.numero_processo || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-700">
+                          {item.credor || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-700">
+                          {item.fonte || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-700 font-mono text-xs">
+                          {item.documento_liquidacao || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-700 font-mono text-xs">
+                          {item.ordem_bancaria || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-700">
+                          {formatDate(item.data_pagamento)}
+                        </td>
+                        <td className="px-6 py-4 text-right font-bold text-para-blue">
+                          {formatCurrency(item.valor)}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <PaymentToggle
+                            ordemBancaria={item.ordem_bancaria}
+                            initialConfirmado={item.confirmado_manualmente ?? false}
+                            confirmadoPor={item.confirmado_por ?? null}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="px-6 py-12 text-center">
+                <p className="text-slate-500 text-sm font-medium">
+                  Nenhuma ordem bancária encontrada.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Sidebar */}
         <aside className="space-y-6">
           <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
             <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-4">
-              Relatórios
+              Relatorios
             </p>
-            <div className="space-y-4">
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm font-black text-slate-900 mb-1">Geração de Relatórios</p>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Área reservada para exportação de arquivos XLSX e PDF na próxima etapa.
-                </p>
+            <CpagExportButtons />
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
+            <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-4">
+              Painel de Indicadores
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                  OBs confirmadas
+                </span>
+                <span className="text-sm font-black text-green-600">
+                  {monitoramento.filter((r) => r.confirmado_manualmente).length}
+                </span>
               </div>
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm font-black text-slate-900 mb-1">Painel de Indicadores</p>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Espaço para mostrar métricas de pago vs a pagar e status de liquidação.
-                </p>
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                  OBs pendentes
+                </span>
+                <span className="text-sm font-black text-amber-600">
+                  {monitoramento.filter((r) => !r.confirmado_manualmente).length}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                  DLs sem OB
+                </span>
+                <span className="text-sm font-black text-para-blue">
+                  {liquidados.length}
+                </span>
               </div>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
-            <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-4">
-              Observações
+            <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-3">
+              Observacoes
             </p>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              Esta versão apresenta apenas o esqueleto visual. Os dados e filtros serão adicionados na próxima etapa.
+            <p className="text-xs text-slate-500 leading-relaxed">
+              O status de pagamento pode ser confirmado manualmente na coluna
+              Status da tabela de Monitoramento. A alteracao e registrada em tempo real.
             </p>
           </div>
         </aside>
