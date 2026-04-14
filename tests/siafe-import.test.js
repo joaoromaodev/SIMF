@@ -13,55 +13,22 @@ import {
 import {
   ImportValidationError,
   ensureStaticScopeCanImport,
+  resolveHeaders,
   validateHeaders,
   validateUploadSelection
 } from "../lib/siafe/validation.js";
 
-test("validate upload selection enforces exact filename contract", () => {
-  const result = validateUploadSelection({
-    fileName: "2026_NEDL.csv",
-    reportType: REPORT_TYPES.NE_DL,
-    yearScope: "2026"
-  });
-
-  assert.equal(result.ok, true);
-  assert.equal(getExpectedFileName(REPORT_TYPES.NE_DL, "2026"), "2026_NEDL.csv");
-});
-
-test("validate upload selection accepts domain report labels from the upload form", () => {
-  const result = validateUploadSelection({
-    fileName: "2026_NEDL.csv",
-    reportType: "NE+DL",
-    yearScope: "2026"
-  });
-
-  assert.equal(result.ok, true);
-  assert.equal(normalizeReportType("NE+DL"), REPORT_TYPES.NE_DL);
-  assert.equal(getExpectedFileName("NE+DL", "2026"), "2026_NEDL.csv");
-});
-
-test("validate upload selection rejects wrong filename and extension", () => {
-  const result = validateUploadSelection({
-    fileName: "notes.xlsx",
-    reportType: REPORT_TYPES.DL_OB,
-    yearScope: "2025"
-  });
-
-  assert.equal(result.ok, false);
-  assert.match(result.errors[0], /Only `.csv` files are supported/);
-});
-
-test("validate headers accepts exact NE+DL schema and rejects extra columns", () => {
-  const header = [
-    "DocumentodeLiquidacao",
-    "CodigoNotadeEmpenho",
+function buildNeDlHeader(overrides = {}) {
+  return [
+    overrides.documento_liquidacao ?? "DocumentodeLiquidacao",
+    overrides.codigo_nota_empenho ?? "CodigoNotadeEmpenho",
+    overrides.numero_processo ?? "NUMERO_PROCESSO",
     "CodigoPlanoInterno",
     "CodigoProjetoAtividade",
     "CodigoNaturezaDaDespesa",
     "CodigoFonteDeRecurso",
     "CodigoDetalhamentoFr",
-    "NUMERO_PROCESSO",
-    "InstituicaoCodigoUnidadeGestora",
+    overrides.codigo_unidade_gestora ?? "CodigoUnidadeGestora",
     "Valor Original",
     "Valor Liquido",
     "Valor Bruto",
@@ -70,123 +37,24 @@ test("validate headers accepts exact NE+DL schema and rejects extra columns", ()
     "Valor Liquidado a Pagar",
     "Valor Liquido2"
   ];
+}
 
-  assert.deepEqual(validateHeaders(REPORT_TYPES.NE_DL, header).expected, header);
-
-  assert.throws(
-    () => validateHeaders(REPORT_TYPES.NE_DL, [...header, "Unexpected"]),
-    ImportValidationError
-  );
-});
-
-test("parse csv handles quoted commas", () => {
-  const csvText = 'ColA,ColB\n"value, one","two"';
-  const parsed = parseCsv(csvText);
-
-  assert.deepEqual(parsed.header, ["ColA", "ColB"]);
-  assert.deepEqual(parsed.rows, [["value, one", "two"]]);
-});
-
-test("parse csv detects semicolon-delimited SIAFE exports", () => {
-  const header = REPORT_SCHEMAS[REPORT_TYPES.NE_DL].headers;
-  const row = header.map((column) => {
-    const values = {
-      DocumentodeLiquidacao: "DL-1",
-      CodigoNotadeEmpenho: "NE-1",
-      "Valor Original": "10,00",
-      "Valor Liquido": "10,00",
-      "Valor Bruto": "10,00",
-      "Valor Retido": "0,00",
-      "Valor Pago": "10,00",
-      "Valor Liquidado a Pagar": "0,00",
-      "Valor Liquido2": "10,00"
-    };
-
-    return values[column] ?? `${column}-value`;
-  });
-  const csvText = `${header.join(";")}\r\n${row.join(";")}`;
-  const parsed = parseCsv(csvText);
-
-  assert.equal(detectCsvDelimiter(csvText), ";");
-  assert.deepEqual(parsed.header, header);
-  assert.equal(parsed.rows[0][9], "10,00");
-  assert.equal(validateHeaders("NE+DL", parsed.header).ok, true);
-});
-
-test("parse csv strips UTF-8 BOM from the first header", () => {
-  const header = REPORT_SCHEMAS[REPORT_TYPES.DL_OB].headers;
-  const csvText = `\ufeff${header.join(",")}\r\n${header.map((column) => `${column}-value`).join(",")}`;
-  const parsed = parseCsv(csvText);
-
-  assert.deepEqual(parsed.header, header);
-  assert.equal(validateHeaders("DL+OB", parsed.header).ok, true);
-});
-
-test("validate headers reports the received and expected header contracts", () => {
-  assert.throws(
-    () => validateHeaders("NE+DL", ["DocumentodeLiquidacao;CodigoNotadeEmpenho"]),
-    (error) => {
-      assert.equal(error instanceof ImportValidationError, true);
-      assert.match(error.details.join("\n"), /Expected header count: 16\. Received header count: 1\./);
-      assert.match(error.details.join("\n"), /Expected headers:/);
-      assert.match(error.details.join("\n"), /Received headers: DocumentodeLiquidacao;CodigoNotadeEmpenho/);
-      return true;
-    }
-  );
-});
-
-test("normalize rows preserves distinct DL and OB creditor fields", () => {
-  const header = [
-    "OrdemBancaria",
+function buildDlObHeader(columns = {}) {
+  return [
+    columns.documento_liquidacao ?? "DocumentodeLiquidacao",
+    columns.numero_processo ?? "NUMERO_PROCESSO",
+    columns.ordem_bancaria ?? "OrdemBancaria",
     "CredorDocumento",
     "Credor_Nome",
+    "DocumentoCredor",
+    "NomeCredor",
     "DatadoPagamento",
     "CodigoFonteDeRecurso",
     "CodigoDetalhamentoFr",
-    "DocumentodeLiquidacao",
-    "DocumentoCredor",
-    "NomeCredor",
-    "NUMERO_PROCESSO",
     "CodigoUnidadeGestora",
     "Valor"
-  ];
-
-  const rows = [
-    [
-      "OB-1",
-      "111",
-      "Credor OB",
-      "31/03/2026",
-      "F1",
-      "D1",
-      "DL-1",
-      "222",
-      "Credor DL",
-      "PROC-1",
-      "UG-1",
-      "1.234,56"
-    ]
-  ];
-
-  const normalized = normalizeRows(REPORT_TYPES.DL_OB, header, rows, {
-    batchId: "batch-1",
-    yearScope: "2026"
-  });
-
-  assert.equal(normalized[0].ob_credor_documento, "111");
-  assert.equal(normalized[0].dl_documento_credor, "222");
-  assert.equal(normalized[0].data_pagamento, "2026-03-31");
-  assert.equal(normalized[0].valor, 1234.56);
-});
-
-test("static scopes reject replacement when an active batch already exists", () => {
-  assert.throws(
-    () => ensureStaticScopeCanImport({ id: "existing-batch" }, "2025"),
-    ImportValidationError
-  );
-
-  assert.doesNotThrow(() => ensureStaticScopeCanImport({ id: "existing-batch" }, "2026"));
-});
+  ].filter(Boolean);
+}
 
 function createMockFile(name, contents, type = "text/csv") {
   return {
@@ -234,31 +102,6 @@ function createFailedBatchSupabaseMock(state) {
   };
 }
 
-test("structural validation fails before storage upload and still records a failed batch", async () => {
-  const state = {
-    insertedBatches: [],
-    storageUploads: 0
-  };
-
-  const file = createMockFile("2026_NEDL.csv", "Wrong,Header\n1,2");
-
-  await assert.rejects(
-    () =>
-      processSiafeUpload({
-        file,
-        reportType: REPORT_TYPES.NE_DL,
-        yearScope: "2026",
-        supabaseClient: createFailedBatchSupabaseMock(state)
-      }),
-    ImportValidationError
-  );
-
-  assert.equal(state.storageUploads, 0);
-  assert.equal(state.insertedBatches.length, 1);
-  assert.equal(state.insertedBatches[0].status, "failed");
-  assert.deepEqual(state.insertedBatches[0].source_headers, ["Wrong", "Header"]);
-});
-
 function createSuccessfulImportSupabaseMock(state) {
   let batch = null;
 
@@ -292,8 +135,12 @@ function createSuccessfulImportSupabaseMock(state) {
         };
       }
     },
+    async rpc(name, payload) {
+      state.rpcCalls.push({ name, payload });
+      return { data: { active_batch_id: payload.p_new_batch_id }, error: null };
+    },
     from(table) {
-      if (table === "normalized_ne_dl_rows") {
+      if (table === "normalized_ne_dl_rows" || table === "normalized_dl_ob_rows") {
         return {
           async insert(rows) {
             state.normalizedRows.push(...rows);
@@ -308,7 +155,6 @@ function createSuccessfulImportSupabaseMock(state) {
         insert(payload) {
           batch = { id: "batch-success", ...payload };
           state.insertedBatches.push(payload);
-
           return createImportBatchQuery();
         },
         update(payload) {
@@ -329,7 +175,205 @@ function createSuccessfulImportSupabaseMock(state) {
   };
 }
 
-test("processSiafeUpload accepts form labels and semicolon-delimited SIAFE exports", async () => {
+test("validate upload selection enforces exact filename contract", () => {
+  const result = validateUploadSelection({
+    fileName: "2026_NEDL.csv",
+    reportType: REPORT_TYPES.NE_DL,
+    yearScope: "2026"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(getExpectedFileName(REPORT_TYPES.NE_DL, "2026"), "2026_NEDL.csv");
+});
+
+test("validate upload selection accepts domain report labels from the upload form", () => {
+  const result = validateUploadSelection({
+    fileName: "2026_NEDL.csv",
+    reportType: "NE+DL",
+    yearScope: "2026"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(normalizeReportType("NE+DL"), REPORT_TYPES.NE_DL);
+  assert.equal(getExpectedFileName("NE+DL", "2026"), "2026_NEDL.csv");
+});
+
+test("validate upload selection rejects wrong filename and extension", () => {
+  const result = validateUploadSelection({
+    fileName: "notes.xlsx",
+    reportType: REPORT_TYPES.DL_OB,
+    yearScope: "2025"
+  });
+
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join("\n"), /Only `.csv` files are supported/);
+  assert.match(result.errors.join("\n"), /Filename must match the fixed contract/);
+});
+
+test("validate upload selection still requires the uploaded file name", () => {
+  const result = validateUploadSelection({
+    fileName: undefined,
+    reportType: REPORT_TYPES.NE_DL,
+    yearScope: "2026"
+  });
+
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join("\n"), /Only `.csv` files are supported/);
+});
+
+test("NE_DL accepts columns out of order and extra columns", () => {
+  const header = [
+    "Valor Pago",
+    "CodigoNotadeEmpenho",
+    "ColunaExtra",
+    "NUMERO_PROCESSO",
+    "DocumentodeLiquidacao"
+  ];
+
+  const resolved = validateHeaders(REPORT_TYPES.NE_DL, header);
+
+  assert.equal(resolved.canonicalIndexByField.documento_liquidacao, 4);
+  assert.equal(resolved.canonicalIndexByField.codigo_nota_empenho, 1);
+  assert.equal(resolved.canonicalIndexByField.numero_processo, 3);
+  assert.deepEqual(resolved.extraHeaders, ["ColunaExtra"]);
+  assert.match(resolved.warnings[0], /Ignored extra columns/);
+});
+
+test("NE_DL accepts CodigoUnidadeGestora as the preferred header", () => {
+  const resolved = validateHeaders(REPORT_TYPES.NE_DL, buildNeDlHeader());
+
+  assert.equal(resolved.headerByField.codigo_unidade_gestora, "CodigoUnidadeGestora");
+  assert.equal(resolved.aliasMatches.length, 0);
+});
+
+test("NE_DL accepts InstituicaoCodigoUnidadeGestora as a known alias", () => {
+  const resolved = validateHeaders(
+    REPORT_TYPES.NE_DL,
+    buildNeDlHeader({ codigo_unidade_gestora: "InstituicaoCodigoUnidadeGestora" })
+  );
+
+  assert.equal(resolved.headerByField.codigo_unidade_gestora, "InstituicaoCodigoUnidadeGestora");
+  assert.equal(resolved.aliasMatches[0].preferredHeader, "CodigoUnidadeGestora");
+  assert.match(resolved.warnings.join("\n"), /Applied header aliases/);
+});
+
+test("NE_DL fails when DocumentodeLiquidacao is missing", () => {
+  assert.throws(
+    () => validateHeaders(REPORT_TYPES.NE_DL, buildNeDlHeader({ documento_liquidacao: "OutraColuna" })),
+    (error) => {
+      assert.equal(error instanceof ImportValidationError, true);
+      assert.match(error.details.join("\n"), /Missing required headers: DocumentodeLiquidacao/);
+      return true;
+    }
+  );
+});
+
+test("NE_DL fails when CodigoNotadeEmpenho is missing", () => {
+  assert.throws(
+    () => validateHeaders(REPORT_TYPES.NE_DL, buildNeDlHeader({ codigo_nota_empenho: "OutraColuna" })),
+    (error) => {
+      assert.equal(error instanceof ImportValidationError, true);
+      assert.match(error.details.join("\n"), /Missing required headers: CodigoNotadeEmpenho/);
+      return true;
+    }
+  );
+});
+
+test("NE_DL fails when NUMERO_PROCESSO is missing", () => {
+  assert.throws(
+    () => validateHeaders(REPORT_TYPES.NE_DL, buildNeDlHeader({ numero_processo: "OutraColuna" })),
+    (error) => {
+      assert.equal(error instanceof ImportValidationError, true);
+      assert.match(error.details.join("\n"), /Missing required headers: NUMERO_PROCESSO/);
+      return true;
+    }
+  );
+});
+
+test("DL_OB accepts columns out of order and extra columns", () => {
+  const header = [
+    "Valor",
+    "ColunaExtra",
+    "NUMERO_PROCESSO",
+    "DocumentodeLiquidacao"
+  ];
+
+  const resolved = validateHeaders(REPORT_TYPES.DL_OB, header);
+
+  assert.equal(resolved.canonicalIndexByField.documento_liquidacao, 3);
+  assert.equal(resolved.canonicalIndexByField.numero_processo, 2);
+  assert.deepEqual(resolved.extraHeaders, ["ColunaExtra"]);
+});
+
+test("DL_OB fails when DocumentodeLiquidacao is missing", () => {
+  assert.throws(
+    () => validateHeaders(REPORT_TYPES.DL_OB, buildDlObHeader({ documento_liquidacao: "OutraColuna" })),
+    (error) => {
+      assert.equal(error instanceof ImportValidationError, true);
+      assert.match(error.details.join("\n"), /Missing required headers: DocumentodeLiquidacao/);
+      return true;
+    }
+  );
+});
+
+test("DL_OB fails when NUMERO_PROCESSO is missing", () => {
+  assert.throws(
+    () => validateHeaders(REPORT_TYPES.DL_OB, buildDlObHeader({ numero_processo: "OutraColuna" })),
+    (error) => {
+      assert.equal(error instanceof ImportValidationError, true);
+      assert.match(error.details.join("\n"), /Missing required headers: NUMERO_PROCESSO/);
+      return true;
+    }
+  );
+});
+
+test("DL_OB accepts missing ordem_bancaria because it is optional in this increment", () => {
+  const header = [
+    "DocumentodeLiquidacao",
+    "NUMERO_PROCESSO",
+    "CredorDocumento",
+    "Credor_Nome",
+    "DocumentoCredor",
+    "NomeCredor",
+    "DatadoPagamento",
+    "CodigoFonteDeRecurso",
+    "CodigoDetalhamentoFr",
+    "CodigoUnidadeGestora",
+    "Valor"
+  ];
+  const resolved = validateHeaders(REPORT_TYPES.DL_OB, header);
+
+  assert.equal(resolved.missingRequiredFields.length, 0);
+  assert.equal(resolved.headerByField.ordem_bancaria, undefined);
+});
+
+test("header resolution blocks duplicate mappings to the same canonical field", () => {
+  assert.throws(
+    () =>
+      resolveHeaders(REPORT_TYPES.NE_DL, [
+        "DocumentodeLiquidacao",
+        "CodigoNotadeEmpenho",
+        "NUMERO_PROCESSO",
+        "CodigoUnidadeGestora",
+        "InstituicaoCodigoUnidadeGestora"
+      ]),
+    (error) => {
+      assert.equal(error instanceof ImportValidationError, true);
+      assert.match(error.details.join("\n"), /both map to canonical field `codigo_unidade_gestora`/);
+      return true;
+    }
+  );
+});
+
+test("parse csv handles quoted commas", () => {
+  const csvText = 'ColA,ColB\n"value, one","two"';
+  const parsed = parseCsv(csvText);
+
+  assert.deepEqual(parsed.header, ["ColA", "ColB"]);
+  assert.deepEqual(parsed.rows, [["value, one", "two"]]);
+});
+
+test("parse csv detects semicolon-delimited SIAFE exports", () => {
   const header = REPORT_SCHEMAS[REPORT_TYPES.NE_DL].headers;
   const row = header.map((column) => {
     const values = {
@@ -347,13 +391,134 @@ test("processSiafeUpload accepts form labels and semicolon-delimited SIAFE expor
 
     return values[column] ?? `${column}-value`;
   });
+  const csvText = `${header.join(";")}\r\n${row.join(";")}`;
+  const parsed = parseCsv(csvText);
 
+  assert.equal(detectCsvDelimiter(csvText), ";");
+  assert.deepEqual(parsed.header, header);
+  assert.equal(parsed.rows[0][9], "10,00");
+  assert.equal(validateHeaders("NE+DL", parsed.header).ok, true);
+});
+
+test("parse csv strips UTF-8 BOM from the first header", () => {
+  const header = REPORT_SCHEMAS[REPORT_TYPES.DL_OB].headers;
+  const csvText = `\ufeff${header.join(",")}\r\n${header.map((column) => `${column}-value`).join(",")}`;
+  const parsed = parseCsv(csvText);
+
+  assert.deepEqual(parsed.header, header);
+  assert.equal(validateHeaders("DL+OB", parsed.header).ok, true);
+});
+
+test("validate headers reports the required contract and received header set", () => {
+  assert.throws(
+    () => validateHeaders("NE+DL", ["DocumentodeLiquidacao;CodigoNotadeEmpenho"]),
+    (error) => {
+      assert.equal(error instanceof ImportValidationError, true);
+      assert.match(error.details.join("\n"), /Expected required headers:/);
+      assert.match(error.details.join("\n"), /Received headers: DocumentodeLiquidacao;CodigoNotadeEmpenho/);
+      return true;
+    }
+  );
+});
+
+test("normalize rows fails explicitly when called without a resolved header map", () => {
+  assert.throws(
+    () =>
+      normalizeRows(
+        REPORT_TYPES.DL_OB,
+        ["DocumentodeLiquidacao", "NUMERO_PROCESSO"],
+        [["DL-1", "PROC-1"]],
+        {
+          batchId: "batch-1",
+          yearScope: "2026"
+        }
+      ),
+    /requires a resolved header map/
+  );
+});
+
+test("normalize rows uses the resolved canonical map and fills missing optional fields with null", () => {
+  const header = [
+    "CredorDocumento",
+    "DocumentodeLiquidacao",
+    "Valor",
+    "NUMERO_PROCESSO",
+    "NomeCredor"
+  ];
+  const rows = [["111", "DL-1", "1.234,56", "PROC-1", "Credor DL"]];
+  const headerResolution = resolveHeaders(REPORT_TYPES.DL_OB, header);
+
+  const normalized = normalizeRows(
+    REPORT_TYPES.DL_OB,
+    header,
+    rows,
+    {
+      batchId: "batch-1",
+      yearScope: "2026"
+    },
+    headerResolution
+  );
+
+  assert.equal(normalized[0].numero_processo, "PROC-1");
+  assert.equal(normalized[0].documento_liquidacao, "DL-1");
+  assert.equal(normalized[0].ob_credor_documento, "111");
+  assert.equal(normalized[0].dl_nome_credor, "Credor DL");
+  assert.equal(normalized[0].ordem_bancaria, null);
+  assert.equal(normalized[0].data_pagamento, null);
+  assert.equal(normalized[0].valor, 1234.56);
+});
+
+test("static scopes reject replacement when an active batch already exists", () => {
+  assert.throws(
+    () => ensureStaticScopeCanImport({ id: "existing-batch" }, "2025"),
+    ImportValidationError
+  );
+
+  assert.doesNotThrow(() => ensureStaticScopeCanImport({ id: "existing-batch" }, "2026"));
+});
+
+test("structural validation fails before storage upload and still records a failed batch", async () => {
+  const state = {
+    insertedBatches: [],
+    storageUploads: 0
+  };
+
+  const file = createMockFile("2026_NEDL.csv", "Wrong,Header\n1,2");
+
+  await assert.rejects(
+    () =>
+      processSiafeUpload({
+        file,
+        reportType: REPORT_TYPES.NE_DL,
+        yearScope: "2026",
+        supabaseClient: createFailedBatchSupabaseMock(state)
+      }),
+    ImportValidationError
+  );
+
+  assert.equal(state.storageUploads, 0);
+  assert.equal(state.insertedBatches.length, 1);
+  assert.equal(state.insertedBatches[0].status, "failed");
+  assert.deepEqual(state.insertedBatches[0].source_headers, ["Wrong", "Header"]);
+});
+
+test("processSiafeUpload persists NE_DL rows with flexible headers and warnings", async () => {
+  const header = [
+    "Valor Original",
+    "DocumentodeLiquidacao",
+    "CodigoNotadeEmpenho",
+    "NUMERO_PROCESSO",
+    "InstituicaoCodigoUnidadeGestora",
+    "ColunaExtra"
+  ];
+  const row = ["10,00", "DL-1", "NE-1", "PROC-1", "UG-1", "IGNORAR"];
   const state = {
     insertedBatches: [],
     normalizedRows: [],
     storageBuckets: [],
     storageUploads: [],
-    updatedBatches: []
+    updatedBatches: [],
+    rpcCalls: []
   };
 
   const result = await processSiafeUpload({
@@ -366,9 +531,57 @@ test("processSiafeUpload accepts form labels and semicolon-delimited SIAFE expor
   assert.equal(state.insertedBatches[0].report_type, REPORT_TYPES.NE_DL);
   assert.equal(state.storageBuckets[0], "siafe-imports");
   assert.equal(state.normalizedRows[0].codigo_nota_empenho, "NE-1");
+  assert.equal(state.normalizedRows[0].codigo_unidade_gestora, "UG-1");
   assert.equal(state.normalizedRows[0].valor_original, 10);
+  assert.equal(state.normalizedRows[0].valor_pago, null);
   assert.equal(result.reportType, "NE+DL");
   assert.equal(result.status, "success");
+  assert.match(result.warnings.join("\n"), /Ignored extra columns/);
+  assert.match(result.warnings.join("\n"), /Applied header aliases/);
+});
+
+test("processSiafeUpload keeps yearScope in the persisted normalized rows", async () => {
+  const header = ["DocumentodeLiquidacao", "NUMERO_PROCESSO"];
+  const row = ["DL-1", "PROC-1"];
+  const state = {
+    insertedBatches: [],
+    normalizedRows: [],
+    storageBuckets: [],
+    storageUploads: [],
+    updatedBatches: [],
+    rpcCalls: []
+  };
+
+  await processSiafeUpload({
+    file: createMockFile("2026_DLOB.csv", `${header.join(",")}\n${row.join(",")}`),
+    reportType: "DL+OB",
+    yearScope: "2026",
+    supabaseClient: createSuccessfulImportSupabaseMock(state)
+  });
+
+  assert.equal(state.normalizedRows[0].year_scope, "2026");
+  assert.equal(state.rpcCalls[0].name, "finalize_siafe_active_import");
+  assert.equal(state.rpcCalls[0].payload.p_year_scope, "2026");
+});
+
+test("processSiafeUpload still rejects an upload with no file name", async () => {
+  const state = {
+    insertedBatches: [],
+    storageUploads: 0
+  };
+
+  await assert.rejects(
+    () =>
+      processSiafeUpload({
+        file: createMockFile(undefined, "DocumentodeLiquidacao,NUMERO_PROCESSO\nDL-1,PROC-1"),
+        reportType: REPORT_TYPES.DL_OB,
+        yearScope: "2026",
+        supabaseClient: createFailedBatchSupabaseMock(state)
+      }),
+    ImportValidationError
+  );
+
+  assert.equal(state.insertedBatches[0].original_file_name, "unknown.csv");
 });
 
 test("finalizeBatchSuccess uses the active-year database finalizer for 2026 replacements", async () => {

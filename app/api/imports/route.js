@@ -13,7 +13,11 @@ export async function POST(request) {
 
   try {
     const result = await processSiafeUpload({ file, reportType, yearScope });
-    return NextResponse.json({ message: "Relatório processado com sucesso.", batch: result });
+    return NextResponse.json({
+      message: "Relatório processado com sucesso.",
+      batch: result,
+      warnings: result.warnings ?? []
+    });
   } catch (error) {
     return NextResponse.json({ 
       message: error?.publicMessage ?? "Erro ao processar o upload.", 
