@@ -3,18 +3,9 @@ import PaymentToggle from "../../../../components/payment-toggle.jsx";
 import CpagExportButtons from "../../../../components/cpag-export-buttons.jsx";
 import ErrorBanner from "../../../../components/error-banner.jsx";
 import Link from "next/link";
+import { LiquidadosTable } from "../../../../components/liquidados-table.jsx";
 
-function formatCurrency(value) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value ?? 0);
-}
-
-function formatDate(dateString) {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString("pt-BR");
-}
+import { formatCurrency, formatDate } from "lib/utils/formatters.js";
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
@@ -176,83 +167,11 @@ export default async function CpagDashboardPage() {
             </div>
 
             {liquidados.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50">
-                    <tr className="border-b border-slate-200">
-                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                        Processo
-                      </th>
-                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                        Empenho
-                      </th>
-                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                        Credor
-                      </th>
-                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                        Fonte
-                      </th>
-                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                        DL
-                      </th>
-                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                        Atualizado em
-                      </th>
-                      <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
-                        Valor Liquido
-                      </th>
-                      <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
-                        Valor Bruto
-                      </th>
-                      <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
-                        A Pagar
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {liquidados.map((item, index) => (
-                      <tr
-                        key={item.documento_liquidacao}
-                        className={`border-b border-slate-100 ${
-                          index % 2 === 0 ? "bg-white" : "bg-slate-50"
-                        } hover:bg-slate-100 transition-colors`}
-                      >
-                        <td className="px-6 py-4 text-slate-800 font-medium">
-                          {item.numero_processo || "—"}
-                        </td>
-                        <td className="px-6 py-4 text-slate-700 font-mono text-xs">
-                          {item.codigo_nota_empenho || "—"}
-                        </td>
-                        <td className="px-6 py-4 text-slate-700">
-                          {item.credor || "—"}
-                        </td>
-                        <td className="px-6 py-4 text-slate-700">
-                          {item.fonte || "—"}
-                        </td>
-                        <td className="px-6 py-4 text-slate-700 font-mono text-xs">
-                          {item.documento_liquidacao || "—"}
-                        </td>
-                        <td className="px-6 py-4 text-slate-700">
-                          {formatDate(item.updated_at)}
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold text-para-blue">
-                          {formatCurrency(item.valor_liquido)}
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold text-para-blue">
-                          {formatCurrency(item.valor_bruto)}
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold text-amber-600">
-                          {formatCurrency(item.valor_liquidado_a_pagar)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <LiquidadosTable liquidados={liquidados} />
             ) : (
               <div className="px-6 py-12 text-center">
                 <p className="text-slate-500 text-sm font-medium">
-                  Nenhum documento de liquidação a pagar encontrado.
+                  Nenhum documento de liquidacao a pagar encontrado.
                 </p>
               </div>
             )}
