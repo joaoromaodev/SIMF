@@ -2,41 +2,30 @@ import { getSupabaseAdminClient } from "../../../../lib/supabase/server.js";
 import PaymentToggle from "../../../../components/payment-toggle.jsx";
 import CpagExportButtons from "../../../../components/cpag-export-buttons.jsx";
 import ErrorBanner from "../../../../components/error-banner.jsx";
-import Link from "next/link";
 import { LiquidadosTable } from "../../../../components/liquidados-table.jsx";
+import Link from "next/link";
+import { ChevronLeft, TrendingUp, Clock, Landmark } from "lucide-react";
 
-import { formatCurrency, formatDate } from "lib/utils/formatters.js";
+function formatCurrency(value) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value ?? 0);
+}
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
+function formatDate(dateString) {
+  if (!dateString) return "—";
+  return new Date(dateString).toLocaleDateString("pt-BR");
+}
 
 async function fetchCpagData(supabase) {
   const [obAggResult, dlAggResult, liquidadosResult, monitoramentoResult] = await Promise.all([
-    // KPI 1 + KPI 3: OBs — valor pago e contagem
-    supabase
-      .from("vw_monitoramento_pagamentos")
-      .select("valor, confirmado_manualmente"),
-
-    // KPI 2: total a pagar das DLs sem OB
-    supabase
-      .from("vw_liquidados_a_pagar")
-      .select("valor_liquidado_a_pagar"),
-
-    // Tabela Liquidados a Pagar
-    supabase
-      .from("vw_liquidados_a_pagar")
-      .select("*")
-      .order("updated_at", { ascending: false })
-      .limit(100),
-
-    // Tabela Monitoramento de Pagamentos
-    supabase
-      .from("vw_monitoramento_pagamentos")
-      .select("*")
-      .order("data_pagamento", { ascending: false })
-      .limit(100),
+    supabase.from("vw_monitoramento_pagamentos").select("valor, confirmado_manualmente"),
+    supabase.from("vw_liquidados_a_pagar").select("valor_liquidado_a_pagar"),
+    supabase.from("vw_liquidados_a_pagar").select("*").order("updated_at", { ascending: false }).limit(100),
+    supabase.from("vw_monitoramento_pagamentos").select("*").order("data_pagamento", { ascending: false }).limit(100),
   ]);
 
-  // Verifica erros por query e agrega mensagem descritiva
   const queryErrors = [
     obAggResult.error && "vw_monitoramento_pagamentos (agregado)",
     dlAggResult.error && "vw_liquidados_a_pagar (agregado)",
@@ -44,23 +33,15 @@ async function fetchCpagData(supabase) {
     monitoramentoResult.error && "vw_monitoramento_pagamentos (tabela)",
   ].filter(Boolean);
 
-  const fetchError =
-    queryErrors.length > 0
-      ? `Falha ao consultar: ${queryErrors.join(", ")}. Os dados podem estar incompletos.`
-      : null;
+  const fetchError = queryErrors.length > 0
+    ? `Falha ao consultar: ${queryErrors.join(", ")}. Os dados podem estar incompletos.`
+    : null;
 
   const obData = obAggResult.data || [];
   const dlData = dlAggResult.data || [];
 
-  const totalPago = obData
-    .filter((r) => r.confirmado_manualmente)
-    .reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
-
-  const totalAPagar = dlData.reduce(
-    (s, r) => s + (parseFloat(r.valor_liquidado_a_pagar) || 0),
-    0
-  );
-
+  const totalPago = obData.filter((r) => r.confirmado_manualmente).reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+  const totalAPagar = dlData.reduce((s, r) => s + (parseFloat(r.valor_liquidado_a_pagar) || 0), 0);
   const quantidadeOBs = obData.length;
 
   return {
@@ -71,97 +52,114 @@ async function fetchCpagData(supabase) {
   };
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
+function StatCard({ label, value, sub, icon: Icon, accent }) {
+  const accents = {
+    green: "border-emerald-500",
+    amber: "border-amber-400",
+    blue: "border-para-blue",
+  };
+  const textAccents = {
+    green: "text-emerald-600",
+    amber: "text-amber-600",
+    blue: "text-para-blue",
+  };
+  const bgAccents = {
+    green: "bg-emerald-50",
+    amber: "bg-amber-50",
+    blue: "bg-blue-50",
+  };
+
+  return (
+    <div className={`bg-white rounded-xl border border-slate-200 shadow-sm border-l-4 ${accents[accent]} p-5 flex items-start gap-4`}>
+      <div className={`p-2.5 rounded-lg ${bgAccents[accent]} flex-shrink-0`}>
+        <Icon size={18} className={textAccents[accent]} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
+        <p className={`text-2xl font-black ${textAccents[accent]} leading-none`}>{value}</p>
+        {sub && <p className="text-[11px] text-slate-400 mt-1.5 font-medium">{sub}</p>}
+      </div>
+    </div>
+  );
+}
 
 export default async function CpagDashboardPage() {
   const supabase = getSupabaseAdminClient();
   const { kpis, liquidados, monitoramento, fetchError } = await fetchCpagData(supabase);
 
   return (
-    <div className="space-y-10">
-      {/* Banner de erro de conexão */}
+    <div className="space-y-8">
       {fetchError && <ErrorBanner message={fetchError} />}
 
-      {/* Link de Retorno */}
+      {/* Breadcrumb + Header */}
       <div>
         <Link
           href="/dashboard/dppc"
-          className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-para-blue uppercase tracking-widest mb-6 transition-colors"
+          className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-para-blue uppercase tracking-widest mb-5 transition-colors"
         >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          Voltar ao Hub DPPC
+          <ChevronLeft size={13} />
+          Hub DPPC
         </Link>
-      </div>
-
-      {/* Header */}
-      <div>
-        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
-          Dashboard CPAG
-        </h1>
-        <p className="text-slate-500 text-sm font-medium">
-          Controle de Pagamentos — Exercício Fiscal 2026
-        </p>
+        <div className="flex items-end justify-between">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+              Dashboard CPAG
+            </h1>
+            <p className="text-slate-400 text-sm font-medium mt-1">
+              Controle de Pagamentos — Exercício Fiscal 2026
+            </p>
+          </div>
+          <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
+            Dados em tempo real
+          </span>
+        </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-md border-l-4 border-green-500 p-6">
-          <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
-            Total Efetivamente Pago
-          </p>
-          <p className="text-3xl font-black text-green-600 wrap-break-word">
-            {formatCurrency(kpis.totalPago)}
-          </p>
-          <p className="text-xs text-slate-400 mt-1 font-medium">OBs confirmadas manualmente</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md border-l-4 border-amber-400 p-6">
-          <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
-            Total a Pagar
-          </p>
-          <p className="text-3xl font-black text-amber-600 wrap-break-word">
-            {formatCurrency(kpis.totalAPagar)}
-          </p>
-          <p className="text-xs text-slate-400 mt-1 font-medium">DLs sem OB correspondente</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md border-l-4 border-para-blue p-6">
-          <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-2">
-            Ordens Bancarias Emitidas
-          </p>
-          <p className="text-3xl font-black text-para-blue">
-            {kpis.quantidadeOBs.toLocaleString("pt-BR")}
-          </p>
-          <p className="text-xs text-slate-400 mt-1 font-medium">Total de OBs no periodo</p>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard
+          label="Total Efetivamente Pago"
+          value={formatCurrency(kpis.totalPago)}
+          sub="OBs confirmadas manualmente"
+          icon={TrendingUp}
+          accent="green"
+        />
+        <StatCard
+          label="Total a Pagar"
+          value={formatCurrency(kpis.totalAPagar)}
+          sub="DLs sem OB correspondente"
+          icon={Clock}
+          accent="amber"
+        />
+        <StatCard
+          label="Ordens Bancárias Emitidas"
+          value={kpis.quantidadeOBs.toLocaleString("pt-BR")}
+          sub="Total de OBs no período"
+          icon={Landmark}
+          accent="blue"
+        />
       </div>
 
-      {/* Conteúdo principal + sidebar */}
-      <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-8">
+      {/* Grid principal + sidebar */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-6">
 
-        {/* Coluna principal: duas tabelas */}
-        <div className="space-y-8">
+        {/* Coluna principal */}
+        <div className="space-y-6 min-w-0">
 
           {/* Tabela: Liquidados a Pagar */}
-          <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-black uppercase tracking-wider text-slate-800">
-                Liquidados a Pagar
-              </h2>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+              <div>
+                <h2 className="text-sm font-black uppercase tracking-widest text-slate-800">
+                  Liquidados a Pagar
+                </h2>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                  Documentos de liquidação sem ordem bancária emitida
+                </p>
+              </div>
               {liquidados.length > 0 && (
-                <span className="text-xs text-slate-500 font-medium">
-                  {liquidados.length} registro{liquidados.length !== 1 ? "s" : ""}
+                <span className="text-[11px] font-black text-slate-400 bg-slate-100 rounded-full px-3 py-1">
+                  {liquidados.length} registros
                 </span>
               )}
             </div>
@@ -169,23 +167,31 @@ export default async function CpagDashboardPage() {
             {liquidados.length > 0 ? (
               <LiquidadosTable liquidados={liquidados} />
             ) : (
-              <div className="px-6 py-12 text-center">
-                <p className="text-slate-500 text-sm font-medium">
-                  Nenhum documento de liquidacao a pagar encontrado.
+              <div className="px-6 py-16 text-center">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                  <TrendingUp size={18} className="text-slate-400" />
+                </div>
+                <p className="text-slate-400 text-sm font-medium">
+                  Nenhum documento de liquidação a pagar encontrado.
                 </p>
               </div>
             )}
           </div>
 
           {/* Tabela: Monitoramento de Pagamentos */}
-          <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-black uppercase tracking-wider text-slate-800">
-                Monitoramento de Pagamentos
-              </h2>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+              <div>
+                <h2 className="text-sm font-black uppercase tracking-widest text-slate-800">
+                  Monitoramento de Pagamentos
+                </h2>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                  Ordens bancárias emitidas e status de confirmação
+                </p>
+              </div>
               {monitoramento.length > 0 && (
-                <span className="text-xs text-slate-500 font-medium">
-                  {monitoramento.length} registro{monitoramento.length !== 1 ? "s" : ""}
+                <span className="text-[11px] font-black text-slate-400 bg-slate-100 rounded-full px-3 py-1">
+                  {monitoramento.length} registros
                 </span>
               )}
             </div>
@@ -193,64 +199,50 @@ export default async function CpagDashboardPage() {
             {monitoramento.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-slate-50">
-                    <tr className="border-b border-slate-200">
-                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                        Processo
-                      </th>
-                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                        Credor
-                      </th>
-                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                        Fonte
-                      </th>
-                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                        DL
-                      </th>
-                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                        OB
-                      </th>
-                      <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">
-                        Data Pgto
-                      </th>
-                      <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">
-                        Valor
-                      </th>
-                      <th className="px-6 py-3 text-center font-black uppercase text-xs tracking-wider text-slate-700">
-                        Status
-                      </th>
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      {["Processo", "Credor", "Fonte", "DL", "OB", "Data Pgto", "Valor", "Status"].map((h, i) => (
+                        <th
+                          key={h}
+                          className={`px-5 py-3 text-[11px] font-black uppercase tracking-wider text-slate-500 ${
+                            i >= 6 ? "text-right" : i === 7 ? "text-center" : "text-left"
+                          }`}
+                        >
+                          {h}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-100">
                     {monitoramento.map((item, index) => (
                       <tr
                         key={item.ordem_bancaria}
-                        className={`border-b border-slate-100 ${
-                          index % 2 === 0 ? "bg-white" : "bg-slate-50"
-                        } hover:bg-slate-100 transition-colors`}
+                        className={`transition-colors hover:bg-slate-50 ${
+                          index % 2 === 0 ? "bg-white" : "bg-slate-50/50"
+                        }`}
                       >
-                        <td className="px-6 py-4 text-slate-800 font-medium">
+                        <td className="px-5 py-3.5 text-slate-800 font-semibold text-xs">
                           {item.numero_processo || "—"}
                         </td>
-                        <td className="px-6 py-4 text-slate-700">
+                        <td className="px-5 py-3.5 text-slate-600 text-xs max-w-[180px] truncate">
                           {item.credor || "—"}
                         </td>
-                        <td className="px-6 py-4 text-slate-700">
+                        <td className="px-5 py-3.5 text-slate-600 text-xs">
                           {item.fonte || "—"}
                         </td>
-                        <td className="px-6 py-4 text-slate-700 font-mono text-xs">
+                        <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">
                           {item.documento_liquidacao || "—"}
                         </td>
-                        <td className="px-6 py-4 text-slate-700 font-mono text-xs">
+                        <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">
                           {item.ordem_bancaria || "—"}
                         </td>
-                        <td className="px-6 py-4 text-slate-700">
+                        <td className="px-5 py-3.5 text-slate-600 text-xs">
                           {formatDate(item.data_pagamento)}
                         </td>
-                        <td className="px-6 py-4 text-right font-bold text-para-blue">
+                        <td className="px-5 py-3.5 text-right font-mono font-bold text-para-blue text-xs">
                           {formatCurrency(item.valor)}
                         </td>
-                        <td className="px-6 py-4 text-center">
+                        <td className="px-5 py-3.5 text-center">
                           <PaymentToggle
                             ordemBancaria={item.ordem_bancaria}
                             initialConfirmado={item.confirmado_manualmente ?? false}
@@ -263,8 +255,8 @@ export default async function CpagDashboardPage() {
                 </table>
               </div>
             ) : (
-              <div className="px-6 py-12 text-center">
-                <p className="text-slate-500 text-sm font-medium">
+              <div className="px-6 py-16 text-center">
+                <p className="text-slate-400 text-sm font-medium">
                   Nenhuma ordem bancária encontrada.
                 </p>
               </div>
@@ -272,54 +264,62 @@ export default async function CpagDashboardPage() {
           </div>
         </div>
 
-        {/* Sidebar */}
-        <aside className="space-y-6">
-          <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
-            <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-4">
-              Relatorios
+        {/* Sidebar direita */}
+        <aside className="space-y-4">
+
+          {/* Exportação */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-4">
+              Relatórios
             </p>
             <CpagExportButtons />
           </div>
 
-          <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
-            <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-4">
+          {/* Indicadores */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-4">
               Painel de Indicadores
             </p>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between py-2 border-b border-slate-100">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
-                  OBs confirmadas
-                </span>
-                <span className="text-sm font-black text-green-600">
-                  {monitoramento.filter((r) => r.confirmado_manualmente).length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-slate-100">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
-                  OBs pendentes
-                </span>
-                <span className="text-sm font-black text-amber-600">
-                  {monitoramento.filter((r) => !r.confirmado_manualmente).length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
-                  DLs sem OB
-                </span>
-                <span className="text-sm font-black text-para-blue">
-                  {liquidados.length}
-                </span>
-              </div>
+            <div className="space-y-0 divide-y divide-slate-100">
+              {[
+                {
+                  label: "OBs confirmadas",
+                  value: monitoramento.filter((r) => r.confirmado_manualmente).length,
+                  color: "text-emerald-600",
+                  bg: "bg-emerald-50",
+                },
+                {
+                  label: "OBs pendentes",
+                  value: monitoramento.filter((r) => !r.confirmado_manualmente).length,
+                  color: "text-amber-600",
+                  bg: "bg-amber-50",
+                },
+                {
+                  label: "DLs sem OB",
+                  value: liquidados.length,
+                  color: "text-para-blue",
+                  bg: "bg-blue-50",
+                },
+              ].map(({ label, value, color, bg }) => (
+                <div key={label} className="flex items-center justify-between py-3">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    {label}
+                  </span>
+                  <span className={`text-sm font-black ${color} ${bg} px-2.5 py-1 rounded-md`}>
+                    {value}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
-            <p className="text-xs uppercase font-black text-slate-500 tracking-widest mb-3">
-              Observacoes
+          {/* Observações */}
+          <div className="bg-slate-900 rounded-xl p-5">
+            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-3">
+              Observações
             </p>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              O status de pagamento pode ser confirmado manualmente na coluna
-              Status da tabela de Monitoramento. A alteracao e registrada em tempo real.
+            <p className="text-xs text-slate-300 leading-relaxed">
+              O status de pagamento pode ser confirmado manualmente na coluna Status da tabela de Monitoramento. A alteração é registrada em tempo real.
             </p>
           </div>
         </aside>

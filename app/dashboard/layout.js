@@ -3,7 +3,39 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import "../globals.css";
+import {
+  LayoutDashboard,
+  FileCheck2,
+  CreditCard,
+  Database,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  BookOpen,
+  Calculator,
+  Menu,
+} from "lucide-react";
+import "/app/globals.css";
+
+const NAV_SECTIONS = [
+  {
+    label: "Diretoria de Finanças",
+    abbr: "DFIN",
+    items: [
+      { label: "CEO", href: "/dashboard/dfin/ceo", icon: TrendingUp },
+      { label: "CPED", href: "/dashboard/dfin/cped", icon: BookOpen },
+      { label: "ACONT", href: "/dashboard/dfin/acont", icon: Calculator },
+    ],
+  },
+  {
+    label: "Pagamento e Prestação de Contas",
+    abbr: "DPPC",
+    items: [
+      { label: "CLIQ", href: "/dashboard/dppc/cliq", icon: FileCheck2 },
+      { label: "CPAG", href: "/dashboard/dppc/cpag", icon: CreditCard },
+    ],
+  },
+];
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
@@ -11,16 +43,10 @@ export default function DashboardLayout({ children }) {
   const [isMounted, setIsMounted] = useState(false);
   const hasInitialized = useRef(false);
 
-  const isActiveLink = (href) => {
-    return pathname === href;
-  };
-
   useEffect(() => {
     if (!hasInitialized.current) {
       const stored = localStorage.getItem("sidebarCollapsed");
-      if (stored !== null) {
-        setIsCollapsed(stored === "true");
-      }
+      if (stored !== null) setIsCollapsed(stored === "true");
       hasInitialized.current = true;
       setIsMounted(true);
     }
@@ -33,138 +59,117 @@ export default function DashboardLayout({ children }) {
   }, [isCollapsed, isMounted]);
 
   return (
-    <div className="flex h-screen bg-para-white font-sans text-slate-800">
-      {/* Sidebar Institucional - Azul Pará */}
+    <div className="flex h-screen bg-slate-100 font-sans text-slate-800 overflow-hidden">
+
+      {/* ── Sidebar ── */}
       <aside
         className={`${
-          isCollapsed ? "w-20" : "w-64"
-        } bg-para-blue text-white flex flex-col shadow-xl transition-all duration-300 ease-in-out`}
+          isCollapsed ? "w-[72px]" : "w-64"
+        } bg-slate-900 text-white flex flex-col shadow-2xl transition-all duration-300 ease-in-out flex-shrink-0`}
       >
-        {/* Header com Toggle Button */}
-        <div className={`${isCollapsed ? "px-3 py-4" : "p-8"} border-b border-blue-400/30 flex items-center justify-between transition-all duration-300`}>
-          <div className={isCollapsed ? "hidden" : "block"}>
-            <h1 className="text-2xl font-bold tracking-tight">SIMF</h1>
-            <p className="text-xs text-blue-200 font-medium uppercase tracking-widest">
-              Governo do Estado do Pará
-            </p>
-          </div>
-
+        {/* Logo */}
+        <div className={`flex items-center border-b border-white/10 transition-all duration-300 ${isCollapsed ? "px-4 py-5 justify-center" : "px-6 py-5 justify-between"}`}>
+          {!isCollapsed && (
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-md bg-para-blue flex items-center justify-center flex-shrink-0">
+                  <LayoutDashboard size={14} className="text-white" />
+                </div>
+                <span className="text-base font-black tracking-tight text-white">SIMF</span>
+              </div>
+              <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1 font-medium pl-9">
+                SEDUC · Pará
+              </p>
+            </div>
+          )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-slate-400 hover:text-white flex-shrink-0"
             aria-label="Toggle sidebar"
-            className="p-2 hover:bg-white/10 rounded transition-colors cursor-pointer flex-shrink-0"
           >
-            {isCollapsed ? (
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            ) : (
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            )}
+            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto transition-all duration-300">
-          <div className={isCollapsed ? "hidden" : "block p-6 space-y-8"}>
-            {/* Módulo DFIN */}
-            <div>
-              <h2 className="text-sm font-black text-blue-100/50 uppercase mb-4 tracking-wider">
-                Diretoria de Finanças (DFIN)
-              </h2>
-              <ul className="space-y-2 text-sm">
-                <li className="p-3 hover:bg-white/10 rounded-md cursor-pointer transition-colors">CEO</li>
-                <li className="p-3 hover:bg-white/10 rounded-md cursor-pointer transition-colors">CPED</li>
-                <li className="p-3 hover:bg-white/10 rounded-md cursor-pointer transition-colors">ACONT</li>
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto py-4 space-y-6 scrollbar-none">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.abbr}>
+              {!isCollapsed && (
+                <p className="px-6 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  {section.abbr}
+                </p>
+              )}
+              <ul className="space-y-0.5 px-3">
+                {section.items.map(({ label, href, icon: Icon }) => {
+                  const active = pathname === href;
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        title={isCollapsed ? label : undefined}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                          active
+                            ? "bg-para-blue text-white shadow-md shadow-blue-900/40"
+                            : "text-slate-400 hover:text-white hover:bg-white/8"
+                        }`}
+                      >
+                        <Icon size={17} className="flex-shrink-0" />
+                        {!isCollapsed && <span>{label}</span>}
+                        {!isCollapsed && active && (
+                          <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white/80" />
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
-
-            {/* Módulo DPPC */}
-            <div>
-              <h2 className="text-sm font-black text-blue-100/50 uppercase mb-4 tracking-wider">
-                Pagamento e Prestação de Contas (DPPC)
-              </h2>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link
-                    href="/dashboard/dppc/cliq"
-                    className={`block p-3 text-white hover:bg-white/10 rounded-md transition-colors ${isActiveLink("/dashboard/dppc/cliq") ? "bg-white/20 border-l-4 border-[#0055A4]" : ""}`}
-                  >
-                    CLIQ
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/dashboard/dppc/cpag"
-                    className={`block p-3 text-white hover:bg-white/10 rounded-md transition-colors ${isActiveLink("/dashboard/dppc/cpag") ? "bg-white/20 border-l-4 border-[#0055A4]" : ""}`}
-                  >
-                    CPAG
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
+          ))}
         </nav>
 
-        {/* Rodapé de Gestão */}
-        <div className={`${isCollapsed ? "px-3 py-4" : "p-6"} bg-blue-900/20 transition-all duration-300`}>
-          <a
+        {/* Rodapé — Atualizar Base */}
+        <div className={`border-t border-white/10 transition-all duration-300 ${isCollapsed ? "px-3 py-4" : "px-4 py-4"}`}>
+          <Link
             href="/dashboard/import"
-            className="flex items-center justify-center gap-2 p-3 bg-para-red hover:bg-red-700 text-white rounded-lg font-bold shadow-lg transition-all"
-            title={isCollapsed ? "Atualizar Base" : ""}
+            title={isCollapsed ? "Atualizar Base" : undefined}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold transition-all duration-150 ${
+              pathname === "/dashboard/import"
+                ? "bg-para-red text-white"
+                : "bg-white/6 text-slate-300 hover:bg-para-red hover:text-white"
+            }`}
           >
-            <svg 
-  width="20" 
-  height="20" 
-  viewBox="0 0 24 24" 
-  fill="none" 
-  stroke="currentColor" 
-  strokeWidth="2" 
-  strokeLinecap="round" 
-  strokeLinejoin="round" 
-  className="flex-shrink-0"
->
-  <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-  <path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"></path>
-</svg>
-            <span className={isCollapsed ? "hidden" : "block"}>Atualizar Base</span>
-          </a>
+            <Database size={17} className="flex-shrink-0" />
+            {!isCollapsed && <span>Atualizar Base</span>}
+          </Link>
         </div>
       </aside>
 
-      {/* Área de Conteúdo */}
-      <main className="flex-1 overflow-y-auto bg-slate-50">
-        <header className="bg-white border-b border-slate-200 p-6 flex justify-between items-center shadow-sm">
-          <span className="text-slate-400 font-medium">SECRETARIA ADJUNTA DE PLANEJAMENTO E FINANÇAS (SAPF)</span>
-          <div className="text-right">
-            <p className="text-xs font-bold text-slate-500">Usuário do Sistema</p>
+      {/* ── Conteúdo ── */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Topbar */}
+        <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+              Secretaria Adjunta de Planejamento e Finanças
+            </span>
+            <span className="text-slate-300">·</span>
+            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+              SAPF
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center">
+              <span className="text-[10px] font-black text-slate-500">US</span>
+            </div>
+            <span className="text-xs font-medium text-slate-500">Usuário do Sistema</span>
           </div>
         </header>
-        <section className="p-10">
-          {children}
-        </section>
-      </main>
+
+        <main className="flex-1 overflow-y-auto bg-slate-50">
+          <div className="p-8">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }
