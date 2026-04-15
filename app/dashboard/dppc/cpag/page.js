@@ -1,6 +1,7 @@
 import { getSupabaseAdminClient } from "../../../../lib/supabase/server.js";
 import PaymentToggle from "../../../../components/payment-toggle.jsx";
 import CpagExportButtons from "../../../../components/cpag-export-buttons.jsx";
+import ErrorBanner from "../../../../components/error-banner.jsx";
 import Link from "next/link";
 
 function formatCurrency(value) {
@@ -44,6 +45,19 @@ async function fetchCpagData(supabase) {
       .limit(100),
   ]);
 
+  // Verifica erros por query e agrega mensagem descritiva
+  const queryErrors = [
+    obAggResult.error && "vw_monitoramento_pagamentos (agregado)",
+    dlAggResult.error && "vw_liquidados_a_pagar (agregado)",
+    liquidadosResult.error && "vw_liquidados_a_pagar (tabela)",
+    monitoramentoResult.error && "vw_monitoramento_pagamentos (tabela)",
+  ].filter(Boolean);
+
+  const fetchError =
+    queryErrors.length > 0
+      ? `Falha ao consultar: ${queryErrors.join(", ")}. Os dados podem estar incompletos.`
+      : null;
+
   const obData = obAggResult.data || [];
   const dlData = dlAggResult.data || [];
 
@@ -62,6 +76,7 @@ async function fetchCpagData(supabase) {
     kpis: { totalPago, totalAPagar, quantidadeOBs },
     liquidados: liquidadosResult.data || [],
     monitoramento: monitoramentoResult.data || [],
+    fetchError,
   };
 }
 
@@ -69,10 +84,13 @@ async function fetchCpagData(supabase) {
 
 export default async function CpagDashboardPage() {
   const supabase = getSupabaseAdminClient();
-  const { kpis, liquidados, monitoramento } = await fetchCpagData(supabase);
+  const { kpis, liquidados, monitoramento, fetchError } = await fetchCpagData(supabase);
 
   return (
     <div className="space-y-10">
+      {/* Banner de erro de conexão */}
+      {fetchError && <ErrorBanner message={fetchError} />}
+
       {/* Link de Retorno */}
       <div>
         <Link
