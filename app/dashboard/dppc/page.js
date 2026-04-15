@@ -1,168 +1,93 @@
 import Link from "next/link";
+import { FileCheck2, CreditCard, ChevronRight, ChevronLeft } from "lucide-react";
 
 export default function DPPCHubPage() {
   return (
-    <div className="space-y-10">
-      {/* Link de Retorno */}
+    <div className="space-y-8">
+
+      {/* Breadcrumb */}
       <div>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-para-blue transition-colors"
-        >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          Voltar ao Portal Principal
+        <Link href="/" className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-para-blue uppercase tracking-widest transition-colors">
+          <ChevronLeft size={13} />
+          Portal Principal
         </Link>
       </div>
 
-      {/* Page Header */}
+      {/* Header */}
       <div>
-        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
+        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">DPPC</p>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
           Diretoria de Pagamento e Prestação de Contas
         </h1>
-        <p className="text-slate-500 text-sm font-medium">
-          Gestão centralizada de liquidações (CLIQ) e pagamentos (CPAG)
+        <p className="text-slate-400 text-sm font-medium mt-1">
+          Gestão centralizada de liquidações e pagamentos
         </p>
       </div>
 
-      {/* Navigation Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Card 1: CLIQ */}
+      {/* Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+        {/* CLIQ */}
         <Link
           href="/dashboard/dppc/cliq"
-          className="group bg-white rounded-lg shadow-md border border-slate-200 p-8 hover:shadow-lg transition-all duration-300 cursor-pointer"
+          className="group bg-white rounded-xl border border-slate-200 shadow-sm p-7 hover:shadow-md hover:border-para-blue/30 transition-all duration-200"
         >
           <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-slate-50 rounded-lg group-hover:bg-slate-100 transition-colors">
-                <svg
-                  width="32"
-                  height="32"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#0071ce"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <path d="M9 15l2 2 4-4" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">CLIQ</h2>
-                <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mt-1">
-                  Coordenadoria de Liquidação
-                </p>
-              </div>
+            <div className="p-3 bg-blue-50 rounded-xl group-hover:bg-blue-100 transition-colors">
+              <FileCheck2 size={24} className="text-para-blue" />
             </div>
-          </div>
-
-          {/* Badge */}
-          <div className="inline-block mb-4">
-            <span className="px-3 py-1 bg-blue-100 text-para-blue text-xs font-black uppercase tracking-widest rounded-full">
-              Módulo Operacional
+            <span className="text-[10px] font-black text-para-blue bg-blue-50 px-2.5 py-1 rounded-full uppercase tracking-widest">
+              Operacional
             </span>
           </div>
 
-          <p className="text-slate-600 text-sm leading-relaxed">
-            Gestão de documentos de liquidação. Análise e aprovação de liquidações de empenhos com integração aos dados do SIAFE.
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">CLIQ</h2>
+          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">
+            Coordenadoria de Liquidação
+          </p>
+          <p className="text-slate-500 text-sm leading-relaxed mb-6">
+            Gestão de documentos de liquidação com análise, filtros e integração aos dados do SIAFE.
           </p>
 
-          <div className="mt-6 flex items-center gap-2 text-para-blue font-black uppercase text-xs tracking-widest group-hover:translate-x-1 transition-transform">
+          <div className="flex items-center gap-1.5 text-para-blue font-black uppercase text-[11px] tracking-widest group-hover:gap-2.5 transition-all">
             Acessar
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+            <ChevronRight size={13} />
           </div>
         </Link>
 
-        {/* Card 2: CPAG */}
+        {/* CPAG */}
         <Link
           href="/dashboard/dppc/cpag"
-          className="group bg-white rounded-lg shadow-md border border-slate-200 p-8 hover:shadow-lg transition-all duration-300 cursor-pointer"
+          className="group bg-white rounded-xl border border-slate-200 shadow-sm p-7 hover:shadow-md hover:border-para-blue/30 transition-all duration-200"
         >
           <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-slate-50 rounded-lg group-hover:bg-slate-100 transition-colors">
-                <svg
-                  width="32"
-                  height="32"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#0071ce"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="7" height="7" />
-                  <rect x="14" y="3" width="7" height="7" />
-                  <rect x="14" y="14" width="7" height="7" />
-                  <rect x="3" y="14" width="7" height="7" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">CPAG</h2>
-                <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mt-1">
-                  Coordenadoria de Pagamentos
-                </p>
-              </div>
+            <div className="p-3 bg-blue-50 rounded-xl group-hover:bg-blue-100 transition-colors">
+              <CreditCard size={24} className="text-para-blue" />
             </div>
-          </div>
-
-          {/* Badge */}
-          <div className="inline-block mb-4">
-            <span className="px-3 py-1 bg-blue-100 text-para-blue text-xs font-black uppercase tracking-widest rounded-full">
-              Módulo Operacional
+            <span className="text-[10px] font-black text-para-blue bg-blue-50 px-2.5 py-1 rounded-full uppercase tracking-widest">
+              Operacional
             </span>
           </div>
 
-          <p className="text-slate-600 text-sm leading-relaxed">
-            Dashboard completo com KPIs de pagamento, evolução mensal, distribuição por fonte de recurso e histórico de ordens bancárias.
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">CPAG</h2>
+          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">
+            Coordenadoria de Pagamentos
+          </p>
+          <p className="text-slate-500 text-sm leading-relaxed mb-6">
+            KPIs de pagamento, monitoramento de ordens bancárias e exportação de relatórios XLSX e PDF.
           </p>
 
-          <div className="mt-6 flex items-center gap-2 text-para-blue font-black uppercase text-xs tracking-widest group-hover:translate-x-1 transition-transform">
+          <div className="flex items-center gap-1.5 text-para-blue font-black uppercase text-[11px] tracking-widest group-hover:gap-2.5 transition-all">
             Acessar
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+            <ChevronRight size={13} />
           </div>
         </Link>
       </div>
 
-      {/* Footer Note */}
-      <div className="border-t border-slate-200 pt-8 mt-8">
-        <p className="text-slate-500 text-xs font-medium">
-          Todas as operações são realizadas com dados em tempo real do banco de dados centralizado. Para suporte, contacte o desenvolvedor.
+      {/* Footer */}
+      <div className="border-t border-slate-200 pt-6">
+        <p className="text-slate-400 text-xs font-medium">
+          Dados em tempo real do banco de dados centralizado.
         </p>
       </div>
     </div>

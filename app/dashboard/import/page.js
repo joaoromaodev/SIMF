@@ -4,7 +4,7 @@ import { ChevronLeft, BookOpen, ArrowRightLeft, Plus } from "lucide-react";
 
 export default function ImportPage() {
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col font-sans">
+    <div className="-m-8 min-h-screen bg-slate-950 flex flex-col font-sans">
 
       {/* Topbar */}
       <header className="border-b border-white/10 px-8 py-4 flex items-center justify-between">
