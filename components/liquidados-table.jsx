@@ -40,7 +40,7 @@ export function LiquidadosTable({ liquidados }) {
           <tbody>
             {liquidados.map((item, index) => (
               <tr
-                key={item.documento_liquidacao}
+                key={item.documento_liquidacao ?? `row-${index}`}
                 onClick={() => toggleRow(item.documento_liquidacao)}
                 className={`border-b border-slate-100 cursor-pointer transition-colors ${
                   isSelected(item.documento_liquidacao)

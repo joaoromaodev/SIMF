@@ -10,3 +10,4 @@ coverage
 # ------------------------------
 .openclaude-profile.json
 .claude/
+.relatorios/
