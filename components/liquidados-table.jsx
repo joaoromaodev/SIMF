@@ -27,47 +27,54 @@ export function LiquidadosTable({ liquidados }) {
                   className="cursor-pointer"
                 />
               </th>
-              <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">Processo</th>
-              <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">Empenho</th>
-              <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">Credor</th>
-              <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">Fonte</th>
-              <th className="px-6 py-3 text-left font-black uppercase text-xs tracking-wider text-slate-700">DL</th>
-              <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">Valor Liquido</th>
-              <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">Valor Bruto</th>
-              <th className="px-6 py-3 text-right font-black uppercase text-xs tracking-wider text-slate-700">A Pagar</th>
+              <th className="px-5 py-3 text-left font-black uppercase text-[11px] tracking-wider text-slate-500">Processo</th>
+              <th className="px-5 py-3 text-left font-black uppercase text-[11px] tracking-wider text-slate-500">Empenho</th>
+              <th className="px-5 py-3 text-left font-black uppercase text-[11px] tracking-wider text-slate-500">Credor</th>
+              <th className="px-5 py-3 text-left font-black uppercase text-[11px] tracking-wider text-slate-500">Natureza</th>
+              <th className="px-5 py-3 text-left font-black uppercase text-[11px] tracking-wider text-slate-500">Fonte</th>
+              <th className="px-5 py-3 text-left font-black uppercase text-[11px] tracking-wider text-slate-500">DL</th>
+              <th className="px-5 py-3 text-right font-black uppercase text-[11px] tracking-wider text-slate-500">Vl. Líquido</th>
+              <th className="px-5 py-3 text-right font-black uppercase text-[11px] tracking-wider text-slate-500">Vl. Bruto</th>
+              <th className="px-5 py-3 text-right font-black uppercase text-[11px] tracking-wider text-slate-500">Vl. Imposto</th>
+              <th className="px-5 py-3 text-right font-black uppercase text-[11px] tracking-wider text-slate-500">A Pagar</th>
             </tr>
           </thead>
-          <tbody>
-            {liquidados.map((item, index) => (
-              <tr
-                key={item.documento_liquidacao ?? `row-${index}`}
-                onClick={() => toggleRow(item.documento_liquidacao)}
-                className={`border-b border-slate-100 cursor-pointer transition-colors ${
-                  isSelected(item.documento_liquidacao)
-                    ? "bg-blue-50"
-                    : index % 2 === 0
-                    ? "bg-white hover:bg-slate-100"
-                    : "bg-slate-50 hover:bg-slate-100"
-                }`}
-              >
-                <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={isSelected(item.documento_liquidacao)}
-                    onChange={() => toggleRow(item.documento_liquidacao)}
-                    className="cursor-pointer"
-                  />
-                </td>
-                <td className="px-6 py-4 text-slate-800 font-medium">{item.numero_processo || "—"}</td>
-                <td className="px-6 py-4 text-slate-700 font-mono text-xs">{item.codigo_nota_empenho || "—"}</td>
-                <td className="px-6 py-4 text-slate-700">{item.credor || "—"}</td>
-                <td className="px-6 py-4 text-slate-700">{item.fonte || "—"}</td>
-                <td className="px-6 py-4 text-slate-700 font-mono text-xs">{item.documento_liquidacao || "—"}</td>
-                <td className="px-6 py-4 text-right font-bold text-para-blue">{formatCurrency(item.valor_liquido)}</td>
-                <td className="px-6 py-4 text-right font-bold text-para-blue">{formatCurrency(item.valor_bruto)}</td>
-                <td className="px-6 py-4 text-right font-bold text-amber-600">{formatCurrency(item.valor_liquidado_a_pagar)}</td>
-              </tr>
-            ))}
+          <tbody className="divide-y divide-slate-100">
+            {liquidados.map((item, index) => {
+              const vlImposto = (parseFloat(item.valor_bruto) || 0) - (parseFloat(item.valor_liquido) || 0);
+              return (
+                <tr
+                  key={item.documento_liquidacao ?? `row-${index}`}
+                  onClick={() => toggleRow(item.documento_liquidacao)}
+                  className={`cursor-pointer transition-colors ${
+                    isSelected(item.documento_liquidacao)
+                      ? "bg-blue-50"
+                      : index % 2 === 0
+                      ? "bg-white hover:bg-slate-50"
+                      : "bg-slate-50/50 hover:bg-slate-100"
+                  }`}
+                >
+                  <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected(item.documento_liquidacao)}
+                      onChange={() => toggleRow(item.documento_liquidacao)}
+                      className="cursor-pointer"
+                    />
+                  </td>
+                  <td className="px-5 py-3.5 text-slate-800 font-semibold text-xs">{item.numero_processo || "—"}</td>
+                  <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{item.codigo_nota_empenho || "—"}</td>
+                  <td className="px-5 py-3.5 text-slate-600 text-xs max-w-[160px] truncate">{item.credor || "—"}</td>
+                  <td className="px-5 py-3.5 text-slate-600 text-xs">{item.codigo_natureza_despesa || "—"}</td>
+                  <td className="px-5 py-3.5 text-slate-600 text-xs">{item.fonte || "—"}</td>
+                  <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{item.documento_liquidacao || "—"}</td>
+                  <td className="px-5 py-3.5 text-right font-mono font-bold text-para-blue text-xs">{formatCurrency(item.valor_liquido)}</td>
+                  <td className="px-5 py-3.5 text-right font-mono font-bold text-para-blue text-xs">{formatCurrency(item.valor_bruto)}</td>
+                  <td className="px-5 py-3.5 text-right font-mono font-bold text-slate-500 text-xs">{formatCurrency(vlImposto)}</td>
+                  <td className="px-5 py-3.5 text-right font-mono font-bold text-amber-600 text-xs">{formatCurrency(item.valor_liquidado_a_pagar)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

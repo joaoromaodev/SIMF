@@ -264,3 +264,12 @@ Esse documento deve continuar enxuto, verificável e orientado à execução.
 - A suíte ganhou cobertura para o comportamento corretivo quando a normalização é chamada sem mapa resolvido.
 - `npm test` passou na implementação deste incremento.
 - `npm run build` segue pendente no ambiente atual porque o workspace está sem dependências instaladas em `node_modules` (`npm ls` retornou árvore vazia), e o build falha antes da ingestão em imports já existentes de `xlsx`, `jspdf` e `jspdf-autotable`.
+- Os relatórios CSV passaram a ter formato monetário `R$ 6,092.04` (americano com símbolo BRL). O `parseDecimal` foi atualizado para detectar e converter esse formato corretamente.
+- O campo `Credor_Nome` passou a ser `NomeCredor` no cubo de 2026 — adicionado como alias no schema NE_DL.
+- Campos novos adicionados ao NEDL: `Credor_Nome`, `CONTRATO`, `CONVENIO`. Removido: `CodigoPlanoInterno`.
+- Campos novos adicionados ao DLOB: `CodigoProjetoAtividade`, `CodigoNaturezaDaDespesa`, `NomeNaturezaDaDespesa`, `NomeElementoDeDespesa`. Removidos: `DocumentoCredor`, `NomeCredor` (dl_documento_credor, dl_nome_credor).
+- Migration `20260416000000_add_new_nedl_dlob_fields.sql` adicionada para os novos campos.
+- Views `vw_liquidados_a_pagar` e `vw_monitoramento_pagamentos` criadas no Supabase consumindo diretamente as tabelas normalizadas.
+- Tabelas canônicas criadas e função `consolidate_siafe_lineage()` executada com sucesso.
+- Tabela `marcacoes_pagamento` criada para confirmação manual de pagamentos.
+- Dashboard CPAG e CLIQ conectados com dados reais — mock data removido.

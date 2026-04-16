@@ -1,170 +1,101 @@
 # Documentação Técnica - SIMF (Sistema Integrado de Monitoramento Financeiro)
 
 ## Visão Geral
-O SIMF é um sistema web desenvolvido com Next.js (App Router), utilizando Supabase como backend/DB e Tailwind CSS para estilização. O sistema gerencia dados financeiros do SIAFE (Sistema Integrado de Administração Financeira para Estados), focando em relatórios de NE+DL (Notas de Empenho + Documentos de Liquidação) e DL+OB (Documentos de Liquidação + Ordens Bancárias).
+O SIMF é um sistema web desenvolvido com Next.js (App Router), utilizando Supabase como backend/DB e Tailwind CSS para estilização. O sistema gerencia dados financeiros do SIAFE, focando em relatórios de NE+DL (Notas de Empenho + Documentos de Liquidação) e DL+OB (Documentos de Liquidação + Ordens Bancárias).
+
+## Stack Técnica
+- **Frontend**: Next.js 15 (App Router), React 19, Tailwind CSS v4
+- **Backend**: Next.js API Routes, Supabase (Postgres + Storage)
+- **Charts**: Recharts
+- **Ícones**: lucide-react
+- **Exportação**: xlsx, jspdf, jspdf-autotable
+- **Validação e Processamento**: schemas customizados em `lib/siafe/`
 
 ## Mapa de Rotas
 
-### Estrutura do Next.js App Router
-As rotas são definidas pela estrutura de pastas em `app/`, seguindo o padrão do Next.js 13+ App Router.
+### Páginas Implementadas
 
-#### Páginas Implementadas
+| Rota | Arquivo | Descrição |
+|---|---|---|
+| `/` | `app/page.js` | Portal principal — cards de navegação para os módulos |
+| `/dashboard/dppc` | `app/dashboard/dppc/page.js` | Hub DPPC com cards para CLIQ e CPAG |
+| `/dashboard/dppc/cpag` | `app/dashboard/dppc/cpag/page.js` | Dashboard de Controle de Pagamentos |
+| `/dashboard/dppc/cliq` | `app/dashboard/dppc/cliq/page.js` | Dashboard de Controle de Liquidações |
+| `/dashboard/dfin` | `app/dashboard/dfin/page.js` | Hub DFIN — em construção |
+| `/dashboard/import` | `app/dashboard/import/page.js` | Upload de relatórios CSV do SIAFE |
 
-1. **/** (Página Inicial)
-   - **Arquivo**: `app/page.js`
-   - **Componente**: `HomePage`
-   - **Descrição**: Portal principal com cards de navegação para os módulos DFIN, DPPC e Gestão de Dados.
-   - **Links**:
-     - `/dashboard/dfin` (Diretoria de Finanças)
-     - `/dashboard/dppc` (Pagamento e Prestação de Contas)
-     - `/dashboard/import` (Atualização de Base)
+### APIs Implementadas
 
-2. **/dashboard** (Layout do Dashboard)
-   - **Arquivo**: `app/dashboard/layout.js`
-   - **Componente**: `DashboardLayout`
-   - **Descrição**: Layout compartilhado para todas as páginas do dashboard, incluindo sidebar colapsível com navegação institucional.
-   - **Sidebar Links**:
-     - `/dashboard/dppc/cliq` (CLIQ - Controle de Liquidações)
-     - `/dashboard/dppc/cpag` (CPAG - Controle de Pagamentos)
-     - `/dashboard/import` (Atualizar Base)
+**POST /api/imports**
+- Arquivo: `app/api/imports/route.js`
+- Parâmetros (FormData): `file`, `reportType` ("NE+DL" ou "DL+OB"), `yearScope` ("2023_2024", "2025", "2026")
+- Resposta: JSON com status, batch e warnings
 
-3. **/dashboard/dppc** (Hub DPPC)
-   - **Arquivo**: `app/dashboard/dppc/page.js`
-   - **Componente**: `DPPCHubPage`
-   - **Descrição**: Página hub para a Diretoria de Pagamento e Prestação de Contas, com cards de navegação para CLIQ e CPAG.
+## Arquitetura de Dados
 
-4. **/dashboard/dppc/cpag** (Dashboard CPAG)
-   - **Arquivo**: `app/dashboard/dppc/cpag/page.js`
-   - **Componente**: `CpagDashboardPage`
-   - **Descrição**: Dashboard de Controle de Pagamentos (Ordens Bancárias), exibindo KPIs, gráficos e tabela de ordens recentes.
-   - **Funcionalidades**:
-     - KPIs: Total Efetivamente Pago, Quantidade de Ordens Bancárias, Total de Liquidações a Pagar
-     - Gráficos: Distribuição por Fonte de Recurso (Pizza) e por Categoria (Barra)
-     - Tabela: Últimas 10 ordens bancárias
+### Hierarquia de Negócio
 
-5. **/dashboard/dppc/cliq** (Dashboard CLIQ)
-   - **Arquivo**: `app/dashboard/dppc/cliq/page.js`
-   - **Componente**: `CliqDashboardPage`
-   - **Descrição**: Dashboard de Controle de Liquidações, exibindo KPIs, gráficos e tabela de liquidações recentes.
-   - **Funcionalidades**:
-     - KPIs: Total (R$) de Empenhos em Liquidação, Empenhos em Liquidação (quantidade), Empenhos Liquidados a Pagar (quantidade)
-     - Gráficos: Status dos Empenhos (Barra) e Distribuição por Fonte de Recurso (Pizza)
-     - Tabela: Últimas 10 liquidações
+Processo > NE (Empenho) > DL (Liquidação) > OB (Ordem Bancária)
 
-#### APIs Implementadas
+Chave de ligação entre relatórios: `documento_liquidacao`
 
-1. **POST /api/imports**
-   - **Arquivo**: `app/api/imports/route.js`
-   - **Descrição**: Endpoint para upload e processamento de arquivos CSV do SIAFE.
-   - **Parâmetros** (FormData):
-     - `file`: Arquivo CSV (obrigatório)
-     - `reportType`: Tipo de relatório ("NE+DL" ou "DL+OB")
-     - `yearScope`: Ano de referência ("2023_2024", "2025", "2026")
-   - **Resposta**: JSON com status do processamento ou erros
+### Tabelas Normalizadas (fonte)
+- `normalized_ne_dl_rows` — linhas do relatório NE+DL
+- `normalized_dl_ob_rows` — linhas do relatório DL+OB
 
-## Componentes React
+### Tabelas Canônicas
+- `processos`
+- `notas_empenho`
+- `documentos_liquidacao`
+- `ordens_bancarias`
+- `marcacoes_pagamento` — confirmação manual de pagamento pelo usuário
 
-### CpagCharts
-- **Arquivo**: `components/cpag-charts.jsx`
-- **Tipo**: Client Component ("use client")
-- **Props**:
-  - `sourceData`: Array de objetos `{name: string, value: number}` - Dados para gráfico de distribuição por fonte de recurso
-  - `categoryData`: Array de objetos `{name: string, value: number}` - Dados para gráfico de distribuição por categoria
-- **Responsabilidades**:
-  - Renderiza dois gráficos usando Recharts: Pizza (Donut) para fontes e Barra para categorias
-  - Formatação de moeda brasileira (BRL)
-  - Tooltips customizados com valores e percentuais
-  - Layout responsivo (grid-cols-1 lg:grid-cols-2)
+### Views de Negócio
+- `vw_liquidados_a_pagar` — DLs sem OB correspondente (todos os exercícios)
+- `vw_monitoramento_pagamentos` — OBs emitidas com status de confirmação
 
-### CliqCharts
-- **Arquivo**: `components/cliq-charts.jsx`
-- **Tipo**: Client Component ("use client")
-- **Props**:
-  - `statusData`: Array de objetos `{name: string, value: number}` - Dados para gráfico de status dos empenhos
-  - `sourceData`: Array de objetos `{name: string, value: number}` - Dados para gráfico de distribuição por fonte de recurso
-- **Responsabilidades**:
-  - Renderiza dois gráficos usando Recharts: Barra para status e Pizza (Donut) para fontes
-  - Formatação de moeda brasileira (BRL)
-  - Tooltips customizados com valores e percentuais
-  - Layout responsivo (grid-cols-1 lg:grid-cols-2)
+### Materialized View
+- `consolidated_siafe_lineage` — linhagem consolidada para BI (refresh via `consolidate_siafe_lineage()`)
 
-### UploadForm
-- **Arquivo**: `components/upload-form.jsx`
-- **Tipo**: Client Component ("use client")
-- **Props**: Nenhuma (componente autocontido)
-- **Estado Interno**:
-  - `status`: Objeto com estado do upload (`{kind: "success"|"error", payload: {...}}`)
-  - `submitting`: Boolean para controle de loading
-- **Responsabilidades**:
-  - Formulário para upload de CSV do SIAFE
-  - Selects para tipo de relatório (NE+DL, DL+OB) e ano de referência
-  - Input file com accept=".csv,text/csv"
-  - Submissão via fetch para `/api/imports`
-  - Exibição de status de sucesso/erro com mensagens detalhadas
+## Política de Importação
+- `2023_2024` e `2025`: históricos estáticos, imutáveis após primeiro upload
+- `2026`: escopo ativo, cada novo upload substitui integralmente o batch anterior do mesmo tipo
 
-## Data Schema (Mock Data)
+## Formato dos Relatórios CSV
 
-### Schema do MockCpagData (CPAG)
-Baseado no mock data implementado em `app/dashboard/dppc/cpag/page.js`, o schema dos dados de Ordens Bancárias (CPAG) é definido como:
+### NEDL — campos principais
+`DocumentodeLiquidacao, CodigoNotadeEmpenho, CodigoNaturezaDaDespesa, CodigoFonteDeRecurso, CodigoDetalhamentoFr, NUMERO_PROCESSO, CodigoProjetoAtividade, InstituicaoCodigoUnidadeGestora, Credor_Nome (alias: NomeCredor), CONTRATO, CONVENIO, Valor Original, Valor Liquido, Valor Bruto, Valor Retido, Valor Pago, Valor Liquidado a Pagar, Valor Liquido2`
 
-```javascript
-{
-  ordem_bancaria: string,     // Ex: "2026160101OB00001" - Identificador único da ordem bancária
-  contrato: string,           // Ex: "015/2026" - Número do contrato
-  categoria: string,          // Ex: "ALUGUEL DE IMÓVEIS" - Categoria da despesa
-  credor: string,             // Ex: "ENOQUE COSTA DO NASCIMENTO" - Nome do credor/fornecedor
-  data: string,               // Ex: "2026-01-15" - Data do pagamento (formato YYYY-MM-DD)
-  valor: number,              // Ex: 25000.00 - Valor em reais (float)
-  descricao: string,          // Ex: "Pagamento referente a medição 03" - Descrição da transação
-  fonte_recurso: string       // Ex: "TESOURO ESTADUAL" - Fonte de recurso do pagamento
-}
-```
+Obrigatórios: `DocumentodeLiquidacao`, `CodigoNotadeEmpenho`, `NUMERO_PROCESSO`
 
-### Schema do MockCliqData (CLIQ)
-Baseado no mock data implementado em `app/dashboard/dppc/cliq/page.js`, o schema dos dados de Liquidações (CLIQ) é definido como:
+### DLOB — campos principais
+`OrdemBancaria, CredorDocumento, Credor_Nome, DatadoPagamento, CodigoFonteDeRecurso, CodigoDetalhamentoFr, DocumentodeLiquidacao, NUMERO_PROCESSO, CodigoUnidadeGestora, CodigoProjetoAtividade, CodigoNaturezaDaDespesa, NomeNaturezaDaDespesa, NomeElementoDeDespesa, Valor`
 
-```javascript
-{
-  processo: string,           // Ex: "001/2026" - Número do processo
-  documento_liquidacao: string, // Ex: "2026160101DL000001" - Identificador único da liquidação
-  categoria: string,          // Ex: "ALUGUEL DE IMÓVEIS" - Categoria da despesa
-  fonte: string,              // Ex: "TESOURO ESTADUAL" - Fonte de recurso
-  credor: string,             // Ex: "ENOQUE COSTA DO NASCIMENTO" - Nome do credor/fornecedor
-  data: string,               // Ex: "2026-01-15" - Data da liquidação (formato YYYY-MM-DD)
-  valor_liquido: number,      // Ex: 22500.00 - Valor líquido em reais (float)
-  valor_imposto: number,      // Ex: 2500.00 - Valor do imposto em reais (float)
-  valor_bruto: number,        // Ex: 25000.00 - Valor bruto em reais (float)
-  descricao: string           // Ex: "Liquidação referente a medição 03" - Descrição da transação
-}
-```
+Obrigatórios: `DocumentodeLiquidacao`, `NUMERO_PROCESSO`
 
-### Campos Obrigatórios
-Todos os campos são opcionais no mock data atual, mas em produção devem ser validados.
+**Formato dos valores monetários**: `R$ 6,092.04` (símbolo + separador de milhar vírgula + decimal ponto)
 
-### Tipos de Dados Inferidos
-- **Strings**: ordem_bancaria, contrato, categoria, credor, descricao, fonte_recurso, processo, documento_liquidacao, fonte
-- **Number**: valor, valor_liquido, valor_imposto, valor_bruto (float com 2 casas decimais)
-- **Date**: data (representado como string no formato ISO YYYY-MM-DD)
+## Componentes Principais
 
-### Relacionamentos
-- `documento_liquidacao`: Chave de ligação entre relatórios (conforme regras de negócio)
-- Hierarquia: Processo > NE (Empenho) > DL (Liquidação) > OB (Ordem Bancária)
+### Server Components
+- `app/dashboard/dppc/cpag/page.js` — busca dados de `vw_liquidados_a_pagar` e `vw_monitoramento_pagamentos`
+- `app/dashboard/dppc/cliq/page.js` — busca dados de `vw_liquidados_a_pagar` com filtros e paginação
 
-## Regras de Negócio Implementadas
-1. **Hierarquia**: Processo > NE > DL > OB
-2. **Chave de Ligação**: Relatórios se cruzam pelo `documento_liquidacao`
-3. **Política 2026**: Uploads do ano de 2026 substituem integralmente os dados anteriores do mesmo tipo/ano
-4. **Persistência**: Primeiro salva CSV bruto no Storage, depois normaliza em tabelas `normalized_ne_dl_rows` ou `normalized_dl_ob_rows`
+### Client Components
+- `components/liquidados-table.jsx` — tabela com seleção de linhas e calculadora de saldo
+- `components/selection-calculator.jsx` — barra flutuante com total selecionado
+- `components/payment-toggle.jsx` — botão de confirmação manual com update otimista
+- `components/cpag-export-buttons.jsx` — exportação XLSX e PDF
+- `components/upload-form.jsx` — formulário de upload de CSV
 
-## Tecnologias Utilizadas
-- **Frontend**: Next.js 13+ (App Router), React, Tailwind CSS
-- **Backend**: Next.js API Routes, Supabase (Postgres + Storage)
-- **Charts**: Recharts
-- **Validação**: Schemas customizados em `lib/siafe/schemas.js`
-- **Processamento**: Lógica em `lib/siafe/importer.js`, `normalize.js`, `validation.js`
+### Hooks e Utilitários
+- `lib/hooks/useRowSelection.js` — gerenciamento de seleção de linhas
+- `lib/utils/formatters.js` — `formatCurrency` e `formatDate`
+- `app/actions/pagamentos.js` — Server Actions para marcação de pagamento e exportação
 
 ## Próximos Passos
-- Conectar dados reais do Supabase (atualmente usando mock data)
-- Implementar autenticação/autorização
-- Adicionar testes automatizados
-- Expandir validações e tratamento de erros
+- Autenticação e autorização de usuários
+- Filtros por período no CPAG
+- Paginação no CPAG (atualmente limitado a 100 registros)
+- Reimportar históricos com nova estrutura de colunas quando disponível
+- Conectar CLIQ com dados reais de `vw_liquidados_a_pagar` com filtro de credor por fonte
