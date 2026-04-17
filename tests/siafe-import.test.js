@@ -21,14 +21,17 @@ import {
 function buildNeDlHeader(overrides = {}) {
   return [
     overrides.documento_liquidacao ?? "DocumentodeLiquidacao",
+    overrides.data_liquidacao ?? "DatadaLiquidacao",
     overrides.codigo_nota_empenho ?? "CodigoNotadeEmpenho",
     overrides.numero_processo ?? "NUMERO_PROCESSO",
-    "CodigoPlanoInterno",
     "CodigoProjetoAtividade",
     "CodigoNaturezaDaDespesa",
     "CodigoFonteDeRecurso",
     "CodigoDetalhamentoFr",
     overrides.codigo_unidade_gestora ?? "CodigoUnidadeGestora",
+    "Credor_Nome",
+    "CONTRATO",
+    "CONVENIO",
     "Valor Original",
     "Valor Liquido",
     "Valor Bruto",
@@ -42,16 +45,19 @@ function buildNeDlHeader(overrides = {}) {
 function buildDlObHeader(columns = {}) {
   return [
     columns.documento_liquidacao ?? "DocumentodeLiquidacao",
+    columns.data_liquidacao ?? "DatadaLiquidacao",
     columns.numero_processo ?? "NUMERO_PROCESSO",
     columns.ordem_bancaria ?? "OrdemBancaria",
     "CredorDocumento",
     "Credor_Nome",
-    "DocumentoCredor",
-    "NomeCredor",
     "DatadoPagamento",
     "CodigoFonteDeRecurso",
     "CodigoDetalhamentoFr",
     "CodigoUnidadeGestora",
+    "CodigoProjetoAtividade",
+    "CodigoNaturezaDaDespesa",
+    "NomeNaturezaDaDespesa",
+    "NomeElementoDeDespesa",
     "Valor"
   ].filter(Boolean);
 }
@@ -227,7 +233,8 @@ test("NE_DL accepts columns out of order and extra columns", () => {
     "CodigoNotadeEmpenho",
     "ColunaExtra",
     "NUMERO_PROCESSO",
-    "DocumentodeLiquidacao"
+    "DocumentodeLiquidacao",
+    "DatadaLiquidacao"
   ];
 
   const resolved = validateHeaders(REPORT_TYPES.NE_DL, header);
@@ -295,7 +302,8 @@ test("DL_OB accepts columns out of order and extra columns", () => {
     "Valor",
     "ColunaExtra",
     "NUMERO_PROCESSO",
-    "DocumentodeLiquidacao"
+    "DocumentodeLiquidacao",
+    "DatadaLiquidacao"
   ];
 
   const resolved = validateHeaders(REPORT_TYPES.DL_OB, header);
@@ -330,11 +338,10 @@ test("DL_OB fails when NUMERO_PROCESSO is missing", () => {
 test("DL_OB accepts missing ordem_bancaria because it is optional in this increment", () => {
   const header = [
     "DocumentodeLiquidacao",
+    "DatadaLiquidacao",
     "NUMERO_PROCESSO",
     "CredorDocumento",
     "Credor_Nome",
-    "DocumentoCredor",
-    "NomeCredor",
     "DatadoPagamento",
     "CodigoFonteDeRecurso",
     "CodigoDetalhamentoFr",
@@ -393,10 +400,11 @@ test("parse csv detects semicolon-delimited SIAFE exports", () => {
   });
   const csvText = `${header.join(";")}\r\n${row.join(";")}`;
   const parsed = parseCsv(csvText);
+  const valorOriginalIndex = header.indexOf("Valor Original");
 
   assert.equal(detectCsvDelimiter(csvText), ";");
   assert.deepEqual(parsed.header, header);
-  assert.equal(parsed.rows[0][9], "10,00");
+  assert.equal(parsed.rows[0][valorOriginalIndex], "10,00");
   assert.equal(validateHeaders("NE+DL", parsed.header).ok, true);
 });
 
@@ -441,11 +449,12 @@ test("normalize rows uses the resolved canonical map and fills missing optional 
   const header = [
     "CredorDocumento",
     "DocumentodeLiquidacao",
+    "DatadaLiquidacao",
     "Valor",
     "NUMERO_PROCESSO",
-    "NomeCredor"
+    "Credor_Nome"
   ];
-  const rows = [["111", "DL-1", "1.234,56", "PROC-1", "Credor DL"]];
+  const rows = [["111", "DL-1", "01/04/2026", "1.234,56", "PROC-1", "Credor OB"]];
   const headerResolution = resolveHeaders(REPORT_TYPES.DL_OB, header);
 
   const normalized = normalizeRows(
@@ -461,11 +470,50 @@ test("normalize rows uses the resolved canonical map and fills missing optional 
 
   assert.equal(normalized[0].numero_processo, "PROC-1");
   assert.equal(normalized[0].documento_liquidacao, "DL-1");
+  assert.equal(normalized[0].data_liquidacao, "2026-04-01");
   assert.equal(normalized[0].ob_credor_documento, "111");
-  assert.equal(normalized[0].dl_nome_credor, "Credor DL");
+  assert.equal(normalized[0].ob_credor_nome, "Credor OB");
   assert.equal(normalized[0].ordem_bancaria, null);
   assert.equal(normalized[0].data_pagamento, null);
   assert.equal(normalized[0].valor, 1234.56);
+});
+
+test("normalize rows keeps DatadaLiquidacao optional for NE_DL and parses it when present", () => {
+  const header = ["DocumentodeLiquidacao", "DatadaLiquidacao", "CodigoNotadeEmpenho", "NUMERO_PROCESSO"];
+  const rows = [["DL-10", "17/04/2026", "NE-10", "PROC-10"]];
+  const headerResolution = resolveHeaders(REPORT_TYPES.NE_DL, header);
+
+  const normalized = normalizeRows(
+    REPORT_TYPES.NE_DL,
+    header,
+    rows,
+    {
+      batchId: "batch-10",
+      yearScope: "2026"
+    },
+    headerResolution
+  );
+
+  assert.equal(normalized[0].data_liquidacao, "2026-04-17");
+});
+
+test("normalize rows keeps DatadaLiquidacao null when absent in legacy files", () => {
+  const header = ["DocumentodeLiquidacao", "CodigoNotadeEmpenho", "NUMERO_PROCESSO"];
+  const rows = [["DL-20", "NE-20", "PROC-20"]];
+  const headerResolution = resolveHeaders(REPORT_TYPES.NE_DL, header);
+
+  const normalized = normalizeRows(
+    REPORT_TYPES.NE_DL,
+    header,
+    rows,
+    {
+      batchId: "batch-20",
+      yearScope: "2025"
+    },
+    headerResolution
+  );
+
+  assert.equal(normalized[0].data_liquidacao, null);
 });
 
 test("static scopes reject replacement when an active batch already exists", () => {
@@ -506,12 +554,13 @@ test("processSiafeUpload persists NE_DL rows with flexible headers and warnings"
   const header = [
     "Valor Original",
     "DocumentodeLiquidacao",
+    "DatadaLiquidacao",
     "CodigoNotadeEmpenho",
     "NUMERO_PROCESSO",
     "InstituicaoCodigoUnidadeGestora",
     "ColunaExtra"
   ];
-  const row = ["10,00", "DL-1", "NE-1", "PROC-1", "UG-1", "IGNORAR"];
+  const row = ["10,00", "DL-1", "17/04/2026", "NE-1", "PROC-1", "UG-1", "IGNORAR"];
   const state = {
     insertedBatches: [],
     normalizedRows: [],
@@ -531,6 +580,7 @@ test("processSiafeUpload persists NE_DL rows with flexible headers and warnings"
   assert.equal(state.insertedBatches[0].report_type, REPORT_TYPES.NE_DL);
   assert.equal(state.storageBuckets[0], "siafe-imports");
   assert.equal(state.normalizedRows[0].codigo_nota_empenho, "NE-1");
+  assert.equal(state.normalizedRows[0].data_liquidacao, "2026-04-17");
   assert.equal(state.normalizedRows[0].codigo_unidade_gestora, "UG-1");
   assert.equal(state.normalizedRows[0].valor_original, 10);
   assert.equal(state.normalizedRows[0].valor_pago, null);
@@ -541,8 +591,8 @@ test("processSiafeUpload persists NE_DL rows with flexible headers and warnings"
 });
 
 test("processSiafeUpload keeps yearScope in the persisted normalized rows", async () => {
-  const header = ["DocumentodeLiquidacao", "NUMERO_PROCESSO"];
-  const row = ["DL-1", "PROC-1"];
+  const header = ["DocumentodeLiquidacao", "DatadaLiquidacao", "NUMERO_PROCESSO"];
+  const row = ["DL-1", "05/04/2026", "PROC-1"];
   const state = {
     insertedBatches: [],
     normalizedRows: [],
@@ -560,6 +610,7 @@ test("processSiafeUpload keeps yearScope in the persisted normalized rows", asyn
   });
 
   assert.equal(state.normalizedRows[0].year_scope, "2026");
+  assert.equal(state.normalizedRows[0].data_liquidacao, "2026-04-05");
   assert.equal(state.rpcCalls[0].name, "finalize_siafe_active_import");
   assert.equal(state.rpcCalls[0].payload.p_year_scope, "2026");
 });

@@ -29,11 +29,11 @@ export async function fetchAllCpagExportData() {
   const [liquidadosResult, monitoramentoResult] = await Promise.all([
     supabase
       .from("vw_liquidados_a_pagar")
-      .select("numero_processo, codigo_nota_empenho, documento_liquidacao, credor, dl_documento_credor, fonte, valor_liquido, valor_bruto, valor_liquidado_a_pagar, updated_at")
-      .order("updated_at", { ascending: false }),
+      .select("numero_processo, codigo_nota_empenho, documento_liquidacao, data_liquidacao, credor, dl_documento_credor, fonte, valor_liquido, valor_bruto, valor_liquidado_a_pagar, valor_ja_pago_obs, updated_at")
+      .order("data_liquidacao", { ascending: false, nullsFirst: false }),
     supabase
       .from("vw_monitoramento_pagamentos")
-      .select("numero_processo, documento_liquidacao, ordem_bancaria, credor, ob_credor_documento, data_pagamento, valor, fonte, confirmado_manualmente, confirmado_por, confirmado_em, observacao")
+      .select("numero_processo, documento_liquidacao, ordem_bancaria, credor, ob_credor_documento, data_liquidacao, data_pagamento, valor, fonte, codigo_unidade_gestora, confirmado_manualmente, confirmado_por, confirmado_em, observacao")
       .order("data_pagamento", { ascending: false }),
   ]);
 

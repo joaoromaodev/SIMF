@@ -25,10 +25,10 @@ Implementar a tela do Dashboard CPAG (`app/dashboard/dppc/cpag/page.js`) com dad
 
 - [x] **TASK 4: Conexão com Dados Reais**
   - Mock data removido.
-  - Dados reais consumidos via Supabase das views `vw_liquidados_a_pagar` e `vw_monitoramento_pagamentos`.
+- Dados reais consumidos via Supabase das views `vw_liquidados_a_pagar` e `vw_monitoramento_pagamentos`.
   - KPIs calculados com dados reais: Total Pago, Total a Pagar, Quantidade de OBs.
-  - Tabela "Liquidados a Pagar": mostra todas as DLs sem OB correspondente, todos os exercícios.
-  - Tabela "Monitoramento": mostra OBs emitidas com status de confirmação manual.
+- Tabela "Liquidados a Pagar": mostra todas as DLs com saldo pendente, inclusive pagamento parcial, em todos os exercícios.
+- Tabela "Monitoramento": mostra OBs emitidas com status de confirmação manual.
 
 - [x] **TASK 5: Seleção de Linhas e Calculadora de Saldo**
   - Hook `useRowSelection` em `lib/hooks/useRowSelection.js`.
@@ -51,6 +51,8 @@ Implementar a tela do Dashboard CPAG (`app/dashboard/dppc/cpag/page.js`) com dad
 | Natureza | `codigo_natureza_despesa` |
 | Fonte | `fonte` |
 | DL | `documento_liquidacao` |
+| Dt. Liquidação | `data_liquidacao` |
+| Pago em OBs | `valor_ja_pago_obs` |
 | Vl. Líquido | `valor_liquido` |
 | Vl. Bruto | `valor_bruto` |
 | Vl. Imposto | `valor_bruto - valor_liquido` (calculado no frontend) |
@@ -63,6 +65,7 @@ Implementar a tela do Dashboard CPAG (`app/dashboard/dppc/cpag/page.js`) com dad
 | Credor | `credor` |
 | Fonte | `fonte` |
 | DL | `documento_liquidacao` |
+| Dt. Liquidação | `data_liquidacao` |
 | OB | `ordem_bancaria` |
 | Data Pgto | `data_pagamento` |
 | Valor | `valor` |

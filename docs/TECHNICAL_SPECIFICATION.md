@@ -51,7 +51,7 @@ Chave de ligação entre relatórios: `documento_liquidacao`
 - `marcacoes_pagamento` — confirmação manual de pagamento pelo usuário
 
 ### Views de Negócio
-- `vw_liquidados_a_pagar` — DLs sem OB correspondente (todos os exercícios)
+- `vw_liquidados_a_pagar` — DLs com saldo pendente após soma das OBs (todos os exercícios)
 - `vw_monitoramento_pagamentos` — OBs emitidas com status de confirmação
 
 ### Materialized View
@@ -64,12 +64,12 @@ Chave de ligação entre relatórios: `documento_liquidacao`
 ## Formato dos Relatórios CSV
 
 ### NEDL — campos principais
-`DocumentodeLiquidacao, CodigoNotadeEmpenho, CodigoNaturezaDaDespesa, CodigoFonteDeRecurso, CodigoDetalhamentoFr, NUMERO_PROCESSO, CodigoProjetoAtividade, InstituicaoCodigoUnidadeGestora, Credor_Nome (alias: NomeCredor), CONTRATO, CONVENIO, Valor Original, Valor Liquido, Valor Bruto, Valor Retido, Valor Pago, Valor Liquidado a Pagar, Valor Liquido2`
+`DocumentodeLiquidacao, DatadaLiquidacao, CodigoNotadeEmpenho, CodigoNaturezaDaDespesa, CodigoFonteDeRecurso, CodigoDetalhamentoFr, NUMERO_PROCESSO, CodigoProjetoAtividade, CodigoUnidadeGestora (alias: InstituicaoCodigoUnidadeGestora), Credor_Nome (alias: NomeCredor), CONTRATO, CONVENIO, Valor Original, Valor Liquido, Valor Bruto, Valor Retido, Valor Pago, Valor Liquidado a Pagar, Valor Liquido2`
 
 Obrigatórios: `DocumentodeLiquidacao`, `CodigoNotadeEmpenho`, `NUMERO_PROCESSO`
 
 ### DLOB — campos principais
-`OrdemBancaria, CredorDocumento, Credor_Nome, DatadoPagamento, CodigoFonteDeRecurso, CodigoDetalhamentoFr, DocumentodeLiquidacao, NUMERO_PROCESSO, CodigoUnidadeGestora, CodigoProjetoAtividade, CodigoNaturezaDaDespesa, NomeNaturezaDaDespesa, NomeElementoDeDespesa, Valor`
+`OrdemBancaria, CredorDocumento, Credor_Nome, DatadoPagamento, CodigoFonteDeRecurso, CodigoDetalhamentoFr, DocumentodeLiquidacao, DatadaLiquidacao, NUMERO_PROCESSO, CodigoUnidadeGestora, CodigoProjetoAtividade, CodigoNaturezaDaDespesa, NomeNaturezaDaDespesa, NomeElementoDeDespesa, Valor`
 
 Obrigatórios: `DocumentodeLiquidacao`, `NUMERO_PROCESSO`
 

@@ -28,13 +28,14 @@ async function exportXLSX(liquidados, monitoramento) {
       Processo: r.numero_processo ?? "—",
       Empenho: r.codigo_nota_empenho ?? "—",
       "Documento de Liquidacao": r.documento_liquidacao ?? "—",
+      "Data da Liquidacao": fmtDate(r.data_liquidacao),
       Credor: r.credor ?? "—",
       "CPF/CNPJ Credor": r.dl_documento_credor ?? "—",
       "Fonte de Recurso": r.fonte ?? "—",
+      "Pago em OBs": r.valor_ja_pago_obs ?? 0,
       "Valor Liquido": r.valor_liquido ?? 0,
       "Valor Bruto": r.valor_bruto ?? 0,
       "A Pagar": r.valor_liquidado_a_pagar ?? 0,
-      "Atualizado em": fmtDate(r.updated_at),
     }))
   );
 
@@ -45,9 +46,11 @@ async function exportXLSX(liquidados, monitoramento) {
       "Ordem Bancaria": r.ordem_bancaria ?? "—",
       Credor: r.credor ?? "—",
       "CPF/CNPJ Credor": r.ob_credor_documento ?? "—",
+      "Data da Liquidacao": fmtDate(r.data_liquidacao),
       "Data de Pagamento": fmtDate(r.data_pagamento),
       Valor: r.valor ?? 0,
       "Fonte de Recurso": r.fonte ?? "—",
+      "Unidade Gestora": r.codigo_unidade_gestora ?? "—",
       Confirmado: r.confirmado_manualmente ? "Sim" : "Nao",
       "Confirmado Por": r.confirmado_por ?? "—",
       "Confirmado Em": fmtDate(r.confirmado_em),
@@ -91,14 +94,16 @@ async function exportPDF(liquidados, monitoramento) {
   autoTable(doc, {
     startY: 40,
     head: [
-      ["Processo", "Empenho", "Doc. Liquidacao", "Credor", "Fonte", "Val. Liq.", "Val. Bruto", "A Pagar"],
+      ["Processo", "Empenho", "Doc. Liquidacao", "Dt. Liquidacao", "Credor", "Fonte", "Pago em OBs", "Val. Liq.", "Val. Bruto", "A Pagar"],
     ],
     body: liquidados.map((r) => [
       r.numero_processo ?? "—",
       r.codigo_nota_empenho ?? "—",
       r.documento_liquidacao ?? "—",
+      fmtDate(r.data_liquidacao),
       r.credor ?? "—",
       r.fonte ?? "—",
+      fmtCurrency(r.valor_ja_pago_obs),
       fmtCurrency(r.valor_liquido),
       fmtCurrency(r.valor_bruto),
       fmtCurrency(r.valor_liquidado_a_pagar),
@@ -108,9 +113,10 @@ async function exportPDF(liquidados, monitoramento) {
     alternateRowStyles: { fillColor: [245, 247, 250] },
     styles: { cellPadding: 2, overflow: "linebreak" },
     columnStyles: {
-      5: { halign: "right" },
       6: { halign: "right" },
       7: { halign: "right" },
+      8: { halign: "right" },
+      9: { halign: "right" },
     },
   });
 
@@ -124,11 +130,12 @@ async function exportPDF(liquidados, monitoramento) {
   autoTable(doc, {
     startY: y2 + 4,
     head: [
-      ["Processo", "Doc. Liquidacao", "Ordem Bancaria", "Credor", "Data Pgto", "Valor", "Fonte", "Status"],
+      ["Processo", "Doc. Liquidacao", "Dt. Liquidacao", "Ordem Bancaria", "Credor", "Data Pgto", "Valor", "Fonte", "Status"],
     ],
     body: monitoramento.map((r) => [
       r.numero_processo ?? "—",
       r.documento_liquidacao ?? "—",
+      fmtDate(r.data_liquidacao),
       r.ordem_bancaria ?? "—",
       r.credor ?? "—",
       fmtDate(r.data_pagamento),
@@ -141,7 +148,7 @@ async function exportPDF(liquidados, monitoramento) {
     alternateRowStyles: { fillColor: [245, 247, 250] },
     styles: { cellPadding: 2, overflow: "linebreak" },
     columnStyles: {
-      5: { halign: "right" },
+      6: { halign: "right" },
     },
   });
 

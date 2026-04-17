@@ -33,6 +33,8 @@ export function LiquidadosTable({ liquidados }) {
               <th className="px-5 py-3 text-left font-black uppercase text-[11px] tracking-wider text-slate-500">Natureza</th>
               <th className="px-5 py-3 text-left font-black uppercase text-[11px] tracking-wider text-slate-500">Fonte</th>
               <th className="px-5 py-3 text-left font-black uppercase text-[11px] tracking-wider text-slate-500">DL</th>
+              <th className="px-5 py-3 text-left font-black uppercase text-[11px] tracking-wider text-slate-500">Dt. Liquidação</th>
+              <th className="px-5 py-3 text-right font-black uppercase text-[11px] tracking-wider text-slate-500">Pago em OBs</th>
               <th className="px-5 py-3 text-right font-black uppercase text-[11px] tracking-wider text-slate-500">Vl. Líquido</th>
               <th className="px-5 py-3 text-right font-black uppercase text-[11px] tracking-wider text-slate-500">Vl. Bruto</th>
               <th className="px-5 py-3 text-right font-black uppercase text-[11px] tracking-wider text-slate-500">Vl. Imposto</th>
@@ -68,6 +70,8 @@ export function LiquidadosTable({ liquidados }) {
                   <td className="px-5 py-3.5 text-slate-600 text-xs">{item.codigo_natureza_despesa || "—"}</td>
                   <td className="px-5 py-3.5 text-slate-600 text-xs">{item.fonte || "—"}</td>
                   <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{item.documento_liquidacao || "—"}</td>
+                  <td className="px-5 py-3.5 text-slate-500 text-xs">{item.data_liquidacao ? new Date(item.data_liquidacao).toLocaleDateString("pt-BR") : "—"}</td>
+                  <td className="px-5 py-3.5 text-right font-mono font-bold text-emerald-600 text-xs">{formatCurrency(item.valor_ja_pago_obs)}</td>
                   <td className="px-5 py-3.5 text-right font-mono font-bold text-para-blue text-xs">{formatCurrency(item.valor_liquido)}</td>
                   <td className="px-5 py-3.5 text-right font-mono font-bold text-para-blue text-xs">{formatCurrency(item.valor_bruto)}</td>
                   <td className="px-5 py-3.5 text-right font-mono font-bold text-slate-500 text-xs">{formatCurrency(vlImposto)}</td>
