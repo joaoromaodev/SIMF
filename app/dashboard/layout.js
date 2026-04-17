@@ -65,17 +65,17 @@ export default function DashboardLayout({ children }) {
       <aside
         className={`${
           isCollapsed ? "w-[72px]" : "w-64"
-        } bg-slate-900 text-white flex flex-col shadow-2xl transition-all duration-300 ease-in-out flex-shrink-0`}
+        } bg-white border-r border-slate-200 text-slate-700 flex flex-col shadow-sm transition-all duration-300 ease-in-out flex-shrink-0`}
       >
         {/* Logo */}
-        <div className={`flex items-center border-b border-white/10 transition-all duration-300 ${isCollapsed ? "px-4 py-5 justify-center" : "px-6 py-5 justify-between"}`}>
+        <div className={`flex items-center border-b border-slate-100 transition-all duration-300 ${isCollapsed ? "px-4 py-5 justify-center" : "px-6 py-5 justify-between"}`}>
           {!isCollapsed && (
             <div>
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-md bg-para-blue flex items-center justify-center flex-shrink-0">
+                <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center flex-shrink-0">
                   <LayoutDashboard size={14} className="text-white" />
                 </div>
-                <span className="text-base font-black tracking-tight text-white">SIMF</span>
+                <span className="text-base font-black tracking-tight text-slate-900">SIMF</span>
               </div>
               <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1 font-medium pl-9">
                 SEDUC · Pará
@@ -84,7 +84,7 @@ export default function DashboardLayout({ children }) {
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-slate-400 hover:text-white flex-shrink-0"
+            className="p-1.5 rounded-md hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600 flex-shrink-0"
             aria-label="Toggle sidebar"
           >
             {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -96,7 +96,7 @@ export default function DashboardLayout({ children }) {
           {NAV_SECTIONS.map((section) => (
             <div key={section.abbr}>
               {!isCollapsed && (
-                <p className="px-6 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                <p className="px-6 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
                   {section.abbr}
                 </p>
               )}
@@ -110,8 +110,8 @@ export default function DashboardLayout({ children }) {
                         title={isCollapsed ? label : undefined}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                           active
-                            ? "bg-para-blue text-white shadow-md shadow-blue-900/40"
-                            : "text-slate-400 hover:text-white hover:bg-white/8"
+                            ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                            : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                         }`}
                       >
                         <Icon size={17} className="flex-shrink-0" />
@@ -129,14 +129,14 @@ export default function DashboardLayout({ children }) {
         </nav>
 
         {/* Rodapé — Atualizar Base */}
-        <div className={`border-t border-white/10 transition-all duration-300 ${isCollapsed ? "px-3 py-4" : "px-4 py-4"}`}>
+        <div className={`border-t border-slate-100 transition-all duration-300 ${isCollapsed ? "px-3 py-4" : "px-4 py-4"}`}>
           <Link
             href="/dashboard/import"
             title={isCollapsed ? "Atualizar Base" : undefined}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold transition-all duration-150 ${
               pathname === "/dashboard/import"
-                ? "bg-para-red text-white"
-                : "bg-white/6 text-slate-300 hover:bg-para-red hover:text-white"
+                ? "bg-red-500 text-white"
+                : "bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white"
             }`}
           >
             <Database size={17} className="flex-shrink-0" />
