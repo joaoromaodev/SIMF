@@ -28,7 +28,7 @@ async function fetchCliqData(supabase, filters, pagina) {
   const from = (page - 1) * PAGE_SIZE;
 
   let aggQuery = supabase.from("vw_liquidados_a_pagar").select("fonte, valor_bruto, valor_liquidado_a_pagar");
-  let rowQuery = supabase.from("vw_liquidados_a_pagar").select("*", { count: "exact" }).order("updated_at", { ascending: false }).range(from, from + PAGE_SIZE - 1);
+  let rowQuery = supabase.from("vw_liquidados_a_pagar").select("*", { count: "exact" }).order("data_liquidacao", { ascending: false, nullsFirst: false }).range(from, from + PAGE_SIZE - 1);
 
   if (filters.fonte) { aggQuery = aggQuery.eq("fonte", filters.fonte); rowQuery = rowQuery.eq("fonte", filters.fonte); }
   if (filters.credor) { aggQuery = aggQuery.ilike("credor", `%${filters.credor}%`); rowQuery = rowQuery.ilike("credor", `%${filters.credor}%`); }
@@ -177,7 +177,7 @@ export default async function CliqDashboardPage({ searchParams }) {
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-black uppercase tracking-widest text-slate-800">Visão Geral de Liquidações</h2>
-            <p className="text-[11px] text-slate-400 font-medium mt-0.5">Documentos de liquidação sem ordem bancária emitida</p>
+            <p className="text-[11px] text-slate-400 font-medium mt-0.5">Documentos de liquidação com saldo pendente, inclusive pagamentos parciais</p>
           </div>
           {totalCount > 0 && (
             <span className="text-[11px] font-black text-slate-400 bg-slate-100 rounded-full px-3 py-1">
@@ -192,8 +192,8 @@ export default async function CliqDashboardPage({ searchParams }) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
-                    {["Processo", "Empenho", "Doc. Liquidação", "Credor", "Fonte", "Atualizado em", "Val. Líquido", "Val. Bruto", "A Pagar"].map((h, i) => (
-                      <th key={h} className={`px-5 py-3 text-[11px] font-black uppercase tracking-wider text-slate-500 ${i >= 6 ? "text-right" : "text-left"}`}>
+                    {["Processo", "Empenho", "Doc. Liquidação", "Credor", "Fonte", "Dt. Liquidação", "Pago em OBs", "Val. Líquido", "Val. Bruto", "A Pagar"].map((h, i) => (
+                      <th key={h} className={`px-5 py-3 text-[11px] font-black uppercase tracking-wider text-slate-500 ${i >= 6 ? (i === 6 ? "text-right" : "text-right") : "text-left"}`}>
                         {h}
                       </th>
                     ))}
@@ -207,7 +207,8 @@ export default async function CliqDashboardPage({ searchParams }) {
                       <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{row.documento_liquidacao || "—"}</td>
                       <td className="px-5 py-3.5 text-slate-600 text-xs max-w-[160px] truncate">{row.credor || "—"}</td>
                       <td className="px-5 py-3.5 text-slate-600 text-xs">{row.fonte || "—"}</td>
-                      <td className="px-5 py-3.5 text-slate-500 text-xs">{formatDate(row.updated_at)}</td>
+                      <td className="px-5 py-3.5 text-slate-500 text-xs">{formatDate(row.data_liquidacao)}</td>
+                      <td className="px-5 py-3.5 text-right font-mono font-bold text-emerald-600 text-xs">{formatCurrency(row.valor_ja_pago_obs)}</td>
                       <td className="px-5 py-3.5 text-right font-mono font-bold text-para-blue text-xs">{formatCurrency(row.valor_liquido)}</td>
                       <td className="px-5 py-3.5 text-right font-mono font-bold text-para-blue text-xs">{formatCurrency(row.valor_bruto)}</td>
                       <td className="px-5 py-3.5 text-right font-mono font-bold text-amber-600 text-xs">{formatCurrency(row.valor_liquidado_a_pagar)}</td>

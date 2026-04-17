@@ -24,12 +24,12 @@ async function fetchCpagData(supabase) {
     supabase.from("vw_liquidados_a_pagar").select("valor_liquidado_a_pagar"),
     supabase
       .from("vw_liquidados_a_pagar")
-      .select("numero_processo, codigo_nota_empenho, documento_liquidacao, credor, codigo_natureza_despesa, fonte, valor_liquido, valor_bruto, valor_liquidado_a_pagar")
-      .order("documento_liquidacao", { ascending: false })
+      .select("numero_processo, codigo_nota_empenho, documento_liquidacao, data_liquidacao, credor, codigo_natureza_despesa, fonte, valor_liquido, valor_bruto, valor_liquidado_a_pagar, valor_ja_pago_obs")
+      .order("data_liquidacao", { ascending: false, nullsFirst: false })
       .limit(100),
     supabase
       .from("vw_monitoramento_pagamentos")
-      .select("numero_processo, credor, fonte, documento_liquidacao, ordem_bancaria, data_pagamento, valor, confirmado_manualmente, confirmado_por, confirmado_em, observacao")
+      .select("numero_processo, credor, fonte, documento_liquidacao, ordem_bancaria, data_liquidacao, data_pagamento, valor, codigo_unidade_gestora, confirmado_manualmente, confirmado_por, confirmado_em, observacao")
       .order("data_pagamento", { ascending: false })
       .limit(100),
   ]);
@@ -105,7 +105,7 @@ export default async function CpagDashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard label="Total Efetivamente Pago" value={formatCurrency(kpis.totalPago)} sub="OBs confirmadas manualmente" icon={TrendingUp} accent="green" />
-        <StatCard label="Total a Pagar" value={formatCurrency(kpis.totalAPagar)} sub="DLs sem OB correspondente" icon={Clock} accent="amber" />
+        <StatCard label="Total a Pagar" value={formatCurrency(kpis.totalAPagar)} sub="DLs com saldo pendente apos OBs" icon={Clock} accent="amber" />
         <StatCard label="Ordens Bancárias Emitidas" value={kpis.quantidadeOBs.toLocaleString("pt-BR")} sub="Total de OBs no período" icon={Landmark} accent="blue" />
       </div>
 
@@ -116,7 +116,7 @@ export default async function CpagDashboardPage() {
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-black uppercase tracking-widest text-slate-800">Liquidados a Pagar</h2>
-                <p className="text-[11px] text-slate-400 font-medium mt-0.5">Todos os exercícios — DLs sem OB emitida</p>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">Todos os exercícios — DLs com saldo pendente, inclusive pagamento parcial</p>
               </div>
               {liquidados.length > 0 && (
                 <span className="text-[11px] font-black text-slate-400 bg-slate-100 rounded-full px-3 py-1">
@@ -153,8 +153,8 @@ export default async function CpagDashboardPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
-                      {["Processo", "Credor", "Fonte", "DL", "OB", "Data Pgto", "Valor", "Status"].map((h, i) => (
-                        <th key={h} className={`px-5 py-3 text-[11px] font-black uppercase tracking-wider text-slate-500 ${i >= 6 ? "text-right" : i === 7 ? "text-center" : "text-left"}`}>
+                      {["Processo", "Credor", "Fonte", "DL", "Dt. Liquidação", "OB", "Data Pgto", "Valor", "Status"].map((h, i) => (
+                        <th key={h} className={`px-5 py-3 text-[11px] font-black uppercase tracking-wider text-slate-500 ${i === 7 ? "text-right" : i === 8 ? "text-center" : "text-left"}`}>
                           {h}
                         </th>
                       ))}
@@ -167,6 +167,7 @@ export default async function CpagDashboardPage() {
                         <td className="px-5 py-3.5 text-slate-600 text-xs max-w-[180px] truncate">{item.credor || "—"}</td>
                         <td className="px-5 py-3.5 text-slate-600 text-xs">{item.fonte || "—"}</td>
                         <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{item.documento_liquidacao || "—"}</td>
+                        <td className="px-5 py-3.5 text-slate-600 text-xs">{formatDate(item.data_liquidacao)}</td>
                         <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{item.ordem_bancaria || "—"}</td>
                         <td className="px-5 py-3.5 text-slate-600 text-xs">{formatDate(item.data_pagamento)}</td>
                         <td className="px-5 py-3.5 text-right font-mono font-bold text-para-blue text-xs">{formatCurrency(item.valor)}</td>
@@ -202,7 +203,7 @@ export default async function CpagDashboardPage() {
               {[
                 { label: "OBs confirmadas", value: monitoramento.filter((r) => r.confirmado_manualmente).length, color: "text-emerald-600", bg: "bg-emerald-50" },
                 { label: "OBs pendentes", value: monitoramento.filter((r) => !r.confirmado_manualmente).length, color: "text-amber-600", bg: "bg-amber-50" },
-                { label: "DLs sem OB", value: liquidados.length, color: "text-para-blue", bg: "bg-blue-50" },
+                { label: "DLs com saldo", value: liquidados.length, color: "text-para-blue", bg: "bg-blue-50" },
               ].map(({ label, value, color, bg }) => (
                 <div key={label} className="flex items-center justify-between py-3">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>

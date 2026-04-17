@@ -100,6 +100,7 @@ export default function ImportPage() {
               <div className="divide-y divide-white/5">
                 {[
                   { origem: "DocumentodeLiquidacao", destino: "documento_liquidacao", tipo: "text" },
+                  { origem: "DatadaLiquidacao", destino: "data_liquidacao", tipo: "date" },
                   { origem: "CodigoNotadeEmpenho", destino: "codigo_nota_empenho", tipo: "text" },
                   { origem: "NUMERO_PROCESSO", destino: "numero_processo", tipo: "text" },
                   { origem: "Valor Original", destino: "valor_original", tipo: "numeric" },

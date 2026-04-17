@@ -193,7 +193,7 @@ mantendo como erro bloqueante apenas a ausência dos campos mínimos obrigatóri
 ## 4.10 Validação operacional do incremento
 
 - [x] Executar `npm test`
-- [ ] Executar `npm run build`
+- [x] Executar `npm run build`
 - [ ] Validar upload manual de `NE_DL` com:
   - [ ] ordem diferente
   - [ ] coluna extra
@@ -222,7 +222,7 @@ O incremento será considerado concluído quando:
 - [x] a política de `2026` permanecer intacta
 - [x] o pipeline atual continuar funcional
 - [x] `npm test` passar
-- [ ] `npm run build` passar
+- [x] `npm run build` passar
 
 ---
 
@@ -263,7 +263,7 @@ Esse documento deve continuar enxuto, verificável e orientado à execução.
 - `normalizeRow` e `normalizeRows` receberam guarda explícita para impedir uso sem `headerResolution`, removendo a regressão latente de API interna/exportada sem alterar o pipeline principal.
 - A suíte ganhou cobertura para o comportamento corretivo quando a normalização é chamada sem mapa resolvido.
 - `npm test` passou na implementação deste incremento.
-- `npm run build` segue pendente no ambiente atual porque o workspace está sem dependências instaladas em `node_modules` (`npm ls` retornou árvore vazia), e o build falha antes da ingestão em imports já existentes de `xlsx`, `jspdf` e `jspdf-autotable`.
+- `npm run build` passou no ambiente local após a instalação das dependências do workspace.
 - Os relatórios CSV passaram a ter formato monetário `R$ 6,092.04` (americano com símbolo BRL). O `parseDecimal` foi atualizado para detectar e converter esse formato corretamente.
 - O campo `Credor_Nome` passou a ser `NomeCredor` no cubo de 2026 — adicionado como alias no schema NE_DL.
 - Campos novos adicionados ao NEDL: `Credor_Nome`, `CONTRATO`, `CONVENIO`. Removido: `CodigoPlanoInterno`.
@@ -273,3 +273,10 @@ Esse documento deve continuar enxuto, verificável e orientado à execução.
 - Tabelas canônicas criadas e função `consolidate_siafe_lineage()` executada com sucesso.
 - Tabela `marcacoes_pagamento` criada para confirmação manual de pagamentos.
 - Dashboard CPAG e CLIQ conectados com dados reais — mock data removido.
+- `DatadaLiquidacao` passou a ser aceita como campo opcional em `NE_DL` e `DL_OB`, com persistência em `normalized_*` e consolidação para `documentos_liquidacao`.
+- As views CPAG passaram a usar `data_liquidacao` real e a regra de pagamento parcial baseada em `sum(OB.valor)`.
+- `vw_liquidados_a_pagar` agora expõe `valor_ja_pago_obs` para diferenciar pagamentos parciais no frontend.
+- A migration `20260416000000_add_new_nedl_dlob_fields.sql` continua vazia no repositório; o ajuste efetivo deste ciclo foi entregue em uma nova migration idempotente.
+- O ciclo corretivo seguinte passou a reconciliar explicitamente a camada canônica com os batches válidos do conjunto corrente, removendo órfãos em `documentos_liquidacao`, `ordens_bancarias` e `marcacoes_pagamento`.
+- `vw_monitoramento_pagamentos` deixou de usar fallback por `numero_processo` para evitar associação insegura entre `OB` e `DL`.
+- O comando `npm test` passou a incluir também `tests/consolidation.test.js`; quando não há credenciais Supabase disponíveis, a suíte de integração continua sendo pulada sem quebrar a validação local.

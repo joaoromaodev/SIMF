@@ -10,21 +10,21 @@ try {
   supabase = null;
 }
 
-const testOrSkip = supabase ? test : test.skip;
+const describeOrSkip = supabase ? test.describe : test.describe.skip;
 
-async function createBatch(reportType, yearScope, originalFileName) {
+async function createBatch(reportType, yearScope, originalFileName, options = {}) {
   const { data, error } = await supabase
     .from("import_batches")
     .insert({
       report_type: reportType,
       year_scope: yearScope,
       original_file_name: originalFileName,
-      status: "success",
+      status: options.status ?? "success",
       source_headers: [],
       validation_errors: [],
       processed_row_count: 0,
       normalized_row_count: 0,
-      is_active: false
+      is_active: options.isActive ?? false
     })
     .select()
     .single();
@@ -79,7 +79,7 @@ async function insertNormalizedDlObRow(batchId, row) {
 
 const testSuiteTitle = "SIAFE lineage consolidation integration";
 
-testOrSkip.describe(testSuiteTitle, () => {
+describeOrSkip(testSuiteTitle, () => {
   const cleanupContext = {
     processIds: [],
     notaIds: [],
@@ -109,8 +109,8 @@ testOrSkip.describe(testSuiteTitle, () => {
     cleanupContext.documentoIds.push(documentoId);
     cleanupContext.ordemIds.push(ordemId);
 
-    const batchNeDl = await createBatch("NE_DL", "2026", `ne-dl-${uniqueSuffix}.csv`);
-    const batchDlOb = await createBatch("DL_OB", "2026", `dl-ob-${uniqueSuffix}.csv`);
+    const batchNeDl = await createBatch("NE_DL", "2025", `ne-dl-${uniqueSuffix}.csv`);
+    const batchDlOb = await createBatch("DL_OB", "2025", `dl-ob-${uniqueSuffix}.csv`);
 
     cleanupContext.batchIds.push(batchNeDl.id, batchDlOb.id);
 
@@ -118,6 +118,8 @@ testOrSkip.describe(testSuiteTitle, () => {
       numero_processo: processId,
       codigo_nota_empenho: notaId,
       documento_liquidacao: documentoId,
+      data_liquidacao: "2026-04-15",
+      credor_nome: "Credor NEDL",
       codigo_fonte_recurso: "F1",
       codigo_detalhamento_fr: "D1",
       codigo_unidade_gestora: "UG1",
@@ -171,6 +173,7 @@ testOrSkip.describe(testSuiteTitle, () => {
     assert.equal(documentos.length, 1);
     assert.equal(documentos[0].numero_processo, processId);
     assert.equal(documentos[0].codigo_nota_empenho, notaId);
+    assert.equal(documentos[0].data_liquidacao, "2026-04-15");
     assert.equal(documentos[0].dl_documento_credor, "55566677788");
     assert.equal(documentos[0].dl_nome_credor, "Fornecedor DL");
     assert.equal(Number(documentos[0].valor), 1500.0);
@@ -198,13 +201,15 @@ testOrSkip.describe(testSuiteTitle, () => {
     cleanupContext.notaIds.push(notaId);
     cleanupContext.documentoIds.push(documentoId);
 
-    const batchNeDl = await createBatch("NE_DL", "2026", `ne-dl-partial-${uniqueSuffix}.csv`);
+    const batchNeDl = await createBatch("NE_DL", "2025", `ne-dl-partial-${uniqueSuffix}.csv`);
     cleanupContext.batchIds.push(batchNeDl.id);
 
     await insertNormalizedNeDlRow(batchNeDl.id, {
       numero_processo: processId,
       codigo_nota_empenho: notaId,
       documento_liquidacao: documentoId,
+      data_liquidacao: "2026-04-16",
+      credor_nome: "Credor NEDL sem OB",
       codigo_fonte_recurso: "F2",
       codigo_detalhamento_fr: "D2",
       codigo_unidade_gestora: "UG2",
@@ -243,6 +248,8 @@ testOrSkip.describe(testSuiteTitle, () => {
     assert.equal(documentos.length, 1);
     assert.equal(documentos[0].numero_processo, processId);
     assert.equal(documentos[0].codigo_nota_empenho, notaId);
+    assert.equal(documentos[0].data_liquidacao, "2026-04-16");
+    assert.equal(documentos[0].dl_nome_credor, null);
     assert.equal(documentos[0].valor, null);
 
     const { data: ordens, error: ordemError } = await supabase
@@ -251,5 +258,173 @@ testOrSkip.describe(testSuiteTitle, () => {
       .eq("documento_liquidacao", documentoId);
     assert.equal(ordemError, null);
     assert.equal(ordens.length, 0);
+  });
+
+  test("Canonical reconciliation removes orphan OBs and keeps CPAG saldo rules", async () => {
+    const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const processId = `PROC-CPAG-${uniqueSuffix}`;
+    const notaA = `NE-A-${uniqueSuffix}`;
+    const notaB = `NE-B-${uniqueSuffix}`;
+    const notaC = `NE-C-${uniqueSuffix}`;
+    const dlA = `DL-A-${uniqueSuffix}`;
+    const dlB = `DL-B-${uniqueSuffix}`;
+    const dlC = `DL-C-${uniqueSuffix}`;
+    const obB = `OB-B-${uniqueSuffix}`;
+    const obC = `OB-C-${uniqueSuffix}`;
+
+    cleanupContext.processIds.push(processId);
+    cleanupContext.notaIds.push(notaA, notaB, notaC);
+    cleanupContext.documentoIds.push(dlA, dlB, dlC);
+    cleanupContext.ordemIds.push(obB, obC);
+
+    const batchNeDl = await createBatch("NE_DL", "2025", `ne-dl-cpag-${uniqueSuffix}.csv`);
+    const batchDlOb = await createBatch("DL_OB", "2025", `dl-ob-cpag-${uniqueSuffix}.csv`);
+    cleanupContext.batchIds.push(batchNeDl.id, batchDlOb.id);
+
+    await insertNormalizedNeDlRow(batchNeDl.id, {
+      numero_processo: processId,
+      codigo_nota_empenho: notaA,
+      documento_liquidacao: dlA,
+      data_liquidacao: "2026-04-10",
+      codigo_fonte_recurso: "F-CPAG",
+      codigo_unidade_gestora: "UG-CPAG",
+      valor_bruto: 100.0
+    });
+    await insertNormalizedNeDlRow(batchNeDl.id, {
+      numero_processo: processId,
+      codigo_nota_empenho: notaB,
+      documento_liquidacao: dlB,
+      data_liquidacao: "2026-04-11",
+      codigo_fonte_recurso: "F-CPAG",
+      codigo_unidade_gestora: "UG-CPAG",
+      valor_bruto: 100.0
+    });
+    await insertNormalizedNeDlRow(batchNeDl.id, {
+      numero_processo: processId,
+      codigo_nota_empenho: notaC,
+      documento_liquidacao: dlC,
+      data_liquidacao: "2026-04-12",
+      codigo_fonte_recurso: "F-CPAG",
+      codigo_unidade_gestora: "UG-CPAG",
+      valor_bruto: 100.0
+    });
+
+    await insertNormalizedDlObRow(batchDlOb.id, {
+      numero_processo: processId,
+      documento_liquidacao: dlB,
+      ordem_bancaria: obB,
+      data_liquidacao: "2026-04-11",
+      data_pagamento: "2026-04-13",
+      valor: 40.0
+    });
+    await insertNormalizedDlObRow(batchDlOb.id, {
+      numero_processo: processId,
+      documento_liquidacao: dlC,
+      ordem_bancaria: obC,
+      data_liquidacao: "2026-04-12",
+      data_pagamento: "2026-04-14",
+      valor: 100.0
+    });
+
+    const { error: firstRpcError } = await supabase.rpc("consolidate_siafe_lineage");
+    assert.equal(firstRpcError, null, `Initial reconciliation failed: ${firstRpcError?.message ?? firstRpcError}`);
+
+    const { data: firstViewRows, error: firstViewError } = await supabase
+      .from("vw_liquidados_a_pagar")
+      .select("documento_liquidacao, data_liquidacao, valor_liquidado_a_pagar, valor_ja_pago_obs")
+      .in("documento_liquidacao", [dlA, dlB, dlC]);
+
+    assert.equal(firstViewError, null);
+    assert.deepEqual(
+      firstViewRows.map((row) => row.documento_liquidacao).sort(),
+      [dlA, dlB]
+    );
+    assert.equal(firstViewRows.find((row) => row.documento_liquidacao === dlA)?.valor_ja_pago_obs, "0.00");
+    assert.equal(firstViewRows.find((row) => row.documento_liquidacao === dlA)?.valor_liquidado_a_pagar, "100.00");
+    assert.equal(firstViewRows.find((row) => row.documento_liquidacao === dlB)?.valor_ja_pago_obs, "40.00");
+    assert.equal(firstViewRows.find((row) => row.documento_liquidacao === dlB)?.valor_liquidado_a_pagar, "60.00");
+    assert.equal(firstViewRows.find((row) => row.documento_liquidacao === dlB)?.data_liquidacao, "2026-04-11");
+
+    const { error: deleteBatchError } = await supabase
+      .from("import_batches")
+      .delete()
+      .eq("id", batchDlOb.id);
+    assert.equal(deleteBatchError, null);
+    cleanupContext.batchIds = cleanupContext.batchIds.filter((id) => id !== batchDlOb.id);
+
+    const { error: secondRpcError } = await supabase.rpc("consolidate_siafe_lineage");
+    assert.equal(secondRpcError, null, `Second reconciliation failed: ${secondRpcError?.message ?? secondRpcError}`);
+
+    const { data: remainingOrdens, error: remainingOrdensError } = await supabase
+      .from("ordens_bancarias")
+      .select("ordem_bancaria")
+      .in("ordem_bancaria", [obB, obC]);
+    assert.equal(remainingOrdensError, null);
+    assert.equal(remainingOrdens.length, 0);
+
+    const { data: secondViewRows, error: secondViewError } = await supabase
+      .from("vw_liquidados_a_pagar")
+      .select("documento_liquidacao, valor_liquidado_a_pagar, valor_ja_pago_obs")
+      .in("documento_liquidacao", [dlA, dlB, dlC]);
+    assert.equal(secondViewError, null);
+    assert.deepEqual(
+      secondViewRows.map((row) => row.documento_liquidacao).sort(),
+      [dlA, dlB, dlC]
+    );
+    assert.equal(secondViewRows.find((row) => row.documento_liquidacao === dlB)?.valor_ja_pago_obs, "0.00");
+    assert.equal(secondViewRows.find((row) => row.documento_liquidacao === dlC)?.valor_liquidado_a_pagar, "100.00");
+  });
+
+  test("vw_monitoramento_pagamentos avoids linking OB by processo when documento_liquidacao is null", async () => {
+    const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const processId = `PROC-MON-${uniqueSuffix}`;
+    const dl1 = `DL-MON-1-${uniqueSuffix}`;
+    const dl2 = `DL-MON-2-${uniqueSuffix}`;
+    const obId = `OB-MON-${uniqueSuffix}`;
+
+    cleanupContext.processIds.push(processId);
+    cleanupContext.documentoIds.push(dl1, dl2);
+    cleanupContext.ordemIds.push(obId);
+
+    const { error: processoError } = await supabase.from("processos").insert({ numero_processo: processId });
+    assert.equal(processoError, null);
+
+    const { error: dlInsertError } = await supabase.from("documentos_liquidacao").insert([
+      {
+        documento_liquidacao: dl1,
+        numero_processo: processId,
+        data_liquidacao: "2026-04-01",
+        dl_nome_credor: "Credor DL 1"
+      },
+      {
+        documento_liquidacao: dl2,
+        numero_processo: processId,
+        data_liquidacao: "2026-04-02",
+        dl_nome_credor: "Credor DL 2"
+      }
+    ]);
+    assert.equal(dlInsertError, null);
+
+    const { error: obInsertError } = await supabase.from("ordens_bancarias").insert({
+      ordem_bancaria: obId,
+      numero_processo: processId,
+      documento_liquidacao: null,
+      ob_credor_nome: "Credor da OB",
+      data_pagamento: "2026-04-03",
+      valor: 25.0
+    });
+    assert.equal(obInsertError, null);
+
+    const { data: monitoramentoRows, error: monitoramentoError } = await supabase
+      .from("vw_monitoramento_pagamentos")
+      .select("numero_processo, documento_liquidacao, credor, data_liquidacao")
+      .eq("ordem_bancaria", obId);
+
+    assert.equal(monitoramentoError, null);
+    assert.equal(monitoramentoRows.length, 1);
+    assert.equal(monitoramentoRows[0].numero_processo, processId);
+    assert.equal(monitoramentoRows[0].documento_liquidacao, null);
+    assert.equal(monitoramentoRows[0].credor, "Credor da OB");
+    assert.equal(monitoramentoRows[0].data_liquidacao, null);
   });
 });
