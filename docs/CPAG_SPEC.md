@@ -136,6 +136,8 @@ Ela deve registrar confirmacoes manuais, observacoes e metadados de usuario quan
 
 Ela nao deve virar camada canonica completa e nao deve substituir as views de dados SIAFE.
 
+Na arquitetura `NE` / `NEDL` / `DLOB`, a marcacao manual deve usar `ordem_bancaria` como chave textual independente, sem exigir que a OB exista na tabela canonica historica `ordens_bancarias`.
+
 Join recomendado:
 
 - por `ordem_bancaria`, quando a OB estiver disponivel e for chave operacional suficiente;
