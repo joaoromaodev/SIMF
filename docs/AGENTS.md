@@ -1,292 +1,169 @@
 # AGENTS.md
 
-## 1. Visão geral do projeto
+## 1. Visao Geral do Projeto
 
-**SIMF** é uma aplicação para ingestão, validação, normalização e persistência de relatórios CSV do SIAFE, com foco em preparar uma base consistente para consolidação e consumo posterior em BI.
+O SIMF e um MVP para ingestao, validacao, normalizacao e disponibilizacao de relatorios CSV extraidos do SIAFE para uso em painel e BI.
 
-A stack atual do projeto é:
+Stack principal:
 
-- **Next.js**
-- **Supabase**
-- **Postgres**
-- **Supabase Storage**
+- Next.js
+- Supabase
+- PostgreSQL
+- Supabase Storage
 
-O projeto está em fase de evolução incremental. A fundação da ingestão já existe e está funcional. A próxima linha de trabalho está concentrada na flexibilização controlada da ingestão e na preparação da base para suportar novos relatórios no futuro.
+O projeto esta na fase de reestruturacao Supabase para tres universos oficiais de relatorio:
 
----
+- `NE`
+- `NEDL`
+- `DLOB`
 
-## 2. O que o projeto é
+Os nomes antigos `NE_DL` e `DL_OB` sao legados. Use-os apenas quando for necessario compreender codigo, migrations ou dados existentes.
 
-O SIMF, no estado atual, é:
+## 2. Direcao Arquitetural Atual
 
-- uma plataforma de upload manual de arquivos `.csv`;
-- uma camada de validação estrutural e operacional dos relatórios SIAFE;
-- uma camada de parsing e normalização dos dados;
-- uma camada de persistência de batches de importação;
-- uma camada de persistência de linhas normalizadas por relatório;
-- uma base para futura consolidação canônica e uso em BI.
+A base alvo do MVP e:
 
----
+```text
+CSV
+  -> import_batches
+  -> normalized_ne_rows
+  -> normalized_nedl_rows
+  -> normalized_dlob_rows
+  -> views SQL
+  -> painel / BI
+```
 
-## 3. O que o projeto não é
+Nesta fase, o painel deve ser alimentado por views SQL sobre tabelas normalizadas.
 
-O SIMF, no estado atual, **não é**:
+Consolidacao fisica completa, materialized views e camada canonica persistida podem ser avaliadas futuramente, mas nao sao prioridade do MVP atual.
 
-- sistema transacional completo do fluxo financeiro;
-- workflow administrativo;
-- substituto do SIAFE;
-- dashboard final;
-- integração direta com API do SIAFE;
-- plataforma com catálogo administrativo de schemas;
-- engine genérica completa de qualquer tipo de relatório.
+## 3. Contrato dos Relatorios
 
----
+O contrato oficial esta em:
 
-## 4. Estado atual da aplicação
+- `docs/estrutura_relatorios.md`
 
-Atualmente, o projeto já possui:
+Arquivos esperados:
 
-- upload manual de CSV;
-- UI mínima para envio dos relatórios;
-- rota de importação;
-- parsing de CSV;
-- validação de:
-  - tipo de relatório;
-  - nome do arquivo;
-  - escopo anual;
-  - estrutura/cabeçalhos;
-- normalização;
-- persistência de `import_batches`;
-- persistência de:
-  - `normalized_ne_dl_rows`
-  - `normalized_dl_ob_rows`
-- armazenamento do CSV original no Supabase Storage;
-- política especial de substituição integral do `2026`;
-- testes automatizados da fundação da ingestão.
+```text
+2023_2024_NE.csv
+2025_NE.csv
+2026_NE.csv
+2023_2024_NEDL.csv
+2025_NEDL.csv
+2026_NEDL.csv
+2023_2024_DLOB.csv
+2025_DLOB.csv
+2026_DLOB.csv
+```
 
-Os tipos de relatório atualmente suportados são:
+Regras essenciais:
 
-- `NE_DL`
-- `DL_OB`
+- `NE` possui `NUMERO_PROCESSO`.
+- `NEDL` possui `NUMERO_PROCESSO`, mas vincula com `NE` por `CodigoNotadeEmpenho`.
+- `DLOB` nao possui `NUMERO_PROCESSO`.
+- `DLOB.DocumentodaLiquidacao` deve mapear para `documento_liquidacao`.
+- Processo para OB deve ser derivado por `DLOB -> NEDL -> NE`.
+- Uma DL so e quitada quando a soma das OBs vinculadas atinge ou supera o `Valor Bruto`.
 
----
+## 4. Documentos que Agentes Devem Ler Antes de Implementar
 
-## 5. Diretrizes arquiteturais obrigatórias
+Antes de qualquer alteracao funcional, leia:
 
-Ao trabalhar neste projeto, preserve os seguintes princípios:
+- `docs/estrutura_relatorios.md`
+- `docs/roadmap_reestruturacao_supabase.md`
+- `docs/roadmap_reestruturacao_supabase_tasks.md`
+- `docs/TECHNICAL_SPECIFICATION.md`
 
-### 5.1 Flexibilidade na entrada, disciplina no domínio
-O sistema pode evoluir para aceitar maior flexibilidade nos arquivos de entrada, mas o domínio interno deve continuar normalizado e canônico.
+Se a mudanca envolver painel, CPAG, pagamentos, views de pagamento ou marcacoes manuais, leia tambem:
 
-### 5.2 Preservar o domínio canônico
-Campos internos como:
-- `numero_processo`
-- `codigo_nota_empenho`
-- `documento_liquidacao`
-- `ordem_bancaria`
+- `docs/CPAG_SPEC.md`
 
-continuam sendo a base do modelo de negócio.
+## 5. Documentos Arquivados
 
-### 5.3 Preservar rastreabilidade
-Toda mudança na ingestão deve manter:
-- batch de importação;
-- armazenamento do arquivo original;
-- visibilidade suficiente para troubleshooting;
-- comportamento auditável.
+Documentos em `docs/archive/` sao historicos.
 
-### 5.4 Preservar a política anual
-A política de ano deve continuar sendo respeitada:
+Eles podem ser usados para entender contexto, MDX antigo, decisoes passadas ou implementacoes legadas, mas nao devem ser usados como fonte principal para novas implementacoes.
 
-- `2023_2024` e `2025` como históricos estáticos;
-- `2026` como escopo ativo com substituição integral por tipo.
+Arquivos arquivados nesta reestruturacao:
 
-### 5.5 Não expandir escopo sem solicitação clara
-Mudanças devem ser incrementais e focadas no objetivo do ciclo atual.
+- `docs/archive/simf-evolucao-ingestao-incrementos_legacy.md`
+- `docs/archive/simf-evolucao-ingestao-tasks_legacy.md`
+- `docs/archive/estrutura_relatorios_legacy.md`
 
----
+## 6. Escopo Atual
 
-## 6. Fluxo de evolução atual
+O roadmap ativo esta em:
 
-O projeto **não utiliza mais OpenSpec** como fluxo de trabalho.
+- `docs/roadmap_reestruturacao_supabase.md`
 
-As referências atuais para evolução estão em `docs/`.
+O tracker ativo esta em:
 
-Use como base principal:
+- `docs/roadmap_reestruturacao_supabase_tasks.md`
 
-- `docs/simf-evolucao-ingestao-incrementos.md`
-- `docs/simf-evolucao-ingestao-tasks.md`
+Nao use `simf-evolucao-ingestao-tasks.md` como tracker ativo. Esse documento foi substituido.
 
-Esses arquivos definem:
-- a estratégia de evolução da ingestão;
-- os incrementos previstos;
-- o escopo do incremento atual;
-- as tasks operacionais em andamento.
+## 7. Regras Para Implementacao
 
----
+Antes de alterar codigo:
 
-## 7. Incremento atual
+- confirme qual incremento do roadmap esta em execucao;
+- leia os documentos ativos;
+- inspecione os arquivos impactados;
+- preserve a menor superficie de mudanca possivel;
+- evite refatoracoes amplas fora do incremento;
+- nao gere migrations sem solicitacao explicita para a rodada;
+- mantenha rastreabilidade por batch;
+- preserve a politica de `2026`;
+- nao reintroduza dependencia de `NUMERO_PROCESSO` em `DLOB`.
 
-Salvo instrução em contrário, considere que o projeto está trabalhando no:
+Durante implementacao:
 
-## Incremento 1 — Flexibilização controlada dos 2 relatórios atuais
+- prefira evolucao incremental;
+- mantenha schemas e validacoes controladas;
+- trate aliases e colunas extras com governanca;
+- registre warnings claros;
+- preserve `raw_row` e metadados necessarios para troubleshooting;
+- evite transformar JSON auxiliar em modelo principal de consulta.
 
-Objetivo:
-- permitir ordem livre de colunas;
-- separar campos obrigatórios e opcionais;
-- aceitar aliases conhecidos;
-- permitir colunas extras com warning;
-- preservar a fundação atual da ingestão.
+Ao concluir:
 
-Este incremento **não** inclui:
-- novos relatórios;
-- catálogo em banco;
-- UI administrativa;
-- versionamento persistido de schema;
-- consolidação canônica;
-- dashboards;
-- autenticação.
+- informe arquivos alterados;
+- explique a decisao tecnica;
+- registre validacoes executadas;
+- registre riscos residuais;
+- atualize o tracker ativo quando uma task real for concluida.
 
----
+## 8. Restricoes de Escopo Sem Pedido Explicito
 
-## 8. Arquivos-chave do projeto
+Nao implementar sem solicitacao clara:
 
-Antes de alterar qualquer coisa, inspecione com prioridade:
-
-- `README.md`
-- `docs/simf-evolucao-ingestao-incrementos.md`
-- `docs/simf-evolucao-ingestao-tasks.md`
-- `package.json`
-- `app/api/imports/route.js`
-- `components/upload-form.jsx`
-- `lib/siafe/csv.js`
-- `lib/siafe/importer.js`
-- `lib/siafe/normalize.js`
-- `lib/siafe/schemas.js`
-- `lib/siafe/validation.js`
-- `tests/siafe-import.test.js`
-- `supabase/migrations/`
-
----
-
-## 9. Regras para agentes
-
-### 9.1 Antes de implementar
-O agente deve:
-- ler o `README.md`;
-- ler os arquivos relevantes em `docs/`;
-- entender o incremento atual;
-- inspecionar os arquivos impactados antes de modificar;
-- identificar o menor conjunto de mudanças necessário.
-
-### 9.2 Durante a implementação
-O agente deve:
-- fazer a menor mudança coerente possível;
-- preservar o que já funciona;
-- evitar refatorações amplas sem necessidade;
-- evitar expansão de escopo;
-- manter compatibilidade com a política de `2026`;
-- preservar a persistência atual, salvo instrução contrária.
-
-### 9.3 Ao concluir
-O agente deve informar:
-- diagnóstico do problema ou objetivo implementado;
-- arquivos alterados;
-- motivo das alterações;
-- validações executadas;
-- riscos residuais ou pendências.
-
----
-
-## 10. Restrições de escopo
-
-Sem solicitação clara, **não implementar**:
-
-- novos relatórios fora do incremento atual;
-- catálogo administrativo de schemas;
-- UI administrativa para aliases;
-- consolidação canônica completa;
-- tabelas `processos`, `notas_empenho`, `documentos_liquidacao`, `ordens_bancarias`;
-- `consolidated_siafe_lineage`;
-- dashboard final;
-- autenticação avançada;
-- integrações externas novas;
+- autenticacao avancada;
+- integracoes externas novas;
+- UI administrativa de schemas;
+- catalogo persistido de schemas;
+- consolidacao fisica completa;
+- materialized views como primeira opcao;
+- dashboards fora do escopo solicitado;
 - troca de stack;
-- refatoração estrutural ampla sem necessidade operacional imediata.
+- refatoracao estrutural ampla.
 
----
+## 9. Validacao Recomendada
 
-## 11. Convenções de implementação
-
-### 11.1 Preferir evolução incremental
-Sempre preferir:
-- adaptação do pipeline atual;
-- compatibilidade progressiva;
-- mudanças pequenas e verificáveis.
-
-### 11.2 Evitar lógica mágica
-Não introduzir inferência excessiva ou heurísticas frágeis para “adivinhar” relatórios ou campos sem controle explícito.
-
-### 11.3 Flexibilizar com governança
-Ao flexibilizar a ingestão:
-- warnings devem ser claros;
-- erros bloqueantes devem continuar explícitos;
-- aliases devem ser controlados;
-- colisões de mapeamento devem ser tratadas com segurança.
-
-### 11.4 JSON não deve virar substituto do domínio
-Se no futuro houver `extra_fields_json` ou equivalente, tratá-lo como:
-- buffer de evolução;
-- área de retenção;
-- apoio à observabilidade;
-
-e não como modelo principal de consulta operacional.
-
----
-
-## 12. Validação obrigatória
-
-Sempre que possível, validar com:
+Quando a rodada envolver codigo, validar quando possivel:
 
 ```bash
 npm test
 npm run build
 ```
 
-Quando o ciclo envolver upload:
-- validar manualmente o fluxo local, se possível;
-- confirmar comportamento no batch;
-- confirmar persistência nas tabelas corretas;
-- confirmar preservação da política de `2026`, quando aplicável.
+Quando a rodada envolver upload ou Supabase:
 
-Se não for possível executar alguma validação por dependência externa, registrar claramente isso no relatório final.
+- validar batch criado;
+- validar arquivo armazenado;
+- validar linhas normalizadas;
+- validar politica de `2026`;
+- validar views afetadas;
+- validar que `DLOB` segue sem `NUMERO_PROCESSO`.
 
----
-
-## 13. Atualização de documentação e tasks
-
-Quando um ciclo alterar o estado do incremento atual, o agente deve atualizar, quando fizer sentido:
-
-- `docs/simf-evolucao-ingestao-tasks.md`
-
-Especialmente para:
-- marcar tarefas concluídas;
-- registrar observações de implementação;
-- refletir decisões fechadas durante o ciclo.
-
-Se houver mudança relevante de direção arquitetural, avaliar também atualização de:
-
-- `docs/simf-evolucao-ingestao-incrementos.md`
-
----
-
-## 14. Observações finais
-
-Este arquivo existe para alinhar o comportamento de agentes técnicos no repositório.
-
-Ao atuar neste projeto, o agente deve sempre buscar:
-
-- clareza de escopo;
-- preservação do que já funciona;
-- respeito às regras de negócio;
-- continuidade técnica;
-- e baixa taxa de regressão.
+Rodadas puramente documentais nao exigem build/testes, mas devem ao menos conferir `git status` e a estrutura de `docs/`.

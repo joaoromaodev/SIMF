@@ -1,101 +1,298 @@
-# Documentação Técnica - SIMF (Sistema Integrado de Monitoramento Financeiro)
+# Documentacao Tecnica - SIMF
 
-## Visão Geral
-O SIMF é um sistema web desenvolvido com Next.js (App Router), utilizando Supabase como backend/DB e Tailwind CSS para estilização. O sistema gerencia dados financeiros do SIAFE, focando em relatórios de NE+DL (Notas de Empenho + Documentos de Liquidação) e DL+OB (Documentos de Liquidação + Ordens Bancárias).
+## Visao Geral
 
-## Stack Técnica
-- **Frontend**: Next.js 15 (App Router), React 19, Tailwind CSS v4
-- **Backend**: Next.js API Routes, Supabase (Postgres + Storage)
+O SIMF e uma aplicacao web desenvolvida com Next.js App Router e Supabase para ingestao, validacao, normalizacao e disponibilizacao de relatorios CSV do SIAFE.
+
+A fase atual da arquitetura documental e tecnica trabalha com tres universos oficiais:
+
+- `NE` - notas de empenho;
+- `NEDL` - documentos de liquidacao vinculados a empenhos;
+- `DLOB` - ordens bancarias vinculadas a liquidacoes.
+
+A base alvo do painel e formada por tabelas normalizadas por universo e views SQL de BI/qualidade.
+
+Referencias como `NE_DL`, `DL_OB`, `normalized_ne_dl_rows`, `normalized_dl_ob_rows` e `consolidated_siafe_lineage` pertencem ao desenho anterior ou a estudos/implementacoes legadas. Elas podem existir no codigo ou banco durante a transicao, mas nao sao o alvo principal da nova fase.
+
+## Stack Tecnica
+
+- **Frontend**: Next.js 15 App Router, React 19, Tailwind CSS v4
+- **Backend**: Next.js API Routes e Server Actions
+- **Banco e Storage**: Supabase, PostgreSQL e Supabase Storage
 - **Charts**: Recharts
-- **Ícones**: lucide-react
-- **Exportação**: xlsx, jspdf, jspdf-autotable
-- **Validação e Processamento**: schemas customizados em `lib/siafe/`
+- **Icones**: lucide-react
+- **Exportacao**: xlsx, jspdf, jspdf-autotable
+- **Validacao e processamento**: schemas customizados em `lib/siafe/`
 
 ## Mapa de Rotas
 
-### Páginas Implementadas
-
-| Rota | Arquivo | Descrição |
+| Rota | Arquivo | Descricao |
 |---|---|---|
-| `/` | `app/page.js` | Portal principal — cards de navegação para os módulos |
-| `/dashboard/dppc` | `app/dashboard/dppc/page.js` | Hub DPPC com cards para CLIQ e CPAG |
+| `/` | `app/page.js` | Portal principal |
+| `/dashboard/dppc` | `app/dashboard/dppc/page.js` | Hub DPPC |
 | `/dashboard/dppc/cpag` | `app/dashboard/dppc/cpag/page.js` | Dashboard de Controle de Pagamentos |
-| `/dashboard/dppc/cliq` | `app/dashboard/dppc/cliq/page.js` | Dashboard de Controle de Liquidações |
-| `/dashboard/dfin` | `app/dashboard/dfin/page.js` | Hub DFIN — em construção |
-| `/dashboard/import` | `app/dashboard/import/page.js` | Upload de relatórios CSV do SIAFE |
+| `/dashboard/dppc/cliq` | `app/dashboard/dppc/cliq/page.js` | Dashboard de Controle de Liquidacoes |
+| `/dashboard/dfin` | `app/dashboard/dfin/page.js` | Hub DFIN |
+| `/dashboard/import` | `app/dashboard/import/page.js` | Upload de relatorios CSV do SIAFE |
 
-### APIs Implementadas
+## API de Importacao
 
-**POST /api/imports**
-- Arquivo: `app/api/imports/route.js`
-- Parâmetros (FormData): `file`, `reportType` ("NE+DL" ou "DL+OB"), `yearScope` ("2023_2024", "2025", "2026")
-- Resposta: JSON com status, batch e warnings
+**POST `/api/imports`**
+
+Parametros esperados no `FormData`:
+
+- `file`
+- `reportType`
+- `yearScope`
+
+Direcao alvo para `reportType`:
+
+- `NE`
+- `NEDL`
+- `DLOB`
+
+Direcao alvo para `yearScope`:
+
+- `2023_2024`
+- `2025`
+- `2026`
+
+Durante a transicao, o codigo pode ainda conter nomes antigos. Novas alteracoes devem convergir para os tipos oficiais.
 
 ## Arquitetura de Dados
 
-### Hierarquia de Negócio
+### Hierarquia de Negocio
 
-Processo > NE (Empenho) > DL (Liquidação) > OB (Ordem Bancária)
+```text
+Processo
+  -> NE
+  -> NEDL
+  -> DLOB
+```
 
-Chave de ligação entre relatórios: `documento_liquidacao`
+Chaves principais:
 
-### Tabelas Normalizadas (fonte)
-- `normalized_ne_dl_rows` — linhas do relatório NE+DL
-- `normalized_dl_ob_rows` — linhas do relatório DL+OB
+| Relacao | Chave |
+|---|---|
+| `NE` -> `NEDL` | `codigo_nota_empenho` |
+| `NEDL` -> `DLOB` | `documento_liquidacao` |
+| processo administrativo | `NE.numero_processo` |
 
-### Tabelas Canônicas
-- `processos`
-- `notas_empenho`
-- `documentos_liquidacao`
-- `ordens_bancarias`
-- `marcacoes_pagamento` — confirmação manual de pagamento pelo usuário
+`DLOB` nao possui `NUMERO_PROCESSO`. Qualquer processo exibido para ordem bancaria deve ser derivado por join:
 
-### Views de Negócio
-- `vw_liquidados_a_pagar` — DLs com saldo pendente após soma das OBs (todos os exercícios)
-- `vw_monitoramento_pagamentos` — OBs emitidas com status de confirmação
+```text
+DLOB.documento_liquidacao
+  -> NEDL.documento_liquidacao
+  -> NEDL.codigo_nota_empenho
+  -> NE.codigo_nota_empenho
+  -> NE.numero_processo
+```
 
-### Materialized View
-- `consolidated_siafe_lineage` — linhagem consolidada para BI (refresh via `consolidate_siafe_lineage()`)
+### Modelo-Alvo
 
-## Política de Importação
-- `2023_2024` e `2025`: históricos estáticos, imutáveis após primeiro upload
-- `2026`: escopo ativo, cada novo upload substitui integralmente o batch anterior do mesmo tipo
+```text
+CSV
+  -> import_batches
+  -> normalized_ne_rows
+  -> normalized_nedl_rows
+  -> normalized_dlob_rows
+  -> views SQL
+  -> painel / BI
+```
 
-## Formato dos Relatórios CSV
+### Tabelas Normalizadas Alvo
 
-### NEDL — campos principais
-`DocumentodeLiquidacao, DatadaLiquidacao, CodigoNotadeEmpenho, CodigoNaturezaDaDespesa, CodigoFonteDeRecurso, CodigoDetalhamentoFr, NUMERO_PROCESSO, CodigoProjetoAtividade, CodigoUnidadeGestora (alias: InstituicaoCodigoUnidadeGestora), Credor_Nome (alias: NomeCredor), CONTRATO, CONVENIO, Valor Original, Valor Liquido, Valor Bruto, Valor Retido, Valor Pago, Valor Liquidado a Pagar, Valor Liquido2`
+- `normalized_ne_rows`
+- `normalized_nedl_rows`
+- `normalized_dlob_rows`
 
-Obrigatórios: `DocumentodeLiquidacao`, `CodigoNotadeEmpenho`, `NUMERO_PROCESSO`
+Essas tabelas devem guardar linhas normalizadas, `import_batch_id`, `year_scope`, `source_row_number`, `raw_row` e campos canonicos necessarios para views.
 
-### DLOB — campos principais
-`OrdemBancaria, CredorDocumento, Credor_Nome, DatadoPagamento, CodigoFonteDeRecurso, CodigoDetalhamentoFr, DocumentodeLiquidacao, DatadaLiquidacao, NUMERO_PROCESSO, CodigoUnidadeGestora, CodigoProjetoAtividade, CodigoNaturezaDaDespesa, NomeNaturezaDaDespesa, NomeElementoDeDespesa, Valor`
+### Tabelas e Estruturas Legadas
 
-Obrigatórios: `DocumentodeLiquidacao`, `NUMERO_PROCESSO`
+As estruturas abaixo podem existir no projeto por historico, mas nao representam o alvo principal da reestruturacao:
 
-**Formato dos valores monetários**: `R$ 6,092.04` (símbolo + separador de milhar vírgula + decimal ponto)
+- `normalized_ne_dl_rows`
+- `normalized_dl_ob_rows`
+- tabelas canonicas fisicas completas como `processos`, `notas_empenho`, `documentos_liquidacao`, `ordens_bancarias`;
+- `consolidated_siafe_lineage`;
+- materialized views usadas como consolidacao principal.
+
+A nova fase deve priorizar views SQL sobre normalizadas. Consolidacao fisica completa e materialized views so devem voltar a ser avaliadas se houver necessidade real apos validacao operacional.
+
+### Tabela Auxiliar do Painel
+
+- `marcacoes_pagamento` - confirmacoes manuais de pagamento.
+
+Essa tabela deve permanecer auxiliar e complementar as views. Ela nao deve se tornar camada canonica completa do fluxo financeiro.
+
+## Formato dos Relatorios CSV
+
+O contrato oficial esta em `docs/estrutura_relatorios.md`.
+
+Arquivos esperados:
+
+```text
+2023_2024_NE.csv
+2025_NE.csv
+2026_NE.csv
+2023_2024_NEDL.csv
+2025_NEDL.csv
+2026_NEDL.csv
+2023_2024_DLOB.csv
+2025_DLOB.csv
+2026_DLOB.csv
+```
+
+### NE
+
+Campos finais:
+
+```text
+CodigoNotadeEmpenho
+DatadoEmpenho
+NomeUsuarioQueCriou
+InstituicaoCodigoUnidadeGestora
+NUMERO_PROCESSO
+Valor Original
+Valor Corrente
+Saldo a Liquidar
+Quantidade
+```
+
+### NEDL
+
+Campos finais:
+
+```text
+DocumentodeLiquidacao
+DatadaLiquidacao
+CodigoNotadeEmpenho
+CodigoNaturezaDaDespesa
+NomeFonteDeRecurso
+CodigoFonteDeRecurso
+NomeDetalhamentoFr
+CodigoDetalhamentoFr
+NUMERO_PROCESSO
+CodigoProjetoAtividade
+NomeCredor
+CONTRATO
+CONVENIO
+Valor Original
+Valor Liquido
+Valor Bruto
+Valor Retido
+Valor Pago
+Valor Liquidado a Pagar
+```
+
+### DLOB
+
+Campos finais:
+
+```text
+OrdemBancaria
+DatadoPagamento
+DocumentodaLiquidacao
+CodigoUnidadeGestora
+NomeUsuarioQueCriou
+Finalidade
+Valor
+```
+
+`DLOB` nao deve exigir `NUMERO_PROCESSO`.
+
+`DocumentodaLiquidacao` deve ser normalizado internamente como `documento_liquidacao`.
+
+### Valores Monetarios
+
+O formato atual esperado inclui:
+
+```text
+R$ 6,092.04
+```
+
+Valores monetarios devem ser persistidos como decimais normalizados, sem simbolo de moeda ou formatacao textual.
+
+## Views de Negocio
+
+Views ativas recomendadas:
+
+- `vw_active_import_batches`
+- `vw_ne_active`
+- `vw_nedl_active`
+- `vw_dlob_active`
+
+Views de BI recomendadas:
+
+- `vw_execucao_financeira`
+- `vw_liquidados_a_pagar`
+- `vw_pagamentos`
+- `vw_monitoramento_pagamentos`
+
+Views de qualidade recomendadas:
+
+- `vw_status_carga_relatorios`
+- `vw_nedl_sem_ne`
+- `vw_dlob_sem_nedl`
+- `vw_divergencia_processo_ne_nedl`
+
+## Regra de Quitacao
+
+Uma DL so e considerada quitada quando a soma das OBs vinculadas atinge ou supera o `Valor Bruto` da DL.
+
+Regra base:
+
+```text
+sum(DLOB.valor) >= NEDL.valor_bruto
+```
+
+Saldo recomendado:
+
+```text
+greatest(NEDL.valor_bruto - coalesce(sum(DLOB.valor), 0), 0)
+```
+
+## Politica de Importacao
+
+Durante desenvolvimento:
+
+- historicos `2023_2024` e `2025` podem ser limpos e recarregados;
+- `2026` permanece com substituicao integral por universo.
+
+Apos estabilizacao:
+
+- historicos devem ser travados apos carga validada;
+- `2026` continua substituivel por universo enquanto for escopo ativo.
 
 ## Componentes Principais
 
 ### Server Components
-- `app/dashboard/dppc/cpag/page.js` — busca dados de `vw_liquidados_a_pagar` e `vw_monitoramento_pagamentos`
-- `app/dashboard/dppc/cliq/page.js` — busca dados de `vw_liquidados_a_pagar` com filtros e paginação
+
+- `app/dashboard/dppc/cpag/page.js` - consulta views do CPAG.
+- `app/dashboard/dppc/cliq/page.js` - consulta dados de liquidacoes.
 
 ### Client Components
-- `components/liquidados-table.jsx` — tabela com seleção de linhas e calculadora de saldo
-- `components/selection-calculator.jsx` — barra flutuante com total selecionado
-- `components/payment-toggle.jsx` — botão de confirmação manual com update otimista
-- `components/cpag-export-buttons.jsx` — exportação XLSX e PDF
-- `components/upload-form.jsx` — formulário de upload de CSV
 
-### Hooks e Utilitários
-- `lib/hooks/useRowSelection.js` — gerenciamento de seleção de linhas
-- `lib/utils/formatters.js` — `formatCurrency` e `formatDate`
-- `app/actions/pagamentos.js` — Server Actions para marcação de pagamento e exportação
+- `components/liquidados-table.jsx`
+- `components/selection-calculator.jsx`
+- `components/payment-toggle.jsx`
+- `components/cpag-export-buttons.jsx`
+- `components/upload-form.jsx`
 
-## Próximos Passos
-- Autenticação e autorização de usuários
-- Filtros por período no CPAG
-- Paginação no CPAG (atualmente limitado a 100 registros)
-- Reimportar históricos com nova estrutura de colunas quando disponível
-- Conectar CLIQ com dados reais de `vw_liquidados_a_pagar` com filtro de credor por fonte
+### Hooks e Utilitarios
+
+- `lib/hooks/useRowSelection.js`
+- `lib/utils/formatters.js`
+- `app/actions/pagamentos.js`
+
+## Proximos Passos Tecnicos
+
+As proximas implementacoes devem seguir `docs/roadmap_reestruturacao_supabase.md` e o tracker `docs/roadmap_reestruturacao_supabase_tasks.md`.
+
+Antes de implementar mudancas funcionais, revisar:
+
+- `docs/estrutura_relatorios.md`
+- `docs/roadmap_reestruturacao_supabase.md`
+- `docs/roadmap_reestruturacao_supabase_tasks.md`
+- `docs/CPAG_SPEC.md`, quando a mudanca afetar painel ou views de pagamento.

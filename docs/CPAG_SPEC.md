@@ -1,72 +1,169 @@
-# ETAPA 2 DO DESENVOLVIMENTO
-
-# Especificação de Desenvolvimento - Módulo CPAG
+# Especificacao de Desenvolvimento - Modulo CPAG
 
 ## Objetivo
-Implementar a tela do Dashboard CPAG (`app/dashboard/dppc/cpag/page.js`) com dados reais do Supabase, funcionalidades de filtro, seleção de linhas, calculadora de saldo e exportação (XLSX/PDF).
 
-## Checklist de Tarefas
+O CPAG e o dashboard de Controle de Pagamentos do SIMF.
 
-- [x] **TASK 1: Estrutura Base e UI**
-  - Refatorar `page.js` para incluir o Banner de "Controle de Recursos".
-  - Criar o esqueleto visual das duas tabelas principais: "Liquidados a Pagar" e "Monitoramento de Pagamentos".
-  - Criar a área lateral de "Relatórios" e "Painel de Indicadores".
+Na nova arquitetura, o CPAG deve consumir views SQL construidas sobre os tres universos normalizados:
 
-- [x] **TASK 2: Mock Data e Renderização**
-  - Criar os arrays `mockLiquidados` e `mockMonitoramento` com registros realistas.
-  - Preencher as tabelas com esses dados.
-  - Formatar moedas para BRL e datas para pt-BR.
+- `NE`
+- `NEDL`
+- `DLOB`
 
-- [x] **TASK 3: Exportação de Relatórios (XLSX e PDF)**
-  - Dependências instaladas: `xlsx`, `jspdf`, `jspdf-autotable`.
-  - Implementadas as funções de download em `components/cpag-export-buttons.jsx`.
-  - XLSX com 2 abas: "Liquidados a Pagar" e "Monitoramento".
-  - PDF landscape A4 com cabeçalho SIMF/SEDUC-PA e tabelas via autoTable.
+O modulo nao deve depender diretamente de consolidacao fisica completa para operar no MVP.
 
-- [x] **TASK 4: Conexão com Dados Reais**
-  - Mock data removido.
-- Dados reais consumidos via Supabase das views `vw_liquidados_a_pagar` e `vw_monitoramento_pagamentos`.
-  - KPIs calculados com dados reais: Total Pago, Total a Pagar, Quantidade de OBs.
-- Tabela "Liquidados a Pagar": mostra todas as DLs com saldo pendente, inclusive pagamento parcial, em todos os exercícios.
-- Tabela "Monitoramento": mostra OBs emitidas com status de confirmação manual.
+## Estado Funcional Existente
 
-- [x] **TASK 5: Seleção de Linhas e Calculadora de Saldo**
-  - Hook `useRowSelection` em `lib/hooks/useRowSelection.js`.
-  - Componente `LiquidadosTable` com checkboxes, seleção individual e total.
-  - Componente `SelectionCalculator` fixo no rodapé com total selecionado em destaque.
-  - Update otimista no `PaymentToggle` com rollback em caso de erro.
+Funcionalidades ja previstas ou implementadas historicamente:
 
-- [x] **TASK 6: Server Action de Marcação Manual**
-  - `app/actions/pagamentos.js` com `toggleMarcacaoPagamento` e `fetchAllCpagExportData`.
-  - Upsert em `marcacoes_pagamento` com `revalidatePath`.
+- tela em `app/dashboard/dppc/cpag/page.js`;
+- tabelas de "Liquidados a Pagar" e "Monitoramento de Pagamentos";
+- KPIs com totais de pagamentos e saldos;
+- selecao de linhas;
+- calculadora de saldo;
+- exportacao XLSX/PDF;
+- confirmacao manual de pagamento via `marcacoes_pagamento`.
 
-## Mapeamento de Colunas (view → tabela)
+Este documento agora define a direcao esperada dessas funcionalidades dentro do modelo `NE` / `NEDL` / `DLOB`.
 
-### Liquidados a Pagar (vw_liquidados_a_pagar — base: NEDL)
+## Fonte de Dados
+
+O CPAG deve consumir views SQL.
+
+Views principais:
+
+- `vw_liquidados_a_pagar`
+- `vw_monitoramento_pagamentos`
+
+Views auxiliares ou futuras equivalentes podem ser criadas, desde que preservem as regras deste documento.
+
+## Regra de Dados do DLOB
+
+`DLOB` nao possui `NUMERO_PROCESSO`.
+
+Nenhuma view do CPAG deve exigir `NUMERO_PROCESSO` diretamente em `DLOB`.
+
+Quando o painel precisar exibir o processo de uma OB, o valor deve ser derivado por:
+
+```text
+DLOB.DocumentodaLiquidacao
+  -> NEDL.DocumentodeLiquidacao
+  -> NEDL.CodigoNotadeEmpenho
+  -> NE.CodigoNotadeEmpenho
+  -> NE.NUMERO_PROCESSO
+```
+
+No modelo normalizado:
+
+```text
+normalized_dlob_rows.documento_liquidacao
+  -> normalized_nedl_rows.documento_liquidacao
+  -> normalized_nedl_rows.codigo_nota_empenho
+  -> normalized_ne_rows.codigo_nota_empenho
+  -> normalized_ne_rows.numero_processo
+```
+
+## vw_liquidados_a_pagar
+
+`vw_liquidados_a_pagar` deve ser baseada em `NEDL` enriquecida pela soma das OBs vinculadas em `DLOB`.
+
+Regra central:
+
+```text
+uma DL so e considerada quitada quando sum(DLOB.valor) >= NEDL.valor_bruto
+```
+
+Saldo recomendado:
+
+```text
+valor_ja_pago_obs = coalesce(sum(DLOB.valor), 0)
+valor_liquidado_a_pagar = greatest(NEDL.valor_bruto - valor_ja_pago_obs, 0)
+```
+
+A view deve retornar DLs com saldo positivo.
+
+Pagamentos parciais devem permanecer visiveis.
+
+Campos esperados ou equivalentes:
+
 | Coluna UI | Campo da view |
 |---|---|
 | Processo | `numero_processo` |
 | Empenho | `codigo_nota_empenho` |
-| Credor | `credor` |
+| Credor | `credor` ou `credor_nome` |
 | Natureza | `codigo_natureza_despesa` |
-| Fonte | `fonte` |
+| Fonte | `fonte` ou `codigo_fonte_recurso` |
 | DL | `documento_liquidacao` |
-| Dt. Liquidação | `data_liquidacao` |
+| Dt. Liquidacao | `data_liquidacao` |
 | Pago em OBs | `valor_ja_pago_obs` |
-| Vl. Líquido | `valor_liquido` |
+| Vl. Liquido | `valor_liquido` |
 | Vl. Bruto | `valor_bruto` |
-| Vl. Imposto | `valor_bruto - valor_liquido` (calculado no frontend) |
+| Vl. Imposto | `valor_bruto - valor_liquido` |
 | A Pagar | `valor_liquidado_a_pagar` |
 
-### Monitoramento de Pagamentos (vw_monitoramento_pagamentos — base: DLOB)
+`numero_processo` nesta view pode vir diretamente de `NEDL` ou, preferencialmente, ser reconciliado com `NE.numero_processo` por `codigo_nota_empenho`.
+
+## vw_monitoramento_pagamentos
+
+`vw_monitoramento_pagamentos` deve ser baseada em `DLOB` enriquecida por `NEDL`, `NE` e `marcacoes_pagamento`.
+
+O processo deve ser derivado por `DLOB -> NEDL -> NE`.
+
+A view pode fazer `left join` com `marcacoes_pagamento` para exibir status manual.
+
+Campos esperados ou equivalentes:
+
 | Coluna UI | Campo da view |
 |---|---|
-| Processo | `numero_processo` |
-| Credor | `credor` |
-| Fonte | `fonte` |
+| Processo | `numero_processo` derivado |
+| Credor | `credor` ou `credor_nome` |
+| Fonte | `fonte` ou `codigo_fonte_recurso` |
 | DL | `documento_liquidacao` |
-| Dt. Liquidação | `data_liquidacao` |
+| Dt. Liquidacao | `data_liquidacao` |
 | OB | `ordem_bancaria` |
 | Data Pgto | `data_pagamento` |
 | Valor | `valor` |
-| Status | `confirmado_manualmente` (PaymentToggle) |
+| Status | `confirmado_manualmente` |
+| Confirmado por | `confirmado_por` |
+| Confirmado em | `confirmado_em` |
+| Observacao | `observacao` |
+
+## marcacoes_pagamento
+
+`marcacoes_pagamento` permanece como tabela auxiliar do painel.
+
+Ela deve registrar confirmacoes manuais, observacoes e metadados de usuario quando disponiveis.
+
+Ela nao deve virar camada canonica completa e nao deve substituir as views de dados SIAFE.
+
+Join recomendado:
+
+- por `ordem_bancaria`, quando a OB estiver disponivel e for chave operacional suficiente;
+- complementarmente por `documento_liquidacao`, se a estrategia funcional futura exigir;
+- evitar fallback inseguro por `numero_processo`.
+
+## Regras de Integridade Para o CPAG
+
+- `DLOB` sem `NEDL` correspondente deve aparecer em view de qualidade, nao ser associado por heuristica fragil.
+- Divergencia entre `NE.numero_processo` e `NEDL.numero_processo` deve aparecer em view de auditoria.
+- A regra de quitacao deve usar soma de OBs contra `Valor Bruto`, nao apenas campo `Valor Pago` do `NEDL`.
+- Pagamentos manuais nao alteram o valor financeiro da OB; apenas adicionam status operacional no painel.
+
+## Checklist Funcional Historico
+
+As tarefas abaixo descrevem funcionalidades do CPAG ja trabalhadas em ciclos anteriores e permanecem como referencia de comportamento esperado:
+
+- [x] Estrutura visual do dashboard CPAG.
+- [x] Tabelas de liquidados a pagar e monitoramento.
+- [x] Exportacao XLSX/PDF.
+- [x] Consumo de dados reais via Supabase.
+- [x] Selecao de linhas e calculadora de saldo.
+- [x] Server Action para marcacao manual.
+
+## Pendencias da Nova Arquitetura
+
+- [ ] Revisar as views atuais para garantir base em `normalized_ne_rows`, `normalized_nedl_rows` e `normalized_dlob_rows`.
+- [ ] Garantir que `vw_liquidados_a_pagar` use soma de `DLOB` contra `NEDL.valor_bruto`.
+- [ ] Garantir que `vw_monitoramento_pagamentos` derive processo por `DLOB -> NEDL -> NE`.
+- [ ] Garantir que nenhuma view do CPAG exija `NUMERO_PROCESSO` em `DLOB`.
+- [ ] Validar o CPAG com os 9 CSVs da nova arquitetura.
