@@ -55,10 +55,11 @@ export default function ImportPage() {
             </div>
 
             {/* Info cards */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
-                { label: "NE+DL", desc: "Notas de Empenho e Documentos de Liquidação", file: "2026_NEDL.csv" },
-                { label: "DL+OB", desc: "Documentos de Liquidação e Ordens Bancárias", file: "2026_DLOB.csv" },
+                { label: "NE", desc: "Notas de Empenho", file: "2026_NE.csv" },
+                { label: "NEDL", desc: "Notas de Empenho e Documentos de Liquidação", file: "2026_NEDL.csv" },
+                { label: "DLOB", desc: "Documentos de Liquidação e Ordens Bancárias", file: "2026_DLOB.csv" },
               ].map(({ label, desc, file }) => (
                 <div key={label} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
                   <span className="text-[11px] font-black text-blue-600 uppercase tracking-widest">{label}</span>
@@ -99,9 +100,9 @@ export default function ImportPage() {
               {/* Preview de mapeamentos */}
               <div className="divide-y divide-slate-100">
                 {[
-                  { origem: "DocumentodeLiquidacao", destino: "documento_liquidacao", tipo: "text" },
-                  { origem: "DatadaLiquidacao", destino: "data_liquidacao", tipo: "date" },
                   { origem: "CodigoNotadeEmpenho", destino: "codigo_nota_empenho", tipo: "text" },
+                  { origem: "DocumentodeLiquidacao", destino: "documento_liquidacao", tipo: "text" },
+                  { origem: "DocumentodaLiquidacao", destino: "documento_liquidacao", tipo: "text" },
                   { origem: "NUMERO_PROCESSO", destino: "numero_processo", tipo: "text" },
                   { origem: "Valor Original", destino: "valor_original", tipo: "numeric" },
                   { origem: "DatadoPagamento", destino: "data_pagamento", tipo: "date" },

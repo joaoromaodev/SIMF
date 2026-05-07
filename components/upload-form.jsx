@@ -3,8 +3,9 @@
 import { useState } from "react";
 
 const REPORT_OPTIONS = [
-  { value: "NE+DL", label: "NE+DL" },
-  { value: "DL+OB", label: "DL+OB" }
+  { value: "NE", label: "NE - Notas de Empenho" },
+  { value: "NEDL", label: "NEDL - Notas de Empenho e Documentos de Liquidação" },
+  { value: "DLOB", label: "DLOB - Documentos de Liquidação e Ordens Bancárias" }
 ];
 
 const YEAR_SCOPE_OPTIONS = [
@@ -58,7 +59,7 @@ export function UploadForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="flex flex-col space-y-2">
           <label htmlFor="reportType" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tipo de Relatório</label>
-          <select id="reportType" name="reportType" defaultValue="NE+DL" required className="w-full p-3 bg-white border border-slate-300 rounded text-sm font-medium focus:border-para-blue outline-none transition-all">
+          <select id="reportType" name="reportType" defaultValue="NE" required className="w-full p-3 bg-white border border-slate-300 rounded text-sm font-medium focus:border-para-blue outline-none transition-all">
             {REPORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
@@ -71,6 +72,9 @@ export function UploadForm() {
       </div>
       <div className="flex flex-col space-y-2">
         <label htmlFor="file" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Arquivo CSV (SIAFE)</label>
+        <p className="text-[11px] text-slate-500 leading-relaxed">
+          Arquivos esperados: 2023_2024_NE.csv, 2025_NE.csv, 2026_NE.csv, 2023_2024_NEDL.csv, 2025_NEDL.csv, 2026_NEDL.csv, 2023_2024_DLOB.csv, 2025_DLOB.csv e 2026_DLOB.csv.
+        </p>
         <div className="p-8 border border-slate-200 rounded bg-slate-50">
           <input id="file" name="file" type="file" accept=".csv,text/csv" required className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-6 file:rounded file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-para-blue file:text-white hover:file:bg-blue-800 cursor-pointer transition-all" />
         </div>
