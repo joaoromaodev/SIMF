@@ -27,7 +27,7 @@ O tracker antigo `docs/simf-evolucao-ingestao-tasks.md` foi arquivado em `docs/a
 - [x] Atualizar `docs/TECHNICAL_SPECIFICATION.md`.
 - [x] Atualizar `docs/AGENTS.md`.
 - [x] Atualizar `docs/CPAG_SPEC.md`.
-- [ ] Revisar se `README.md` ou `AGENTS.md` da raiz precisam apontar para os novos documentos.
+- [x] Revisar se `README.md` ou `AGENTS.md` da raiz precisam apontar para os novos documentos.
 
 ## Incremento 2 - Reestruturacao dos tipos e batches
 
