@@ -3,7 +3,15 @@ import CliqCharts from "../../../../components/cliq-charts.jsx";
 import Link from "next/link";
 import { ChevronLeft, FileCheck2, Filter, X } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 const PAGE_SIZE = 50;
+
+const DEFAULT_KPIS = {
+  totalEmLiquidacao: 0,
+  quantidadeEmLiquidacao: 0,
+  quantidadeLiquidadosAPagar: 0,
+};
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value ?? 0);
@@ -16,44 +24,59 @@ function formatDate(dateString) {
 
 async function fetchFontes(supabase) {
   const { data, error } = await supabase
-    .from("vw_liquidados_a_pagar")
-    .select("fonte")
-    .not("fonte", "is", null);
+    .from("vw_cliq_por_fonte")
+    .select("fonte");
   if (error) return [];
-  return [...new Set((data || []).map((r) => r.fonte).filter(Boolean))].sort();
+  return [...new Set((data || []).map((r) => r.fonte).filter((fonte) => fonte && fonte !== "Sem fonte"))].sort();
 }
 
 async function fetchCliqData(supabase, filters, pagina) {
   const page = Math.max(1, parseInt(pagina, 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
 
-  let aggQuery = supabase.from("vw_liquidados_a_pagar").select("fonte, valor_bruto, valor_liquidado_a_pagar");
   let rowQuery = supabase.from("vw_liquidados_a_pagar").select("*", { count: "exact" }).order("data_liquidacao", { ascending: false, nullsFirst: false }).range(from, from + PAGE_SIZE - 1);
 
-  if (filters.fonte) { aggQuery = aggQuery.eq("fonte", filters.fonte); rowQuery = rowQuery.eq("fonte", filters.fonte); }
-  if (filters.credor) { aggQuery = aggQuery.ilike("credor", `%${filters.credor}%`); rowQuery = rowQuery.ilike("credor", `%${filters.credor}%`); }
-  if (filters.processo) { aggQuery = aggQuery.ilike("numero_processo", `%${filters.processo}%`); rowQuery = rowQuery.ilike("numero_processo", `%${filters.processo}%`); }
+  if (filters.fonte) { rowQuery = rowQuery.eq("fonte", filters.fonte); }
+  if (filters.credor) { rowQuery = rowQuery.ilike("credor", `%${filters.credor}%`); }
+  if (filters.processo) { rowQuery = rowQuery.ilike("numero_processo", `%${filters.processo}%`); }
 
-  const [aggResult, rowResult] = await Promise.all([aggQuery, rowQuery]);
-  return { aggData: aggResult.data || [], rows: rowResult.data || [], totalCount: rowResult.count || 0 };
-}
+  const [kpisResult, sourceResult, statusResult, rowResult] = await Promise.all([
+    supabase
+      .from("vw_cliq_kpis")
+      .select("total_em_liquidacao, quantidade_em_liquidacao, quantidade_liquidados_a_pagar")
+      .maybeSingle(),
+    supabase
+      .from("vw_cliq_por_fonte")
+      .select("fonte, total_valor_bruto, quantidade")
+      .order("total_valor_bruto", { ascending: false }),
+    supabase
+      .from("vw_cliq_status")
+      .select("status, quantidade"),
+    rowQuery,
+  ]);
 
-function calculateKPIs(aggData) {
-  const totalEmLiquidacao = aggData.reduce((sum, r) => sum + (parseFloat(r.valor_bruto) || 0), 0);
-  const quantidadeEmLiquidacao = aggData.length;
-  const quantidadeLiquidadosAPagar = aggData.filter((r) => (parseFloat(r.valor_liquidado_a_pagar) || 0) > 0).length;
-  return { totalEmLiquidacao, quantidadeEmLiquidacao, quantidadeLiquidadosAPagar };
-}
+  const kpisData = kpisResult.data || {};
+  const kpis = {
+    totalEmLiquidacao: parseFloat(kpisData.total_em_liquidacao) || DEFAULT_KPIS.totalEmLiquidacao,
+    quantidadeEmLiquidacao: Number(kpisData.quantidade_em_liquidacao) || DEFAULT_KPIS.quantidadeEmLiquidacao,
+    quantidadeLiquidadosAPagar: Number(kpisData.quantidade_liquidados_a_pagar) || DEFAULT_KPIS.quantidadeLiquidadosAPagar,
+  };
+  const sourceData = (sourceResult.data || []).map((row) => ({
+    name: row.fonte || "Sem fonte",
+    value: Math.round((parseFloat(row.total_valor_bruto) || 0) * 100) / 100,
+  }));
+  const statusOrder = { "Em Liquidação": 0, "Liquidados a Pagar": 1 };
+  const statusData = (statusResult.data || [])
+    .map((row) => ({ name: row.status, value: Number(row.quantidade) || 0 }))
+    .sort((a, b) => (statusOrder[a.name] ?? 99) - (statusOrder[b.name] ?? 99));
 
-function processStatusData(aggData) {
-  const liquidados = aggData.filter((r) => (parseFloat(r.valor_liquidado_a_pagar) || 0) > 0).length;
-  return [{ name: "Em Liquidação", value: aggData.length - liquidados }, { name: "Liquidados a Pagar", value: liquidados }];
-}
-
-function processSourceData(aggData) {
-  const grouped = {};
-  aggData.forEach((r) => { const s = r.fonte || "Não Informado"; grouped[s] = (grouped[s] || 0) + (parseFloat(r.valor_bruto) || 0); });
-  return Object.entries(grouped).map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }));
+  return {
+    kpis,
+    sourceData,
+    statusData,
+    rows: rowResult.data || [],
+    totalCount: rowResult.count || 0,
+  };
 }
 
 function buildHref(filters, pagina) {
@@ -72,14 +95,11 @@ export default async function CliqDashboardPage({ searchParams }) {
   const pagina = Math.max(1, parseInt(sp.pagina, 10) || 1);
   const supabase = getSupabaseAdminClient();
 
-  const [fontes, { aggData, rows, totalCount }] = await Promise.all([
+  const [fontes, { kpis, sourceData, statusData, rows, totalCount }] = await Promise.all([
     fetchFontes(supabase),
     fetchCliqData(supabase, filters, pagina),
   ]);
 
-  const kpis = calculateKPIs(aggData);
-  const statusData = processStatusData(aggData);
-  const sourceData = processSourceData(aggData);
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const hasActiveFilters = filters.fonte || filters.credor || filters.processo;
 

@@ -6,6 +6,17 @@ import { LiquidadosTable } from "../../../../components/liquidados-table.jsx";
 import Link from "next/link";
 import { ChevronLeft, TrendingUp, Clock, Landmark } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
+const DEFAULT_KPIS = {
+  totalPago: 0,
+  totalAPagar: 0,
+  quantidadeOBs: 0,
+  quantidadeObsConfirmadas: 0,
+  quantidadeObsPendentes: 0,
+  quantidadeDlsComSaldo: 0,
+};
+
 function formatCurrency(value) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -19,9 +30,11 @@ function formatDate(dateString) {
 }
 
 async function fetchCpagData(supabase) {
-  const [obAggResult, dlAggResult, liquidadosResult, monitoramentoResult] = await Promise.all([
-    supabase.from("vw_monitoramento_pagamentos").select("valor, confirmado_manualmente"),
-    supabase.from("vw_liquidados_a_pagar").select("valor_liquidado_a_pagar"),
+  const [kpisResult, liquidadosResult, monitoramentoResult] = await Promise.all([
+    supabase
+      .from("vw_cpag_kpis")
+      .select("total_pago_confirmado, total_a_pagar, quantidade_obs_emitidas, quantidade_obs_confirmadas, quantidade_obs_pendentes, quantidade_dls_com_saldo")
+      .maybeSingle(),
     supabase
       .from("vw_liquidados_a_pagar")
       .select("numero_processo, codigo_nota_empenho, documento_liquidacao, data_liquidacao, credor, codigo_natureza_despesa, fonte, valor_liquido, valor_bruto, valor_liquidado_a_pagar, valor_ja_pago_obs")
@@ -35,8 +48,7 @@ async function fetchCpagData(supabase) {
   ]);
 
   const queryErrors = [
-    obAggResult.error && "vw_monitoramento_pagamentos (agregado)",
-    dlAggResult.error && "vw_liquidados_a_pagar (agregado)",
+    kpisResult.error && "vw_cpag_kpis",
     liquidadosResult.error && "vw_liquidados_a_pagar (tabela)",
     monitoramentoResult.error && "vw_monitoramento_pagamentos (tabela)",
   ].filter(Boolean);
@@ -45,15 +57,18 @@ async function fetchCpagData(supabase) {
     ? `Falha ao consultar: ${queryErrors.join(", ")}. Os dados podem estar incompletos.`
     : null;
 
-  const obData = obAggResult.data || [];
-  const dlData = dlAggResult.data || [];
-
-  const totalPago = obData.filter((r) => r.confirmado_manualmente).reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
-  const totalAPagar = dlData.reduce((s, r) => s + (parseFloat(r.valor_liquidado_a_pagar) || 0), 0);
-  const quantidadeOBs = obData.length;
+  const kpisData = kpisResult.data || {};
+  const kpis = {
+    totalPago: parseFloat(kpisData.total_pago_confirmado) || DEFAULT_KPIS.totalPago,
+    totalAPagar: parseFloat(kpisData.total_a_pagar) || DEFAULT_KPIS.totalAPagar,
+    quantidadeOBs: Number(kpisData.quantidade_obs_emitidas) || DEFAULT_KPIS.quantidadeOBs,
+    quantidadeObsConfirmadas: Number(kpisData.quantidade_obs_confirmadas) || DEFAULT_KPIS.quantidadeObsConfirmadas,
+    quantidadeObsPendentes: Number(kpisData.quantidade_obs_pendentes) || DEFAULT_KPIS.quantidadeObsPendentes,
+    quantidadeDlsComSaldo: Number(kpisData.quantidade_dls_com_saldo) || DEFAULT_KPIS.quantidadeDlsComSaldo,
+  };
 
   return {
-    kpis: { totalPago, totalAPagar, quantidadeOBs },
+    kpis,
     liquidados: liquidadosResult.data || [],
     monitoramento: monitoramentoResult.data || [],
     fetchError,
@@ -245,9 +260,9 @@ export default async function CpagDashboardPage() {
             </p>
             <div className="space-y-0 divide-y divide-slate-100">
               {[
-                { label: "OBs confirmadas", value: monitoramento.filter((r) => r.confirmado_manualmente).length, color: "text-emerald-600", bg: "bg-emerald-50" },
-                { label: "OBs pendentes", value: monitoramento.filter((r) => !r.confirmado_manualmente).length, color: "text-amber-600", bg: "bg-amber-50" },
-                { label: "DLs com saldo", value: liquidados.length, color: "text-para-blue", bg: "bg-blue-50" },
+                { label: "OBs confirmadas", value: kpis.quantidadeObsConfirmadas, color: "text-emerald-600", bg: "bg-emerald-50" },
+                { label: "OBs pendentes", value: kpis.quantidadeObsPendentes, color: "text-amber-600", bg: "bg-amber-50" },
+                { label: "DLs com saldo", value: kpis.quantidadeDlsComSaldo, color: "text-para-blue", bg: "bg-blue-50" },
               ].map(({ label, value, color, bg }) => (
                 <div key={label} className="flex items-center justify-between py-3">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
