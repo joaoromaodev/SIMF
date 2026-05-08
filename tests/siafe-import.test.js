@@ -644,6 +644,102 @@ test("normalize rows maps DLOB DocumentodaLiquidacao and never emits numero_proc
   assert.equal(Object.hasOwn(normalized[0], "numero_processo"), false);
 });
 
+test("normalize rows fills down DLOB OrdemBancaria and DatadoPagamento", () => {
+  const header = buildDlobHeader();
+  const rows = [
+    ["2026160101OB02875", "13/02/2026", "2026160101DL000641", "160101", "USER", "Pagamento A", "R$ 1,000.00"],
+    [" ", " ", "2026160101DL000642", "160101", "USER", "Pagamento B", "R$ 2,000.00"]
+  ];
+  const headerResolution = resolveHeaders(REPORT_TYPES.DLOB, header);
+
+  const normalized = normalizeRows(
+    REPORT_TYPES.DLOB,
+    header,
+    rows,
+    {
+      batchId: "batch-dlob",
+      yearScope: "2026"
+    },
+    headerResolution
+  );
+
+  assert.equal(normalized[0].ordem_bancaria, "2026160101OB02875");
+  assert.equal(normalized[0].data_pagamento, "2026-02-13");
+  assert.equal(normalized[0].documento_liquidacao, "2026160101DL000641");
+  assert.equal(normalized[0].source_row_number, 2);
+  assert.equal(normalized[1].ordem_bancaria, "2026160101OB02875");
+  assert.equal(normalized[1].data_pagamento, "2026-02-13");
+  assert.equal(normalized[1].documento_liquidacao, "2026160101DL000642");
+  assert.equal(normalized[1].source_row_number, 3);
+  assert.equal(normalized[1].raw_row.OrdemBancaria, " ");
+  assert.equal(normalized[1].raw_row.DatadoPagamento, " ");
+  assert.equal(Object.hasOwn(normalized[1], "numero_processo"), false);
+});
+
+test("normalize rows does not invent DLOB fill down values on the first row", () => {
+  const header = buildDlobHeader();
+  const rows = [
+    ["", "", "DL-0", "UG-1", "Usuario", "Sem agrupamento anterior", "10.00"],
+    ["OB-1", "18/04/2026", "DL-1", "UG-1", "Usuario", "Finalidade", "20.00"]
+  ];
+  const headerResolution = resolveHeaders(REPORT_TYPES.DLOB, header);
+
+  const normalized = normalizeRows(
+    REPORT_TYPES.DLOB,
+    header,
+    rows,
+    {
+      batchId: "batch-dlob",
+      yearScope: "2026"
+    },
+    headerResolution
+  );
+
+  assert.equal(normalized[0].ordem_bancaria, null);
+  assert.equal(normalized[0].data_pagamento, null);
+  assert.equal(normalized[0].documento_liquidacao, "DL-0");
+  assert.equal(normalized[1].ordem_bancaria, "OB-1");
+  assert.equal(normalized[1].data_pagamento, "2026-04-18");
+});
+
+test("normalize rows does not apply DLOB fill down to NE or NEDL", () => {
+  const neHeader = buildNeHeader();
+  const normalizedNe = normalizeRows(
+    REPORT_TYPES.NE,
+    neHeader,
+    [
+      ["NE-1", "18/04/2026", "Usuario", "UG-1", "PROC-1", "10", "10", "10", "1"],
+      ["NE-2", "", "Usuario", "UG-1", "PROC-2", "10", "10", "10", "1"]
+    ],
+    {
+      batchId: "batch-ne",
+      yearScope: "2026"
+    },
+    resolveHeaders(REPORT_TYPES.NE, neHeader)
+  );
+
+  assert.equal(normalizedNe[0].data_empenho, "2026-04-18");
+  assert.equal(normalizedNe[1].data_empenho, null);
+
+  const nedlHeader = buildNedlHeader();
+  const normalizedNedl = normalizeRows(
+    REPORT_TYPES.NEDL,
+    nedlHeader,
+    [
+      ["DL-1", "18/04/2026", "NE-1", "ND-1", "Fonte", "FR-1", "Detalhamento", "DFR-1", "PROC-1", "PA-1", "Credor", "Contrato", "Convenio", "10", "9", "10", "1", "4", "6"],
+      ["DL-2", "", "NE-2", "ND-1", "Fonte", "FR-1", "Detalhamento", "DFR-1", "PROC-2", "PA-1", "Credor", "Contrato", "Convenio", "10", "9", "10", "1", "4", "6"]
+    ],
+    {
+      batchId: "batch-nedl",
+      yearScope: "2026"
+    },
+    resolveHeaders(REPORT_TYPES.NEDL, nedlHeader)
+  );
+
+  assert.equal(normalizedNedl[0].data_liquidacao, "2026-04-18");
+  assert.equal(normalizedNedl[1].data_liquidacao, null);
+});
+
 test("static scopes reject replacement when an active batch already exists", () => {
   assert.throws(
     () => ensureStaticScopeCanImport({ id: "existing-batch" }, "2025"),
