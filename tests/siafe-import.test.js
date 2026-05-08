@@ -479,6 +479,104 @@ test("normalize rows maps NE fields, dates, money, and year scope", () => {
   assert.equal(normalized[0].raw_row.CodigoNotadeEmpenho, "NE-1");
 });
 
+test("normalize rows parses short SIAFE dates in NE, NEDL, and DLOB", () => {
+  const neHeader = buildNeHeader();
+  const neHeaderResolution = resolveHeaders(REPORT_TYPES.NE, neHeader);
+  const shortDateCases = [
+    ["1/1/21", "2021-01-01"],
+    ["01/01/21", "2021-01-01"],
+    ["1/01/21", "2021-01-01"],
+    ["01/1/21", "2021-01-01"],
+    ["1/1/2021", "2021-01-01"]
+  ];
+
+  for (const [input, expected] of shortDateCases) {
+    const [normalizedNe] = normalizeRows(
+      REPORT_TYPES.NE,
+      neHeader,
+      [["NE-1", input, "Usuario", "UG-1", "PROC-1", "10", "10", "10", "1"]],
+      {
+        batchId: "batch-ne",
+        yearScope: "2026"
+      },
+      neHeaderResolution
+    );
+
+    assert.equal(normalizedNe.data_empenho, expected);
+  }
+
+  const nedlHeader = buildNedlHeader();
+  const [normalizedNedl] = normalizeRows(
+    REPORT_TYPES.NEDL,
+    nedlHeader,
+    [[
+      "DL-1",
+      "1/1/21",
+      "NE-1",
+      "ND-1",
+      "Fonte",
+      "FR-1",
+      "Detalhamento",
+      "DFR-1",
+      "PROC-1",
+      "PA-1",
+      "Credor",
+      "Contrato",
+      "Convenio",
+      "10",
+      "9",
+      "10",
+      "1",
+      "4",
+      "6"
+    ]],
+    {
+      batchId: "batch-nedl",
+      yearScope: "2026"
+    },
+    resolveHeaders(REPORT_TYPES.NEDL, nedlHeader)
+  );
+
+  assert.equal(normalizedNedl.data_liquidacao, "2021-01-01");
+
+  const dlobHeader = buildDlobHeader();
+  const [normalizedDlob] = normalizeRows(
+    REPORT_TYPES.DLOB,
+    dlobHeader,
+    [["OB-1", "1/1/21", "DL-1", "UG-1", "Usuario", "Finalidade", "10"]],
+    {
+      batchId: "batch-dlob",
+      yearScope: "2026"
+    },
+    resolveHeaders(REPORT_TYPES.DLOB, dlobHeader)
+  );
+
+  assert.equal(normalizedDlob.data_pagamento, "2021-01-01");
+});
+
+test("normalize rows preserves accepted full slash and ISO date formats", () => {
+  const header = buildNeHeader();
+  const headerResolution = resolveHeaders(REPORT_TYPES.NE, header);
+  const rows = [
+    ["NE-1", "17/04/2026", "Usuario", "UG-1", "PROC-1", "10", "10", "10", "1"],
+    ["NE-2", "2026-04-17", "Usuario", "UG-1", "PROC-2", "10", "10", "10", "1"]
+  ];
+
+  const normalized = normalizeRows(
+    REPORT_TYPES.NE,
+    header,
+    rows,
+    {
+      batchId: "batch-ne",
+      yearScope: "2026"
+    },
+    headerResolution
+  );
+
+  assert.equal(normalized[0].data_empenho, "2026-04-17");
+  assert.equal(normalized[1].data_empenho, "2026-04-17");
+});
+
 test("normalize rows maps NEDL fields including NomeCredor to credor_nome", () => {
   const header = buildNedlHeader();
   const rows = [[
@@ -518,6 +616,7 @@ test("normalize rows maps NEDL fields including NomeCredor to credor_nome", () =
   assert.equal(normalized[0].documento_liquidacao, "DL-1");
   assert.equal(normalized[0].codigo_nota_empenho, "NE-1");
   assert.equal(normalized[0].numero_processo, "PROC-1");
+  assert.equal(normalized[0].data_liquidacao, "2026-04-17");
   assert.equal(normalized[0].credor_nome, "Credor");
   assert.equal(normalized[0].valor_bruto, 10);
 });
