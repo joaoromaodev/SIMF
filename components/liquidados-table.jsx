@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRowSelection } from "../lib/hooks/useRowSelection";
 import { SelectionCalculator } from "./selection-calculator";
 import { formatCurrency } from "../lib/utils/formatters";
@@ -12,8 +13,41 @@ export function LiquidadosTable({ liquidados }) {
 
   const totalSelecionado = calculateTotal("valor_liquidado_a_pagar");
 
+  const [statusFilter, setStatusFilter] = useState("todos");
+
+  const filteredLiquidados = liquidados.filter((item) => {
+    const pago  = parseFloat(item.valor_ja_pago_obs) || 0;
+    const bruto = parseFloat(item.valor_bruto)       || 0;
+    if (statusFilter === "pendente") return pago === 0;
+    if (statusFilter === "parcial")  return pago > 0 && pago < bruto;
+    return pago < bruto; // "todos" — exclui quitados por padrão
+  });
+
   return (
     <>
+      {/* ── Barra de filtros ── */}
+      <div className="px-6 py-3 border-b border-slate-100 flex items-center gap-4 bg-slate-50/50">
+        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">
+          Status
+        </label>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 cursor-pointer"
+        >
+          <option value="todos">Todos</option>
+          <option value="pendente">Pendente de Pagamento</option>
+          <option value="parcial">Pago Parcial</option>
+        </select>
+        <span className="ml-auto text-[11px] text-slate-400 font-medium">
+          {filteredLiquidados.length}
+          {filteredLiquidados.length !== liquidados.length && (
+            <span className="text-slate-300"> / {liquidados.length}</span>
+          )}{" "}
+          registros
+        </span>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50">
@@ -42,7 +76,7 @@ export function LiquidadosTable({ liquidados }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {liquidados.map((item, index) => {
+            {filteredLiquidados.map((item, index) => {
               const vlImposto = (parseFloat(item.valor_bruto) || 0) - (parseFloat(item.valor_liquido) || 0);
               return (
                 <tr
