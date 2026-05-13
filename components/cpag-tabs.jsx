@@ -18,7 +18,7 @@ const TABS = [
   { id: "recursos",      label: "Recursos (Saldo)"      },
 ];
 
-export function CpagTabs({ liquidados, monitoramento }) {
+export function CpagTabs({ liquidados, monitoramento, ano }) {
   const [activeTab, setActiveTab] = useState("liquidados");
 
   return (
@@ -78,7 +78,7 @@ export function CpagTabs({ liquidados, monitoramento }) {
 
       {/* ── Aba 2: Monitoramento de OBs ── */}
       {activeTab === "monitoramento" && (
-        <MonitoramentoOBTable monitoramento={monitoramento} />
+        <MonitoramentoOBTable monitoramento={monitoramento} ano={ano} />
       )}
 
       {/* ── Aba 3: Recursos (Saldo) — Em Construção ── */}

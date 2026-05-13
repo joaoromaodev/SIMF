@@ -5,7 +5,7 @@ import ErrorBanner from "../../../../components/error-banner.jsx";
 import { LiquidadosTable } from "../../../../components/liquidados-table.jsx";
 import { CpagTabs } from "../../../../components/cpag-tabs.jsx";
 import Link from "next/link";
-import { ChevronLeft, TrendingUp, Clock, Landmark } from "lucide-react";
+import { ChevronLeft, TrendingUp, Clock } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -107,7 +107,9 @@ function StatCard({ label, value, sub, icon: Icon, accent }) {
   );
 }
 
-export default async function CpagDashboardPage() {
+export default async function CpagDashboardPage({ searchParams }) {
+  const sp  = await searchParams;
+  const ano = sp?.ano || "2026";
   const supabase = getSupabaseAdminClient();
   const { kpis, liquidados, monitoramento, fetchError } = await fetchCpagData(supabase);
 
@@ -139,11 +141,45 @@ export default async function CpagDashboardPage() {
         </div>
       </div>
 
+      {/* Seletor de Ano */}
+      <div className="flex items-center gap-3">
+        <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+          Ano de Exercício
+        </span>
+        <details className="relative group">
+          <summary className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm text-[11px] font-black uppercase tracking-widest text-blue-600 cursor-pointer select-none hover:border-blue-400 transition-colors list-none">
+            {ano}
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-180">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </summary>
+          <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 min-w-[110px]">
+            {["2023", "2024", "2025", "2026"].map((a) => (
+              <Link
+                key={a}
+                href={`/dashboard/dppc/cpag?ano=${a}`}
+                className={`flex items-center justify-between px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-colors ${
+                  ano === a
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                }`}
+              >
+                {a}
+                {ano === a && (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </Link>
+            ))}
+          </div>
+        </details>
+      </div>
+
       {/* KPI Cards + Exportação */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_220px] gap-5 items-stretch">
-        <StatCard label="Total Efetivamente Pago" value={formatCurrency(kpis.totalPago)} sub="OBs confirmadas manualmente" icon={TrendingUp} accent="green" />
-        <StatCard label="Total a Pagar" value={formatCurrency(kpis.totalAPagar)} sub="DLs com saldo pendente apos OBs" icon={Clock} accent="amber" />
-        <StatCard label="Ordens Bancárias Emitidas" value={kpis.quantidadeOBs.toLocaleString("pt-BR")} sub="Total de OBs no período" icon={Landmark} accent="blue" />
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px] gap-5 items-stretch">
+        <StatCard label="Total Efetivamente Pago" value={formatCurrency(kpis.totalPago)} sub={`${kpis.quantidadeObsConfirmadas.toLocaleString("pt-BR")} OBs confirmadas`} icon={TrendingUp} accent="green" />
+        <StatCard label="Total a Pagar" value={formatCurrency(kpis.totalAPagar)} sub={`${kpis.quantidadeDlsComSaldo.toLocaleString("pt-BR")} DLs com saldo pendente`} icon={Clock} accent="amber" />
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-6 flex flex-col justify-center gap-1">
           <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Relatórios</p>
           <CpagExportButtons />
@@ -151,7 +187,7 @@ export default async function CpagDashboardPage() {
       </div>
 
       {/* Tabela — largura total */}
-      <CpagTabs liquidados={liquidados} monitoramento={monitoramento} />
+      <CpagTabs liquidados={liquidados} monitoramento={monitoramento} ano={ano} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { getSupabaseAdminClient } from "../../../../lib/supabase/server.js";
-import CliqCharts from "../../../../components/cliq-charts.jsx";
+import { CliqTabs } from "../../../../components/cliq-tabs.jsx";
 import Link from "next/link";
 import { ChevronLeft, FileCheck2, Filter, X } from "lucide-react";
 
@@ -20,6 +20,24 @@ function formatCurrency(value) {
 function formatDate(dateString) {
   if (!dateString) return "—";
   return new Date(dateString).toLocaleDateString("pt-BR");
+}
+
+const ANOS = ["2021","2022","2023", "2024", "2025", "2026"];
+
+function StatCard({ label, quantidade, total }) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-7 py-6 flex flex-col justify-between gap-3">
+      <p className="text-xs font-black uppercase tracking-widest text-slate-400">{label}</p>
+      <div>
+        <p className="text-4xl font-black text-para-blue leading-none tracking-tight">
+          {quantidade.toLocaleString("pt-BR")}
+        </p>
+        <p className="text-sm font-bold text-slate-400 mt-2">
+          {formatCurrency(total)}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 async function fetchFontes(supabase) {
@@ -92,7 +110,8 @@ function buildHref(filters, pagina) {
 export default async function CliqDashboardPage({ searchParams }) {
   const sp = await searchParams;
   const filters = { fonte: sp.fonte || "", credor: sp.credor || "", processo: sp.processo || "" };
-  const pagina = Math.max(1, parseInt(sp.pagina, 10) || 1);
+  const ano     = sp.ano || "2026";
+  const pagina  = Math.max(1, parseInt(sp.pagina, 10) || 1);
   const supabase = getSupabaseAdminClient();
 
   const [fontes, { kpis, sourceData, statusData, rows, totalCount }] = await Promise.all([
@@ -131,145 +150,85 @@ export default async function CliqDashboardPage({ searchParams }) {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          { label: "Total em Liquidação", value: formatCurrency(kpis.totalEmLiquidacao), sub: "Valor bruto acumulado" },
-          { label: "Empenhos em Liquidação", value: kpis.quantidadeEmLiquidacao.toLocaleString("pt-BR"), sub: "Total de registros" },
-          { label: "Liquidados a Pagar", value: kpis.quantidadeLiquidadosAPagar.toLocaleString("pt-BR"), sub: "Com saldo a pagar" },
-        ].map(({ label, value, sub }) => (
-          <div key={label} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
-            <p className="text-2xl font-black text-para-blue leading-none">{value}</p>
-            <p className="text-[11px] text-slate-400 mt-1.5 font-medium">{sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Charts */}
-      <CliqCharts statusData={statusData} sourceData={sourceData} />
-
-      {/* Filtros */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-          <Filter size={14} className="text-slate-400" />
-          <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">Filtros</span>
-          {hasActiveFilters && (
-            <span className="ml-auto text-[10px] font-black text-para-blue bg-blue-50 px-2 py-0.5 rounded-full">
-              Ativo
-            </span>
-          )}
-        </div>
-        <form method="GET" className="p-5">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="block text-[11px] uppercase font-black text-slate-400 tracking-widest mb-1.5">Credor</label>
-              <input
-                type="text" name="credor" defaultValue={filters.credor}
-                placeholder="Buscar por credor..."
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-para-blue/30 focus:border-para-blue transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] uppercase font-black text-slate-400 tracking-widest mb-1.5">Fonte de Recurso</label>
-              <select name="fonte" defaultValue={filters.fonte} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-para-blue/30 focus:border-para-blue transition-colors">
-                <option value="">Todas as fontes</option>
-                {fontes.map((f) => <option key={f} value={f}>{f}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-[11px] uppercase font-black text-slate-400 tracking-widest mb-1.5">Processo</label>
-              <input
-                type="text" name="processo" defaultValue={filters.processo}
-                placeholder="Buscar por processo..."
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-para-blue/30 focus:border-para-blue transition-colors"
-              />
-            </div>
-          </div>
-          <button type="submit" className="px-5 py-2 bg-para-blue text-white text-[11px] font-black uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-colors">
-            Aplicar Filtros
-          </button>
-        </form>
-      </div>
-
-      {/* Tabela */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-black uppercase tracking-widest text-slate-800">Visão Geral de Liquidações</h2>
-            <p className="text-[11px] text-slate-400 font-medium mt-0.5">Documentos de liquidação com saldo pendente, inclusive pagamentos parciais</p>
-          </div>
-          {totalCount > 0 && (
-            <span className="text-[11px] font-black text-slate-400 bg-slate-100 rounded-full px-3 py-1">
-              {totalCount.toLocaleString("pt-BR")} {hasActiveFilters ? "(filtrado)" : "registros"}
-            </span>
-          )}
-        </div>
-
-        {rows.length > 0 ? (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    {["Processo", "Empenho", "Doc. Liquidação", "Credor", "Fonte", "Dt. Liquidação", "Pago em OBs", "Val. Líquido", "Val. Bruto", "A Pagar"].map((h, i) => (
-                      <th key={h} className={`px-5 py-3 text-[11px] font-black uppercase tracking-wider text-slate-500 ${i >= 6 ? (i === 6 ? "text-right" : "text-right") : "text-left"}`}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {rows.map((row, index) => (
-                    <tr key={row.documento_liquidacao} className={`transition-colors hover:bg-slate-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}>
-                      <td className="px-5 py-3.5 text-slate-800 font-semibold text-xs">{row.numero_processo || "—"}</td>
-                      <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{row.codigo_nota_empenho || "—"}</td>
-                      <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{row.documento_liquidacao || "—"}</td>
-                      <td className="px-5 py-3.5 text-slate-600 text-xs max-w-[160px] truncate">{row.credor || "—"}</td>
-                      <td className="px-5 py-3.5 text-slate-600 text-xs">{row.fonte || "—"}</td>
-                      <td className="px-5 py-3.5 text-slate-500 text-xs">{formatDate(row.data_liquidacao)}</td>
-                      <td className="px-5 py-3.5 text-right font-mono font-bold text-emerald-600 text-xs">{formatCurrency(row.valor_ja_pago_obs)}</td>
-                      <td className="px-5 py-3.5 text-right font-mono font-bold text-para-blue text-xs">{formatCurrency(row.valor_liquido)}</td>
-                      <td className="px-5 py-3.5 text-right font-mono font-bold text-para-blue text-xs">{formatCurrency(row.valor_bruto)}</td>
-                      <td className="px-5 py-3.5 text-right font-mono font-bold text-amber-600 text-xs">{formatCurrency(row.valor_liquidado_a_pagar)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Paginação */}
-            <div className="border-t border-slate-100 px-6 py-4 flex items-center justify-between bg-slate-50/50">
+      {/* Seletor de Ano */}
+      <div className="flex items-center gap-3">
+        <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+          Ano de Exercício
+        </span>
+        <details className="relative group">
+          <summary className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm text-[11px] font-black uppercase tracking-widest text-para-blue cursor-pointer select-none hover:border-para-blue transition-colors list-none">
+            {ano}
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-180">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </summary>
+          <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 min-w-[110px]">
+            {ANOS.map((a) => (
               <Link
-                href={buildHref(filters, pagina - 1)}
-                className={`px-4 py-2 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${pagina <= 1 ? "text-slate-300 border-slate-100 pointer-events-none" : "text-slate-600 border-slate-200 hover:bg-slate-100"}`}
-                aria-disabled={pagina <= 1}
+                key={a}
+                href={`/dashboard/dppc/cliq?ano=${a}`}
+                className={`flex items-center justify-between px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-colors ${
+                  ano === a
+                    ? "text-para-blue bg-blue-50"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                }`}
               >
-                Anterior
+                {a}
+                {ano === a && (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
               </Link>
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                Página {pagina} de {totalPages}
-              </span>
-              <Link
-                href={buildHref(filters, pagina + 1)}
-                className={`px-4 py-2 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${pagina >= totalPages ? "text-slate-300 border-slate-100 pointer-events-none" : "text-slate-600 border-slate-200 hover:bg-slate-100"}`}
-                aria-disabled={pagina >= totalPages}
-              >
-                Próxima
-              </Link>
-            </div>
-          </>
-        ) : (
-          <div className="px-6 py-16 text-center">
-            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
-              <FileCheck2 size={18} className="text-slate-400" />
-            </div>
-            <p className="text-slate-400 text-sm font-medium">
-              {hasActiveFilters ? "Nenhum registro para os filtros aplicados." : "Nenhuma liquidação a pagar encontrada."}
-            </p>
+            ))}
           </div>
-        )}
+        </details>
       </div>
+
+      {/* KPI Cards + Exportação */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px] gap-5 items-stretch">
+        <StatCard
+          label="Empenhos em Liquidação"
+          quantidade={kpis.quantidadeEmLiquidacao}
+          total={kpis.totalEmLiquidacao}
+        />
+        <StatCard
+          label="Liquidados a Pagar"
+          quantidade={kpis.quantidadeLiquidadosAPagar}
+          total={kpis.totalAPagar}
+        />
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-6 flex flex-col justify-center gap-1">
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Relatórios</p>
+          <div className="flex flex-col gap-2">
+            <a
+              href={`/api/cliq/export/xlsx?ano=${ano}`}
+              className="inline-flex items-center justify-between px-3 py-2 text-[11px] font-black uppercase tracking-widest text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              Exportar XLSX
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </a>
+            <a
+              href={`/api/cliq/export/pdf?ano=${ano}`}
+              className="inline-flex items-center justify-between px-3 py-2 text-[11px] font-black uppercase tracking-widest text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              Exportar PDF
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Abas — Filtros + Tabela */}
+      <CliqTabs
+        rows={rows}
+        totalCount={totalCount}
+        filters={filters}
+        pagina={pagina}
+        totalPages={totalPages}
+        fontes={fontes}
+        hasActiveFilters={!!hasActiveFilters}
+        ano={ano}
+      />
     </div>
   );
 }

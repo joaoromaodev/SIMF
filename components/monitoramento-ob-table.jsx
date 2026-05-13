@@ -40,13 +40,10 @@ function FilterInput({ label, value, onChange }) {
   );
 }
 
-export function MonitoramentoOBTable({ monitoramento }) {
+export function MonitoramentoOBTable({ monitoramento, ano }) {
   const [filtroProcesso,  setFiltroProcesso]  = useState("");
   const [filtroCredor,    setFiltroCredor]    = useState("");
   const [filtroDocumento, setFiltroDocumento] = useState("");
-  const [yearFilter,      setYearFilter]      = useState("2026");
-
-  const ANOS = ["2021", "2022", "2023", "2024", "2025", "2026"];
 
   const filtered = useMemo(() => {
     const normalize = (str) => (str ?? "").toLowerCase().trim();
@@ -55,50 +52,32 @@ export function MonitoramentoOBTable({ monitoramento }) {
     const doc  = normalize(filtroDocumento);
 
     return monitoramento.filter((item) => {
-      if (yearFilter) {
-        const ano = item.data_pagamento
+      if (ano) {
+        const itemAno = item.data_pagamento
           ? String(new Date(item.data_pagamento).getFullYear())
           : null;
-        if (ano !== yearFilter) return false;
+        if (itemAno !== ano) return false;
       }
       if (proc && !normalize(item.numero_processo).includes(proc))   return false;
       if (cred && !normalize(item.credor).includes(cred))            return false;
       if (doc  && !normalize(item.documento_credor).includes(doc))   return false;
       return true;
     });
-  }, [monitoramento, filtroProcesso, filtroCredor, filtroDocumento, yearFilter]);
+  }, [monitoramento, filtroProcesso, filtroCredor, filtroDocumento, ano]);
 
-  const hasActiveFilter = filtroProcesso || filtroCredor || filtroDocumento || yearFilter !== "2026";
+  const hasActiveFilter = filtroProcesso || filtroCredor || filtroDocumento;
 
   function clearAll() {
     setFiltroProcesso("");
     setFiltroCredor("");
     setFiltroDocumento("");
-    setYearFilter("2026");
   }
 
   return (
     <>
       {/* ── Barra de filtros cruzados ── */}
       <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          {/* Select de Ano — destaque visual por ser filtro principal */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Ano de Exercício
-            </label>
-            <select
-              value={yearFilter}
-              onChange={(e) => setYearFilter(e.target.value)}
-              className="py-1.5 px-3 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 cursor-pointer"
-            >
-              <option value="">Todos os anos</option>
-              {ANOS.map((ano) => (
-                <option key={ano} value={ano}>{ano}</option>
-              ))}
-            </select>
-          </div>
-
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <FilterInput
             label="Processo"
             value={filtroProcesso}
