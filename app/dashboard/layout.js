@@ -70,7 +70,7 @@ export default function DashboardLayout({ children }) {
         {/* Logo */}
         <div className={`flex items-center border-b border-slate-100 transition-all duration-300 ${isCollapsed ? "px-4 py-5 justify-center" : "px-6 py-5 justify-between"}`}>
           {!isCollapsed && (
-            <div>
+            <Link href="/" className="hover:opacity-75 transition-opacity cursor-pointer">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center flex-shrink-0">
                   <LayoutDashboard size={14} className="text-white" />
@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }) {
               <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1 font-medium pl-9">
                 SEDUC · Pará
               </p>
-            </div>
+            </Link>
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
