@@ -43,7 +43,7 @@ async function fetchCpagData(supabase) {
       .limit(100),
     supabase
       .from("vw_monitoramento_pagamentos")
-      .select("numero_processo, credor, fonte, documento_liquidacao, ordem_bancaria, data_liquidacao, data_pagamento, valor, codigo_unidade_gestora, confirmado_manualmente, confirmado_por, confirmado_em, observacao")
+      .select("numero_processo, credor, fonte, documento_liquidacao, ordem_bancaria, data_liquidacao, data_pagamento, valor, codigo_unidade_gestora, confirmado_manualmente, confirmado_por, confirmado_em, observacao, tem_vinculo_nedl, motivo_sem_vinculo")
       .order("data_pagamento", { ascending: false })
       .limit(100),
   ]);

@@ -44,6 +44,7 @@ export function MonitoramentoOBTable({ monitoramento, ano }) {
   const [filtroProcesso,  setFiltroProcesso]  = useState("");
   const [filtroCredor,    setFiltroCredor]    = useState("");
   const [filtroDocumento, setFiltroDocumento] = useState("");
+  const [filtroVinculo,   setFiltroVinculo]   = useState("todos");
 
   const filtered = useMemo(() => {
     const normalize = (str) => (str ?? "").toLowerCase().trim();
@@ -61,23 +62,26 @@ export function MonitoramentoOBTable({ monitoramento, ano }) {
       if (proc && !normalize(item.numero_processo).includes(proc))   return false;
       if (cred && !normalize(item.credor).includes(cred))            return false;
       if (doc  && !normalize(item.documento_credor).includes(doc))   return false;
+      if (filtroVinculo === "sem_vinculo"  && item.tem_vinculo_nedl !== false) return false;
+      if (filtroVinculo === "confirmados"  && !item.confirmado_manualmente)    return false;
       return true;
     });
-  }, [monitoramento, filtroProcesso, filtroCredor, filtroDocumento, ano]);
+  }, [monitoramento, filtroProcesso, filtroCredor, filtroDocumento, filtroVinculo, ano]);
 
-  const hasActiveFilter = filtroProcesso || filtroCredor || filtroDocumento;
+  const hasActiveFilter = filtroProcesso || filtroCredor || filtroDocumento || filtroVinculo !== "todos";
 
   function clearAll() {
     setFiltroProcesso("");
     setFiltroCredor("");
     setFiltroDocumento("");
+    setFiltroVinculo("todos");
   }
 
   return (
     <>
       {/* ── Barra de filtros cruzados ── */}
       <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <FilterInput
             label="Processo"
             value={filtroProcesso}
@@ -93,6 +97,24 @@ export function MonitoramentoOBTable({ monitoramento, ano }) {
             value={filtroDocumento}
             onChange={setFiltroDocumento}
           />
+          <div className="flex flex-col gap-1 min-w-0">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Vínculo NEDL
+            </label>
+            <select
+              value={filtroVinculo}
+              onChange={(e) => setFiltroVinculo(e.target.value)}
+              className={`text-xs font-semibold bg-white border rounded-lg px-3 py-1.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 cursor-pointer transition-colors ${
+                filtroVinculo !== "todos"
+                  ? "border-amber-400 text-amber-700"
+                  : "border-slate-200 text-slate-700"
+              }`}
+            >
+              <option value="todos">Todos</option>
+              <option value="sem_vinculo">Sem vínculo NEDL</option>
+              <option value="confirmados">Confirmados</option>
+            </select>
+          </div>
         </div>
 
         {/* Linha de status do filtro */}
@@ -131,6 +153,7 @@ export function MonitoramentoOBTable({ monitoramento, ano }) {
                   { label: "Nome do Credor",      align: "text-left"  },
                   { label: "Doc. do Credor",      align: "text-left"  },
                   { label: "Descrição",           align: "text-left"  },
+                  { label: "Status NEDL",         align: "text-left"  },
                 ].map(({ label, align }) => (
                   <th
                     key={label}
@@ -172,6 +195,19 @@ export function MonitoramentoOBTable({ monitoramento, ano }) {
                   </td>
                   <td className="px-5 py-3.5 text-slate-500 text-xs max-w-[200px] truncate">
                     {item.descricao || "—"}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    {item.tem_vinculo_nedl === false ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1 whitespace-nowrap">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                        {item.motivo_sem_vinculo || "DL não localizada no NEDL"}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1 whitespace-nowrap">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                        Vinculado
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
