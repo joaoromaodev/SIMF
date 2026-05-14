@@ -1,11 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, Construction, TrendingUp, BookOpen, Calculator } from "lucide-react";
-
-const MODULES = [
-  { abbr: "CEO", label: "Controle de Execução Orçamentária", icon: TrendingUp },
-  { abbr: "CPED", label: "Controle de Planejamento e Execução da Despesa", icon: BookOpen },
-  { abbr: "ACONT", label: "Assessoria de Contabilidade", icon: Calculator },
-];
+import { Landmark, BookOpen, Vault, ChevronRight, ChevronLeft } from "lucide-react";
 
 export default function DfinHubPage() {
   return (
@@ -13,7 +7,10 @@ export default function DfinHubPage() {
 
       {/* Breadcrumb */}
       <div>
-        <Link href="/" className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-para-blue uppercase tracking-widest transition-colors">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-para-blue uppercase tracking-widest transition-colors"
+        >
           <ChevronLeft size={13} />
           Portal Principal
         </Link>
@@ -23,48 +20,92 @@ export default function DfinHubPage() {
       <div>
         <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">DFIN</p>
         <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-          Diretoria de Finanças
+          Diretoria Financeira
         </h1>
         <p className="text-slate-400 text-sm font-medium mt-1">
-          Gestão orçamentária, planejamento e execução da despesa
+          Execução orçamentária, contabilidade e tesouraria
         </p>
       </div>
 
-      {/* Banner em construção */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex items-start gap-4">
-        <div className="p-2.5 bg-amber-100 rounded-lg flex-shrink-0">
-          <Construction size={20} className="text-amber-600" />
-        </div>
-        <div>
-          <p className="text-sm font-black text-amber-800 mb-1">Módulo em desenvolvimento</p>
-          <p className="text-xs text-amber-600 leading-relaxed font-medium">
-            Os dashboards da DFIN estão sendo desenvolvidos. As coordenadorias CEO, CPED e ACONT estarão disponíveis em breve com integração completa ao banco de dados SIAFE.
+      {/* Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        {/* CEO — Ativo */}
+        <Link
+          href="/dashboard/dfin/ceo"
+          className="group bg-white rounded-xl border border-slate-200 shadow-sm p-7 hover:shadow-md hover:border-para-blue/30 transition-all duration-200"
+        >
+          <div className="flex items-start justify-between mb-6">
+            <div className="p-3 bg-blue-50 rounded-xl group-hover:bg-blue-100 transition-colors">
+              <Landmark size={24} className="text-para-blue" />
+            </div>
+            <span className="text-[10px] font-black text-para-blue bg-blue-50 px-2.5 py-1 rounded-full uppercase tracking-widest">
+              Operacional
+            </span>
+          </div>
+
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">CEO</h2>
+          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">
+            Coord. de Execução Orçamentária
+          </p>
+          <p className="text-slate-500 text-sm leading-relaxed mb-6">
+            Monitoramento da execução orçamentária com análise de empenhos, liquidações e saldo disponível.
+          </p>
+
+          <div className="flex items-center gap-1.5 text-para-blue font-black uppercase text-[11px] tracking-widest group-hover:gap-2.5 transition-all">
+            Acessar
+            <ChevronRight size={13} />
+          </div>
+        </Link>
+
+        {/* CCONT — Inativo */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-7 opacity-50 cursor-not-allowed select-none">
+          <div className="flex items-start justify-between mb-6">
+            <div className="p-3 bg-slate-100 rounded-xl">
+              <BookOpen size={24} className="text-slate-400" />
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full uppercase tracking-widest">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              Em Construção
+            </span>
+          </div>
+
+          <h2 className="text-2xl font-black text-slate-700 tracking-tight mb-1">CCONT</h2>
+          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">
+            Coord. de Contabilidade
+          </p>
+          <p className="text-slate-400 text-sm leading-relaxed">
+            Escrituração contábil, conciliação de contas e geração de demonstrativos financeiros.
           </p>
         </div>
-      </div>
 
-      {/* Cards das coordenadorias */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {MODULES.map(({ abbr, label, icon: Icon }) => (
-          <div key={abbr} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 opacity-60 cursor-not-allowed">
-            <div className="p-2.5 bg-slate-100 rounded-lg inline-flex mb-4">
-              <Icon size={18} className="text-slate-400" />
+        {/* CTES — Inativo */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-7 opacity-50 cursor-not-allowed select-none">
+          <div className="flex items-start justify-between mb-6">
+            <div className="p-3 bg-slate-100 rounded-xl">
+              <Vault size={24} className="text-slate-400" />
             </div>
-            <h2 className="text-lg font-black text-slate-600 tracking-tight mb-1">{abbr}</h2>
-            <p className="text-xs text-slate-400 font-medium leading-relaxed">{label}</p>
-            <div className="mt-4">
-              <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full uppercase tracking-widest">
-                Em breve
-              </span>
-            </div>
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full uppercase tracking-widest">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              Em Construção
+            </span>
           </div>
-        ))}
+
+          <h2 className="text-2xl font-black text-slate-700 tracking-tight mb-1">CTES</h2>
+          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">
+            Coord. de Tesouraria
+          </p>
+          <p className="text-slate-400 text-sm leading-relaxed">
+            Controle de fluxo de caixa, gestão de contas bancárias e autorizações de pagamento.
+          </p>
+        </div>
+
       </div>
 
       {/* Footer */}
       <div className="border-t border-slate-200 pt-6">
         <p className="text-slate-400 text-xs font-medium">
-          Para acompanhar o desenvolvimento, entre em contato com o time de TI da SEDUC/PA.
+          Dados em tempo real do banco de dados centralizado.
         </p>
       </div>
     </div>

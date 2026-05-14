@@ -7,8 +7,8 @@ const MODULES = [
     label: "Diretoria de Finanças",
     desc: "Gestão orçamentária e financeira",
     href: "/dashboard/dfin",
-    status: "Em construção",
-    disabled: true,
+    status: "Operacional",
+    disabled: false,
   },
   {
     abbr: "DPPC",
