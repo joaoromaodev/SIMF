@@ -138,7 +138,7 @@ export default async function CliqDashboardPage({ searchParams }) {
             </div>
             <div>
               <h1 className="text-3xl font-black text-slate-900 tracking-tight">Dashboard CLIQ</h1>
-              <p className="text-slate-400 text-sm font-medium mt-0.5">Controle de Liquidações — Exercício Fiscal 2026</p>
+              <p className="text-slate-400 text-sm font-medium mt-0.5">Controle de Liquidações</p>
             </div>
           </div>
           {hasActiveFilters && (

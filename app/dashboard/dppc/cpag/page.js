@@ -132,7 +132,7 @@ export default async function CpagDashboardPage({ searchParams }) {
               Dashboard CPAG
             </h1>
             <p className="text-slate-400 text-sm font-medium mt-1">
-              Controle de Pagamentos — Exercício Fiscal 2026
+              Controle de Pagamentos
             </p>
           </div>
           <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">

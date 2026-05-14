@@ -71,29 +71,6 @@ function ExportButtons() {
   );
 }
 
-// ── Botão de ação: Liquidar Manual ───────────────────────────────────────────
-function LiquidarManualButton({ empenho }) {
-  const [acionado, setAcionado] = useState(false);
-
-  if (acionado) {
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-        Conciliação Pendente
-      </span>
-    );
-  }
-
-  return (
-    <button
-      onClick={() => setAcionado(true)}
-      className="px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white bg-para-blue rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-    >
-      Liquidar Manual
-    </button>
-  );
-}
-
 // ── Multi-select de Fonte ─────────────────────────────────────────────────────
 function FonteMultiSelect({ fontes, selected, onChange }) {
   const [open, setOpen] = useState(false);
@@ -277,14 +254,13 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                     {[
-                      { label: "Processo",  align: "text-left"   },
-                      { label: "Empenho",   align: "text-left"   },
-                      { label: "Credor",    align: "text-left"   },
-                      { label: "Natureza",  align: "text-left"   },
-                      { label: "Fonte",     align: "text-left"   },
-                      { label: "Data",      align: "text-left"   },
-                      { label: "Valor",     align: "text-right"  },
-                      { label: "Ação",      align: "text-center" },
+                      { label: "Processo",  align: "text-left"  },
+                      { label: "Empenho",   align: "text-left"  },
+                      { label: "Credor",    align: "text-left"  },
+                      { label: "Natureza",  align: "text-left"  },
+                      { label: "Fonte",     align: "text-left"  },
+                      { label: "Data",      align: "text-left"  },
+                      { label: "Valor",     align: "text-right" },
                     ].map(({ label, align }) => (
                       <th key={label} className={`px-5 py-3 text-[11px] font-black uppercase tracking-wider text-slate-500 ${align}`}>
                         {label}
@@ -302,9 +278,6 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
                       <td className="px-5 py-3.5 text-slate-600 text-xs">{row.fonte || "—"}</td>
                       <td className="px-5 py-3.5 text-slate-500 text-xs">{formatDate(row.data_empenho)}</td>
                       <td className="px-5 py-3.5 text-right font-mono font-bold text-para-blue text-xs">{formatCurrency(row.valor_empenho)}</td>
-                      <td className="px-5 py-3.5 text-center">
-                        <LiquidarManualButton empenho={row.codigo_nota_empenho} />
-                      </td>
                     </tr>
                   ))}
                 </tbody>
