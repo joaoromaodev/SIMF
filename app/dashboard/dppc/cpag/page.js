@@ -1,13 +1,13 @@
 import { getSupabaseAdminClient } from "../../../../lib/supabase/server.js";
-import PaymentToggle from "../../../../components/payment-toggle.jsx";
 import CpagExportButtons from "../../../../components/cpag-export-buttons.jsx";
 import ErrorBanner from "../../../../components/error-banner.jsx";
-import { LiquidadosTable } from "../../../../components/liquidados-table.jsx";
 import { CpagTabs } from "../../../../components/cpag-tabs.jsx";
 import Link from "next/link";
 import { ChevronLeft, TrendingUp, Clock } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+const PAGE_SIZE = 50;
 
 const DEFAULT_KPIS = {
   totalPago: 0,
@@ -23,57 +23,6 @@ function formatCurrency(value) {
     style: "currency",
     currency: "BRL",
   }).format(value ?? 0);
-}
-
-function formatDate(dateString) {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString("pt-BR");
-}
-
-async function fetchCpagData(supabase) {
-  const [kpisResult, liquidadosResult, monitoramentoResult] = await Promise.all([
-    supabase
-      .from("vw_cpag_kpis")
-      .select("total_pago_confirmado, total_a_pagar, quantidade_obs_emitidas, quantidade_obs_confirmadas, quantidade_obs_pendentes, quantidade_dls_com_saldo")
-      .maybeSingle(),
-    supabase
-      .from("vw_liquidados_a_pagar")
-      .select("numero_processo, codigo_nota_empenho, documento_liquidacao, data_liquidacao, credor, codigo_natureza_despesa, fonte, valor_liquido, valor_bruto, valor_liquidado_a_pagar, valor_ja_pago_obs")
-      .order("data_liquidacao", { ascending: false, nullsFirst: false })
-      .limit(100),
-    supabase
-      .from("vw_monitoramento_pagamentos")
-      .select("numero_processo, credor, fonte, documento_liquidacao, ordem_bancaria, data_liquidacao, data_pagamento, valor, codigo_unidade_gestora, confirmado_manualmente, confirmado_por, confirmado_em, observacao, tem_vinculo_nedl, motivo_sem_vinculo")
-      .order("data_pagamento", { ascending: false })
-      .limit(100),
-  ]);
-
-  const queryErrors = [
-    kpisResult.error && "vw_cpag_kpis",
-    liquidadosResult.error && "vw_liquidados_a_pagar (tabela)",
-    monitoramentoResult.error && "vw_monitoramento_pagamentos (tabela)",
-  ].filter(Boolean);
-
-  const fetchError = queryErrors.length > 0
-    ? `Falha ao consultar: ${queryErrors.join(", ")}. Os dados podem estar incompletos.`
-    : null;
-
-  const kpisData = kpisResult.data || {};
-  const kpis = {
-    totalPago: parseFloat(kpisData.total_pago_confirmado) || DEFAULT_KPIS.totalPago,
-    totalAPagar: parseFloat(kpisData.total_a_pagar) || DEFAULT_KPIS.totalAPagar,
-    quantidadeOBs: Number(kpisData.quantidade_obs_emitidas) || DEFAULT_KPIS.quantidadeOBs,
-    quantidadeObsConfirmadas: Number(kpisData.quantidade_obs_confirmadas) || DEFAULT_KPIS.quantidadeObsConfirmadas,
-    quantidadeObsPendentes: Number(kpisData.quantidade_obs_pendentes) || DEFAULT_KPIS.quantidadeObsPendentes,
-    quantidadeDlsComSaldo: Number(kpisData.quantidade_dls_com_saldo) || DEFAULT_KPIS.quantidadeDlsComSaldo,
-  };
-
-  return {
-    kpis,
-    liquidados: liquidadosResult.data || [],
-    monitoramento: monitoramentoResult.data || [],
-    fetchError,
-  };
 }
 
 function StatCard({ label, value, sub, icon: Icon, accent }) {
@@ -108,10 +57,74 @@ function StatCard({ label, value, sub, icon: Icon, accent }) {
 }
 
 export default async function CpagDashboardPage({ searchParams }) {
-  const sp  = await searchParams;
-  const ano = sp?.ano || "2026";
+  const sp        = await searchParams;
+  const ano       = sp?.ano       || "2026";
+  const paginaLiq = Math.max(1, parseInt(sp?.paginaLiq || "1", 10));
+  const paginaMon = Math.max(1, parseInt(sp?.paginaMon || "1", 10));
+  const offsetLiq = (paginaLiq - 1) * PAGE_SIZE;
+  const offsetMon = (paginaMon - 1) * PAGE_SIZE;
+
   const supabase = getSupabaseAdminClient();
-  const { kpis, liquidados, monitoramento, fetchError } = await fetchCpagData(supabase);
+
+  const [
+    kpisResult,
+    liquidadosResult,
+    liquidadosCountResult,
+    monitoramentoResult,
+    monitoramentoCountResult,
+  ] = await Promise.all([
+    supabase
+      .from("vw_cpag_kpis")
+      .select("total_pago_confirmado, total_a_pagar, quantidade_obs_emitidas, quantidade_obs_confirmadas, quantidade_obs_pendentes, quantidade_dls_com_saldo")
+      .maybeSingle(),
+    supabase
+      .from("vw_liquidados_a_pagar")
+      .select("numero_processo, codigo_nota_empenho, documento_liquidacao, data_liquidacao, credor, codigo_natureza_despesa, fonte, valor_liquido, valor_bruto, valor_liquidado_a_pagar, valor_ja_pago_obs")
+      .order("data_liquidacao", { ascending: false, nullsFirst: false })
+      .range(offsetLiq, offsetLiq + PAGE_SIZE - 1),
+    supabase
+      .from("vw_liquidados_a_pagar")
+      .select("*", { count: "exact", head: true }),
+    supabase
+      .from("vw_monitoramento_pagamentos")
+      .select("numero_processo, credor, fonte, documento_liquidacao, ordem_bancaria, data_liquidacao, data_pagamento, valor, codigo_unidade_gestora, contrato_convenio, descricao, documento_credor, confirmado_manualmente, confirmado_por, confirmado_em, observacao, tem_vinculo_nedl, motivo_sem_vinculo")
+      .gte("data_pagamento", `${ano}-01-01`)
+      .lte("data_pagamento", `${ano}-12-31`)
+      .order("data_pagamento", { ascending: false })
+      .range(offsetMon, offsetMon + PAGE_SIZE - 1),
+    supabase
+      .from("vw_monitoramento_pagamentos")
+      .select("*", { count: "exact", head: true })
+      .gte("data_pagamento", `${ano}-01-01`)
+      .lte("data_pagamento", `${ano}-12-31`),
+  ]);
+
+  const queryErrors = [
+    kpisResult.error          && "vw_cpag_kpis",
+    liquidadosResult.error    && "vw_liquidados_a_pagar",
+    monitoramentoResult.error && "vw_monitoramento_pagamentos",
+  ].filter(Boolean);
+
+  const fetchError = queryErrors.length > 0
+    ? `Falha ao consultar: ${queryErrors.join(", ")}. Os dados podem estar incompletos.`
+    : null;
+
+  const kpisData = kpisResult.data || {};
+  const kpis = {
+    totalPago:              parseFloat(kpisData.total_pago_confirmado)    || DEFAULT_KPIS.totalPago,
+    totalAPagar:            parseFloat(kpisData.total_a_pagar)            || DEFAULT_KPIS.totalAPagar,
+    quantidadeOBs:          Number(kpisData.quantidade_obs_emitidas)      || DEFAULT_KPIS.quantidadeOBs,
+    quantidadeObsConfirmadas: Number(kpisData.quantidade_obs_confirmadas) || DEFAULT_KPIS.quantidadeObsConfirmadas,
+    quantidadeObsPendentes: Number(kpisData.quantidade_obs_pendentes)     || DEFAULT_KPIS.quantidadeObsPendentes,
+    quantidadeDlsComSaldo:  Number(kpisData.quantidade_dls_com_saldo)     || DEFAULT_KPIS.quantidadeDlsComSaldo,
+  };
+
+  const totalLiq      = liquidadosCountResult.count    ?? 0;
+  const totalMon      = monitoramentoCountResult.count ?? 0;
+  const totalPagesLiq = Math.max(1, Math.ceil(totalLiq / PAGE_SIZE));
+  const totalPagesMon = Math.max(1, Math.ceil(totalMon / PAGE_SIZE));
+  const liquidados    = liquidadosResult.data    ?? [];
+  const monitoramento = monitoramentoResult.data ?? [];
 
   return (
     <div className="space-y-8">
@@ -187,7 +200,18 @@ export default async function CpagDashboardPage({ searchParams }) {
       </div>
 
       {/* Tabela — largura total */}
-      <CpagTabs liquidados={liquidados} monitoramento={monitoramento} ano={ano} />
+      <CpagTabs
+        liquidados={liquidados}
+        monitoramento={monitoramento}
+        ano={ano}
+        paginaLiq={paginaLiq}
+        totalPagesLiq={totalPagesLiq}
+        totalLiq={totalLiq}
+        paginaMon={paginaMon}
+        totalPagesMon={totalPagesMon}
+        totalMon={totalMon}
+        pageSize={PAGE_SIZE}
+      />
     </div>
   );
 }

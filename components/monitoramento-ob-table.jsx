@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, X } from "lucide-react";
+import Link from "next/link";
+import { Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatCurrency } from "../lib/utils/formatters";
 
 function formatDate(dateString) {
@@ -40,7 +41,7 @@ function FilterInput({ label, value, onChange }) {
   );
 }
 
-export function MonitoramentoOBTable({ monitoramento, ano }) {
+export function MonitoramentoOBTable({ monitoramento, ano, pagina = 1, totalPages = 1, total = 0 }) {
   const [filtroProcesso,  setFiltroProcesso]  = useState("");
   const [filtroCredor,    setFiltroCredor]    = useState("");
   const [filtroDocumento, setFiltroDocumento] = useState("");
@@ -53,12 +54,6 @@ export function MonitoramentoOBTable({ monitoramento, ano }) {
     const doc  = normalize(filtroDocumento);
 
     return monitoramento.filter((item) => {
-      if (ano) {
-        const itemAno = item.data_pagamento
-          ? String(new Date(item.data_pagamento).getFullYear())
-          : null;
-        if (itemAno !== ano) return false;
-      }
       if (proc && !normalize(item.numero_processo).includes(proc))   return false;
       if (cred && !normalize(item.credor).includes(cred))            return false;
       if (doc  && !normalize(item.documento_credor).includes(doc))   return false;
@@ -66,7 +61,7 @@ export function MonitoramentoOBTable({ monitoramento, ano }) {
       if (filtroVinculo === "confirmados"  && !item.confirmado_manualmente)    return false;
       return true;
     });
-  }, [monitoramento, filtroProcesso, filtroCredor, filtroDocumento, filtroVinculo, ano]);
+  }, [monitoramento, filtroProcesso, filtroCredor, filtroDocumento, filtroVinculo]);
 
   const hasActiveFilter = filtroProcesso || filtroCredor || filtroDocumento || filtroVinculo !== "todos";
 
@@ -221,6 +216,42 @@ export function MonitoramentoOBTable({ monitoramento, ano }) {
               ? "Nenhuma ordem bancária encontrada para os filtros aplicados."
               : "Nenhuma ordem bancária encontrada."}
           </p>
+        </div>
+      )}
+
+      {/* Paginação */}
+      {!hasActiveFilter && totalPages > 1 && (
+        <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <span className="text-[11px] text-slate-400 font-medium">
+            Página <span className="font-black text-slate-600">{pagina}</span> de{" "}
+            <span className="font-black text-slate-600">{totalPages}</span>
+            <span className="text-slate-300 mx-2">·</span>
+            {total.toLocaleString("pt-BR")} registros no total
+          </span>
+          <div className="flex items-center gap-1">
+            <Link
+              href={`/dashboard/dppc/cpag?ano=${ano}&paginaMon=${pagina - 1}`}
+              aria-disabled={pagina <= 1}
+              className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
+                pagina <= 1
+                  ? "border-slate-100 text-slate-300 pointer-events-none"
+                  : "border-slate-200 text-slate-500 bg-white hover:bg-slate-50 hover:text-slate-700"
+              }`}
+            >
+              <ChevronLeft size={12} /> Anterior
+            </Link>
+            <Link
+              href={`/dashboard/dppc/cpag?ano=${ano}&paginaMon=${pagina + 1}`}
+              aria-disabled={pagina >= totalPages}
+              className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
+                pagina >= totalPages
+                  ? "border-slate-100 text-slate-300 pointer-events-none"
+                  : "border-slate-200 text-slate-500 bg-white hover:bg-slate-50 hover:text-slate-700"
+              }`}
+            >
+              Próxima <ChevronRight size={12} />
+            </Link>
+          </div>
         </div>
       )}
     </>

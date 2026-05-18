@@ -3,14 +3,7 @@
 import { useState } from "react";
 import { Wrench, TrendingUp } from "lucide-react";
 import { LiquidadosTable } from "./liquidados-table.jsx";
-import PaymentToggle from "./payment-toggle.jsx";
-import { formatCurrency } from "../lib/utils/formatters";
 import { MonitoramentoOBTable } from "./monitoramento-ob-table.jsx";
-
-function formatDate(dateString) {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString("pt-BR");
-}
 
 const TABS = [
   { id: "liquidados",    label: "Liquidados a Pagar"   },
@@ -18,7 +11,12 @@ const TABS = [
   { id: "recursos",      label: "Recursos (Saldo)"      },
 ];
 
-export function CpagTabs({ liquidados, monitoramento, ano }) {
+export function CpagTabs({
+  liquidados, monitoramento, ano,
+  paginaLiq = 1, totalPagesLiq = 1, totalLiq = 0,
+  paginaMon = 1, totalPagesMon = 1, totalMon = 0,
+  pageSize = 50,
+}) {
   const [activeTab, setActiveTab] = useState("liquidados");
 
   return (
@@ -54,15 +52,21 @@ export function CpagTabs({ liquidados, monitoramento, ano }) {
             <p className="text-[11px] text-slate-400 font-medium">
               Todos os exercícios — DLs com saldo pendente, inclusive pagamento parcial
             </p>
-            {liquidados.length > 0 && (
+            {totalLiq > 0 && (
               <span className="text-[11px] font-black text-slate-400 bg-slate-100 rounded-full px-3 py-1">
-                {liquidados.length} registros
+                {totalLiq.toLocaleString("pt-BR")} registros
               </span>
             )}
           </div>
 
           {liquidados.length > 0 ? (
-            <LiquidadosTable liquidados={liquidados} />
+            <LiquidadosTable
+              liquidados={liquidados}
+              pagina={paginaLiq}
+              totalPages={totalPagesLiq}
+              total={totalLiq}
+              ano={ano}
+            />
           ) : (
             <div className="px-6 py-16 text-center">
               <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
@@ -78,7 +82,13 @@ export function CpagTabs({ liquidados, monitoramento, ano }) {
 
       {/* ── Aba 2: Monitoramento de OBs ── */}
       {activeTab === "monitoramento" && (
-        <MonitoramentoOBTable monitoramento={monitoramento} ano={ano} />
+        <MonitoramentoOBTable
+          monitoramento={monitoramento}
+          ano={ano}
+          pagina={paginaMon}
+          totalPages={totalPagesMon}
+          total={totalMon}
+        />
       )}
 
       {/* ── Aba 3: Recursos (Saldo) — Em Construção ── */}
