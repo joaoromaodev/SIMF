@@ -46,19 +46,25 @@ export default async function CeoDashboardPage({ searchParams }) {
 
   const supabase = getSupabaseAdminClient();
 
-  const { data: empenhos, error } = await supabase
-    .from("vw_ne_active")
-    .select("codigo_nota_empenho, data_empenho, nome_usuario_criou, codigo_unidade_gestora, numero_processo, valor_original, valor_corrente, saldo_a_liquidar, quantidade, year_scope")
-    .eq("year_scope", yearScope)
-    .order("data_empenho", { ascending: false, nullsFirst: false })
-    .limit(500);
+  const [{ data: empenhos, error }, { count: totalCount }] = await Promise.all([
+    supabase
+      .from("vw_ne_active")
+      .select("codigo_nota_empenho, data_empenho, nome_usuario_criou, codigo_unidade_gestora, numero_processo, valor_original, valor_corrente, saldo_a_liquidar, quantidade, year_scope")
+      .eq("year_scope", yearScope)
+      .order("data_empenho", { ascending: false, nullsFirst: false })
+      .limit(500),
+    supabase
+      .from("vw_ne_active")
+      .select("*", { count: "exact", head: true })
+      .eq("year_scope", yearScope),
+  ]);
 
   const rows = empenhos ?? [];
+  const totalReal = totalCount ?? rows.length;
 
   const kpis = {
-    quantidadeEmpenhos: rows.length,
+    quantidadeEmpenhos: totalReal,
     totalEmpenhado: rows.reduce((sum, r) => sum + (parseFloat(r.valor_corrente) || 0), 0),
-    totalSaldoLiquidar: rows.reduce((sum, r) => sum + (parseFloat(r.saldo_a_liquidar) || 0), 0),
   };
 
   return (
@@ -125,19 +131,12 @@ export default async function CeoDashboardPage({ searchParams }) {
         </details>
       </div>
 
-      {/* KPIs + Exportação */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px] gap-5 items-stretch">
+      {/* KPI + Exportação */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-5 items-stretch">
         <StatCard
           label="Empenhos Gerados"
           value={kpis.quantidadeEmpenhos.toLocaleString("pt-BR")}
-          sub={formatCurrency(kpis.totalEmpenhado) + " valor corrente"}
-          icon={Landmark}
-          accent="blue"
-        />
-        <StatCard
-          label="Saldo a Liquidar"
-          value={formatCurrency(kpis.totalSaldoLiquidar)}
-          sub="Total de saldo pendente de liquidação"
+          sub={formatCurrency(kpis.totalEmpenhado) + " valor corrente (exibindo até 500 registros)"}
           icon={Landmark}
           accent="blue"
         />
