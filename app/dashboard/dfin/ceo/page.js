@@ -1,5 +1,7 @@
+import { getSupabaseAdminClient } from "../../../../lib/supabase/server.js";
 import { CeoTabs } from "../../../../components/ceo-tabs.jsx";
 import CeoExportButtons from "../../../../components/ceo-export-buttons.jsx";
+import ErrorBanner from "../../../../components/error-banner.jsx";
 import Link from "next/link";
 import { ChevronLeft, Landmark } from "lucide-react";
 
@@ -12,16 +14,16 @@ function formatCurrency(value) {
   }).format(value ?? 0);
 }
 
+// 2023 e 2024 estão consolidados num único cubo histórico
+function anoToYearScope(ano) {
+  if (ano === "2023" || ano === "2024") return "2023_2024";
+  return ano;
+}
+
 function StatCard({ label, value, sub, icon: Icon, accent }) {
-  const accents = {
-    blue: "border-blue-600",
-  };
-  const textAccents = {
-    blue: "text-blue-600",
-  };
-  const bgAccents = {
-    blue: "bg-blue-50",
-  };
+  const accents    = { blue: "border-blue-600" };
+  const textAccents = { blue: "text-blue-600" };
+  const bgAccents  = { blue: "bg-blue-50" };
 
   return (
     <div className={`bg-white rounded-xl border border-slate-200 shadow-sm border-l-4 ${accents[accent]} px-7 py-6 flex items-center gap-5`}>
@@ -38,19 +40,33 @@ function StatCard({ label, value, sub, icon: Icon, accent }) {
 }
 
 export default async function CeoDashboardPage({ searchParams }) {
-  const sp = await searchParams;
-  const ano = sp?.ano || "2026";
+  const sp        = await searchParams;
+  const ano       = sp?.ano || "2026";
+  const yearScope = anoToYearScope(ano);
 
-  // KPIs mockados — substituir por views Supabase quando disponíveis
+  const supabase = getSupabaseAdminClient();
+
+  const { data: empenhos, error } = await supabase
+    .from("vw_ne_active")
+    .select("codigo_nota_empenho, data_empenho, nome_usuario_criou, codigo_unidade_gestora, numero_processo, valor_original, valor_corrente, saldo_a_liquidar, quantidade, year_scope")
+    .eq("year_scope", yearScope)
+    .order("data_empenho", { ascending: false, nullsFirst: false })
+    .limit(500);
+
+  const rows = empenhos ?? [];
+
   const kpis = {
-    quantidadeEmpenhos: 3,
-    totalEmpenhado: 487320.0,
+    quantidadeEmpenhos: rows.length,
+    totalEmpenhado: rows.reduce((sum, r) => sum + (parseFloat(r.valor_corrente) || 0), 0),
+    totalSaldoLiquidar: rows.reduce((sum, r) => sum + (parseFloat(r.saldo_a_liquidar) || 0), 0),
   };
 
   return (
     <div className="space-y-8">
 
-      {/* Breadcrumb */}
+      {error && <ErrorBanner message={`Falha ao consultar vw_ne_active: ${error.message}`} />}
+
+      {/* Breadcrumb + Header */}
       <div>
         <Link
           href="/dashboard/dfin"
@@ -109,12 +125,19 @@ export default async function CeoDashboardPage({ searchParams }) {
         </details>
       </div>
 
-      {/* KPI + Exportação */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-5 items-stretch">
+      {/* KPIs + Exportação */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px] gap-5 items-stretch">
         <StatCard
           label="Empenhos Gerados"
           value={kpis.quantidadeEmpenhos.toLocaleString("pt-BR")}
-          sub={formatCurrency(kpis.totalEmpenhado) + " total empenhado"}
+          sub={formatCurrency(kpis.totalEmpenhado) + " valor corrente"}
+          icon={Landmark}
+          accent="blue"
+        />
+        <StatCard
+          label="Saldo a Liquidar"
+          value={formatCurrency(kpis.totalSaldoLiquidar)}
+          sub="Total de saldo pendente de liquidação"
           icon={Landmark}
           accent="blue"
         />
@@ -125,7 +148,7 @@ export default async function CeoDashboardPage({ searchParams }) {
       </div>
 
       {/* Abas */}
-      <CeoTabs ano={ano} />
+      <CeoTabs empenhos={rows} ano={ano} />
     </div>
   );
 }

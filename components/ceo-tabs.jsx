@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, X, Wrench } from "lucide-react";
+import { Search, X, Wrench, Landmark } from "lucide-react";
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value ?? 0);
@@ -13,67 +13,22 @@ function formatDate(dateString) {
 }
 
 const TABS = [
-  { id: "empenhos",  label: "Empenhos Gerados"           },
-  { id: "prds",      label: "Fila de PRDs (Aguardando NE)" },
+  { id: "empenhos", label: "Empenhos Gerados"            },
+  { id: "prds",     label: "Fila de PRDs (Aguardando NE)" },
 ];
 
-const MOCK_EMPENHOS = [
-  {
-    ug: "020301",
-    data: "2026-03-12",
-    processo: "2026005842",
-    ne: "2026NE000318",
-    credor: "DISTRIBUIDORA EDUCACIONAL LTDA",
-    fonte: "0148",
-    det: "339030",
-    natureza_despesa: "Material de Consumo",
-    contrato: "CONT-2026-041",
-    mes_ref: "Mar/2026",
-    despesa: 187500.0,
-  },
-  {
-    ug: "020301",
-    data: "2026-04-03",
-    processo: "2026008114",
-    ne: "2026NE000451",
-    credor: "SERVIÇOS TÉCNICOS ESPECIALIZADOS S/A",
-    fonte: "0100",
-    det: "339039",
-    natureza_despesa: "Outros Serv. Terceiros — PJ",
-    contrato: "CONT-2026-057",
-    mes_ref: "Abr/2026",
-    despesa: 214320.0,
-  },
-  {
-    ug: "020302",
-    data: "2026-04-18",
-    processo: "2026009730",
-    ne: "2026NE000589",
-    credor: "CONSTRUTORA ALFA ENGENHARIA EIRELI",
-    fonte: "0148",
-    det: "449051",
-    natureza_despesa: "Obras e Instalações",
-    contrato: "CONT-2026-072",
-    mes_ref: "Abr/2026",
-    despesa: 85500.0,
-  },
-];
-
-export function CeoTabs({ ano }) {
+export function CeoTabs({ empenhos = [], ano }) {
   const [activeTab, setActiveTab] = useState("empenhos");
-  const [busca, setBusca] = useState("");
+  const [busca,     setBusca]     = useState("");
 
   const empenhosFiltrados = useMemo(() => {
     const q = busca.toLowerCase().trim();
-    return MOCK_EMPENHOS.filter((r) => {
-      if (ano && !r.data.startsWith(ano)) return false;
-      if (!q) return true;
-      return (
-        r.processo.toLowerCase().includes(q) ||
-        r.credor.toLowerCase().includes(q)
-      );
-    });
-  }, [busca, ano]);
+    if (!q) return empenhos;
+    return empenhos.filter((r) =>
+      (r.numero_processo ?? "").toLowerCase().includes(q) ||
+      (r.codigo_nota_empenho ?? "").toLowerCase().includes(q)
+    );
+  }, [empenhos, busca]);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -112,7 +67,7 @@ export function CeoTabs({ ano }) {
                 type="text"
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
-                placeholder="Buscar por Processo ou Credor…"
+                placeholder="Buscar por Processo ou NE…"
                 className="w-full pl-8 pr-8 py-1.5 text-xs text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 placeholder:text-slate-300"
               />
               {busca && (
@@ -126,69 +81,68 @@ export function CeoTabs({ ano }) {
             </div>
             <span className="ml-auto text-[11px] text-slate-400 font-medium whitespace-nowrap">
               {empenhosFiltrados.length}
-              {empenhosFiltrados.length !== MOCK_EMPENHOS.length && (
-                <span className="text-slate-300"> / {MOCK_EMPENHOS.length}</span>
+              {empenhosFiltrados.length !== empenhos.length && (
+                <span className="text-slate-300"> / {empenhos.length}</span>
               )}{" "}
               registros
             </span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50">
-                <tr className="border-b border-slate-200">
-                  {[
-                    { label: "UG",                  align: "text-left"  },
-                    { label: "Data",                align: "text-left"  },
-                    { label: "Processo",            align: "text-left"  },
-                    { label: "NE",                  align: "text-left"  },
-                    { label: "Credor",              align: "text-left"  },
-                    { label: "Fonte",               align: "text-left"  },
-                    { label: "Det",                 align: "text-left"  },
-                    { label: "Natureza de Despesa", align: "text-left"  },
-                    { label: "Contrato",            align: "text-left"  },
-                    { label: "Mês Ref",             align: "text-left"  },
-                    { label: "Despesa",             align: "text-right" },
-                  ].map(({ label, align }) => (
-                    <th
-                      key={label}
-                      className={`px-5 py-3 font-black uppercase text-[11px] tracking-wider text-slate-500 ${align}`}
-                    >
-                      {label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {empenhosFiltrados.length > 0 ? (
-                  empenhosFiltrados.map((row, index) => (
+          {empenhosFiltrados.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50">
+                  <tr className="border-b border-slate-200">
+                    {[
+                      { label: "UG",               align: "text-left"  },
+                      { label: "Data Empenho",      align: "text-left"  },
+                      { label: "Processo",          align: "text-left"  },
+                      { label: "NE",                align: "text-left"  },
+                      { label: "Criado Por",        align: "text-left"  },
+                      { label: "Vl. Original",      align: "text-right" },
+                      { label: "Vl. Corrente",      align: "text-right" },
+                      { label: "Saldo a Liquidar",  align: "text-right" },
+                    ].map(({ label, align }) => (
+                      <th
+                        key={label}
+                        className={`px-5 py-3 font-black uppercase text-[11px] tracking-wider text-slate-500 ${align}`}
+                      >
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {empenhosFiltrados.map((row, index) => (
                     <tr
-                      key={row.ne}
+                      key={row.codigo_nota_empenho ?? `row-${index}`}
                       className={`transition-colors hover:bg-slate-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
                     >
-                      <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{row.ug}</td>
-                      <td className="px-5 py-3.5 text-slate-500 text-xs whitespace-nowrap">{formatDate(row.data)}</td>
-                      <td className="px-5 py-3.5 text-slate-800 font-semibold text-xs">{row.processo}</td>
-                      <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{row.ne}</td>
-                      <td className="px-5 py-3.5 text-slate-600 text-xs max-w-[180px] truncate">{row.credor}</td>
-                      <td className="px-5 py-3.5 text-slate-600 text-xs">{row.fonte}</td>
-                      <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{row.det}</td>
-                      <td className="px-5 py-3.5 text-slate-600 text-xs">{row.natureza_despesa}</td>
-                      <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{row.contrato}</td>
-                      <td className="px-5 py-3.5 text-slate-500 text-xs whitespace-nowrap">{row.mes_ref}</td>
-                      <td className="px-5 py-3.5 text-right font-mono font-bold text-blue-600 text-xs whitespace-nowrap">{formatCurrency(row.despesa)}</td>
+                      <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{row.codigo_unidade_gestora || "—"}</td>
+                      <td className="px-5 py-3.5 text-slate-500 text-xs whitespace-nowrap">{formatDate(row.data_empenho)}</td>
+                      <td className="px-5 py-3.5 text-slate-800 font-semibold text-xs">{row.numero_processo || "—"}</td>
+                      <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500 whitespace-nowrap">{row.codigo_nota_empenho || "—"}</td>
+                      <td className="px-5 py-3.5 text-slate-600 text-xs max-w-[160px] truncate">{row.nome_usuario_criou || "—"}</td>
+                      <td className="px-5 py-3.5 text-right font-mono font-bold text-slate-500 text-xs whitespace-nowrap">{formatCurrency(row.valor_original)}</td>
+                      <td className="px-5 py-3.5 text-right font-mono font-bold text-blue-600 text-xs whitespace-nowrap">{formatCurrency(row.valor_corrente)}</td>
+                      <td className="px-5 py-3.5 text-right font-mono font-bold text-amber-600 text-xs whitespace-nowrap">{formatCurrency(row.saldo_a_liquidar)}</td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={11} className="px-6 py-16 text-center text-slate-400 text-sm font-medium">
-                      Nenhum empenho encontrado para os filtros aplicados.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="px-6 py-16 text-center">
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                <Landmark size={18} className="text-slate-400" />
+              </div>
+              <p className="text-slate-400 text-sm font-medium">
+                {busca
+                  ? "Nenhum empenho encontrado para a busca aplicada."
+                  : "Nenhum empenho encontrado para este exercício."}
+              </p>
+            </div>
+          )}
         </>
       )}
 
@@ -217,7 +171,7 @@ export function CeoTabs({ ano }) {
             para listagem de PRDs aprovados aguardando emissão de Nota de Empenho (NE).
           </p>
 
-          <div className="mt-8 flex items-center gap-3 text-slate-200">
+          <div className="mt-8 flex items-center gap-3">
             <span className="h-px w-16 bg-slate-200" />
             <span className="text-[11px] font-black uppercase tracking-widest text-slate-300">Em Breve</span>
             <span className="h-px w-16 bg-slate-200" />
