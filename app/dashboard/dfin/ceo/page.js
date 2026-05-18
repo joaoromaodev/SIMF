@@ -7,6 +7,8 @@ import { ChevronLeft, Landmark } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 50;
+
 function formatCurrency(value) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -14,16 +16,15 @@ function formatCurrency(value) {
   }).format(value ?? 0);
 }
 
-// 2023 e 2024 estão consolidados num único cubo histórico
 function anoToYearScope(ano) {
   if (ano === "2023" || ano === "2024") return "2023_2024";
   return ano;
 }
 
 function StatCard({ label, value, sub, icon: Icon, accent }) {
-  const accents    = { blue: "border-blue-600" };
+  const accents     = { blue: "border-blue-600" };
   const textAccents = { blue: "text-blue-600" };
-  const bgAccents  = { blue: "bg-blue-50" };
+  const bgAccents   = { blue: "bg-blue-50" };
 
   return (
     <div className={`bg-white rounded-xl border border-slate-200 shadow-sm border-l-4 ${accents[accent]} px-7 py-6 flex items-center gap-5`}>
@@ -41,8 +42,10 @@ function StatCard({ label, value, sub, icon: Icon, accent }) {
 
 export default async function CeoDashboardPage({ searchParams }) {
   const sp        = await searchParams;
-  const ano       = sp?.ano || "2026";
+  const ano       = sp?.ano    || "2026";
+  const pagina    = Math.max(1, parseInt(sp?.pagina || "1", 10));
   const yearScope = anoToYearScope(ano);
+  const offset    = (pagina - 1) * PAGE_SIZE;
 
   const supabase = getSupabaseAdminClient();
 
@@ -52,15 +55,16 @@ export default async function CeoDashboardPage({ searchParams }) {
       .select("codigo_nota_empenho, data_empenho, nome_usuario_criou, codigo_unidade_gestora, numero_processo, valor_original, valor_corrente, saldo_a_liquidar, quantidade, year_scope")
       .eq("year_scope", yearScope)
       .order("data_empenho", { ascending: false, nullsFirst: false })
-      .limit(500),
+      .range(offset, offset + PAGE_SIZE - 1),
     supabase.rpc("count_ne_by_year_scope", { p_year_scope: yearScope }),
   ]);
 
-  const rows = empenhos ?? [];
+  const rows       = empenhos ?? [];
+  const total      = totalReal ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const kpis = {
-    quantidadeEmpenhos: totalReal ?? rows.length,
-    totalEmpenhado: rows.reduce((sum, r) => sum + (parseFloat(r.valor_corrente) || 0), 0),
+    quantidadeEmpenhos: total,
   };
 
   return (
@@ -132,7 +136,7 @@ export default async function CeoDashboardPage({ searchParams }) {
         <StatCard
           label="Empenhos Gerados"
           value={kpis.quantidadeEmpenhos.toLocaleString("pt-BR")}
-          sub={formatCurrency(kpis.totalEmpenhado) + " valor corrente (exibindo até 500 registros)"}
+          sub={`${totalPages} páginas · ${PAGE_SIZE} registros por página`}
           icon={Landmark}
           accent="blue"
         />
@@ -143,7 +147,14 @@ export default async function CeoDashboardPage({ searchParams }) {
       </div>
 
       {/* Abas */}
-      <CeoTabs empenhos={rows} ano={ano} />
+      <CeoTabs
+        empenhos={rows}
+        ano={ano}
+        pagina={pagina}
+        totalPages={totalPages}
+        total={total}
+        pageSize={PAGE_SIZE}
+      />
     </div>
   );
 }

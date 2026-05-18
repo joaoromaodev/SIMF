@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, X, Wrench, Landmark } from "lucide-react";
+import { Search, X, Wrench, Landmark, ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value ?? 0);
@@ -17,7 +18,7 @@ const TABS = [
   { id: "prds",     label: "Fila de PRDs (Aguardando NE)" },
 ];
 
-export function CeoTabs({ empenhos = [], ano }) {
+export function CeoTabs({ empenhos = [], ano, pagina = 1, totalPages = 1, total = 0, pageSize = 50 }) {
   const [activeTab, setActiveTab] = useState("empenhos");
   const [busca,     setBusca]     = useState("");
 
@@ -141,6 +142,42 @@ export function CeoTabs({ empenhos = [], ano }) {
                   ? "Nenhum empenho encontrado para a busca aplicada."
                   : "Nenhum empenho encontrado para este exercício."}
               </p>
+            </div>
+          )}
+
+          {/* Paginação */}
+          {!busca && totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <span className="text-[11px] text-slate-400 font-medium">
+                Página <span className="font-black text-slate-600">{pagina}</span> de{" "}
+                <span className="font-black text-slate-600">{totalPages}</span>
+                <span className="text-slate-300 mx-2">·</span>
+                {total.toLocaleString("pt-BR")} registros no total
+              </span>
+              <div className="flex items-center gap-1">
+                <Link
+                  href={`/dashboard/dfin/ceo?ano=${ano}&pagina=${pagina - 1}`}
+                  aria-disabled={pagina <= 1}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
+                    pagina <= 1
+                      ? "border-slate-100 text-slate-300 pointer-events-none"
+                      : "border-slate-200 text-slate-500 bg-white hover:bg-slate-50 hover:text-slate-700"
+                  }`}
+                >
+                  <ChevronLeft size={12} /> Anterior
+                </Link>
+                <Link
+                  href={`/dashboard/dfin/ceo?ano=${ano}&pagina=${pagina + 1}`}
+                  aria-disabled={pagina >= totalPages}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
+                    pagina >= totalPages
+                      ? "border-slate-100 text-slate-300 pointer-events-none"
+                      : "border-slate-200 text-slate-500 bg-white hover:bg-slate-50 hover:text-slate-700"
+                  }`}
+                >
+                  Próxima <ChevronRight size={12} />
+                </Link>
+              </div>
             </div>
           )}
         </>
