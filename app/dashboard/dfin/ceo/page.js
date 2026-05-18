@@ -46,24 +46,20 @@ export default async function CeoDashboardPage({ searchParams }) {
 
   const supabase = getSupabaseAdminClient();
 
-  const [{ data: empenhos, error }, { count: totalCount }] = await Promise.all([
+  const [{ data: empenhos, error }, { data: totalReal }] = await Promise.all([
     supabase
       .from("vw_ne_active")
       .select("codigo_nota_empenho, data_empenho, nome_usuario_criou, codigo_unidade_gestora, numero_processo, valor_original, valor_corrente, saldo_a_liquidar, quantidade, year_scope")
       .eq("year_scope", yearScope)
       .order("data_empenho", { ascending: false, nullsFirst: false })
       .limit(500),
-    supabase
-      .from("vw_ne_active")
-      .select("*", { count: "exact", head: true })
-      .eq("year_scope", yearScope),
+    supabase.rpc("count_ne_by_year_scope", { p_year_scope: yearScope }),
   ]);
 
   const rows = empenhos ?? [];
-  const totalReal = totalCount ?? rows.length;
 
   const kpis = {
-    quantidadeEmpenhos: totalReal,
+    quantidadeEmpenhos: totalReal ?? rows.length,
     totalEmpenhado: rows.reduce((sum, r) => sum + (parseFloat(r.valor_corrente) || 0), 0),
   };
 
