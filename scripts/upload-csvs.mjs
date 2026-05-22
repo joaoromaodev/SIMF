@@ -5,7 +5,10 @@
  * já deployada na Vercel (develop ou produção).
  *
  * Uso:
- *   node scripts/upload-csvs.mjs https://SEU-PREVIEW.vercel.app
+ *   node scripts/upload-csvs.mjs https://SEU-PREVIEW.vercel.app [BYPASS_TOKEN]
+ *
+ * O BYPASS_TOKEN é opcional — necessário apenas para previews protegidos da Vercel.
+ * Obtenha em: Vercel → Project → Settings → Deployment Protection → Protection Bypass for Automation
  *
  * Não requer .env.local — usa a URL da Vercel onde as credenciais
  * do Supabase já estão configuradas.
@@ -15,11 +18,12 @@ import fs   from "fs";
 import path from "path";
 
 // ── URL base da aplicação ─────────────────────────────────────────────────────
-const BASE_URL = process.argv[2]?.replace(/\/$/, "");
+const BASE_URL     = process.argv[2]?.replace(/\/$/, "");
+const BYPASS_TOKEN = process.argv[3] ?? null;
 
 if (!BASE_URL) {
   console.error("\n❌  Informe a URL da Vercel como argumento.");
-  console.error("    Exemplo: node scripts/upload-csvs.mjs https://simf-git-develop-xxx.vercel.app\n");
+  console.error("    Exemplo: node scripts/upload-csvs.mjs https://simf-git-develop-xxx.vercel.app [BYPASS_TOKEN]\n");
   process.exit(1);
 }
 
@@ -63,7 +67,15 @@ async function uploadFile({ file, reportType, yearScope }) {
   formData.append("reportType", reportType);
   formData.append("yearScope",  yearScope);
 
-  const res  = await fetch(`${BASE_URL}/api/imports`, { method: "POST", body: formData });
+  const extraHeaders = BYPASS_TOKEN
+    ? { "x-vercel-protection-bypass": BYPASS_TOKEN }
+    : {};
+
+  const res  = await fetch(`${BASE_URL}/api/imports`, {
+    method: "POST",
+    headers: extraHeaders,
+    body: formData
+  });
   const json = await res.json().catch(() => ({ message: "Resposta não-JSON" }));
 
   return { ok: res.ok, file, reportType, yearScope, fileSize, status: res.status, json };
@@ -72,6 +84,7 @@ async function uploadFile({ file, reportType, yearScope }) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 console.log(`\n🚀  SIMF — Upload de CSVs`);
 console.log(`    URL : ${BASE_URL}`);
+if (BYPASS_TOKEN) console.log(`    Bypass token : configurado`);
 console.log(`    Dir : ${CSV_DIR}`);
 console.log(`──────────────────────────────────────────────────────\n`);
 
