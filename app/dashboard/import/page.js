@@ -1,8 +1,28 @@
 import Link from "next/link";
 import { UploadForm } from "../../../components/upload-form";
+import { getSupabaseAdminClient } from "../../../lib/supabase/server.js";
 import { ChevronLeft, BookOpen, ArrowRightLeft, Plus } from "lucide-react";
 
-export default function ImportPage() {
+export const dynamic = "force-dynamic";
+
+function formatDateTime(ts) {
+  if (!ts) return null;
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  }).format(new Date(ts));
+}
+
+export default async function ImportPage() {
+  const supabase = getSupabaseAdminClient();
+  const { data: statusRows } = await supabase
+    .from("vw_status_carga_relatorios")
+    .select("report_type, year_scope, last_success_at, normalized_row_count, has_success_batch")
+    .eq("year_scope", "2026");
+
+  const statusByType = Object.fromEntries(
+    (statusRows || []).map((r) => [r.report_type, r])
+  );
   return (
     <div className="-m-8 min-h-screen bg-slate-50 flex flex-col font-sans">
 
@@ -57,16 +77,50 @@ export default function ImportPage() {
             {/* Info cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
-                { label: "NE", desc: "Notas de Empenho", file: "2026_NE.csv" },
-                { label: "NEDL", desc: "Notas de Empenho e Documentos de Liquidação", file: "2026_NEDL.csv" },
-                { label: "DLOB", desc: "Documentos de Liquidação e Ordens Bancárias", file: "2026_DLOB.csv" },
-              ].map(({ label, desc, file }) => (
-                <div key={label} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                  <span className="text-[11px] font-black text-blue-600 uppercase tracking-widest">{label}</span>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">{desc}</p>
-                  <p className="text-[10px] font-mono text-slate-400 mt-2 bg-slate-50 border border-slate-100 rounded px-2 py-1 inline-block">{file}</p>
-                </div>
-              ))}
+                { label: "NE",   desc: "Notas de Empenho",                               file: "2026_NE.csv"   },
+                { label: "NEDL", desc: "Notas de Empenho e Documentos de Liquidação",    file: "2026_NEDL.csv" },
+                { label: "DLOB", desc: "Documentos de Liquidação e Ordens Bancárias",    file: "2026_DLOB.csv" },
+              ].map(({ label, desc, file }) => {
+                const s = statusByType[label];
+                const lastAt = s?.last_success_at ? formatDateTime(s.last_success_at) : null;
+                const rows   = s?.normalized_row_count ?? null;
+                const loaded = s?.has_success_batch;
+                return (
+                  <div key={label} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black text-blue-600 uppercase tracking-widest">{label}</span>
+                      {loaded ? (
+                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                          Carregado
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
+                          Aguardando
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 leading-relaxed">{desc}</p>
+                    <p className="text-[10px] font-mono text-slate-400 bg-slate-50 border border-slate-100 rounded px-2 py-1 inline-block self-start">{file}</p>
+                    {lastAt ? (
+                      <div className="pt-1 border-t border-slate-100 space-y-0.5">
+                        <p className="text-[10px] text-slate-400 font-medium">
+                          Última atualização
+                        </p>
+                        <p className="text-[11px] font-bold text-slate-600">{lastAt}</p>
+                        {rows != null && (
+                          <p className="text-[10px] text-slate-400">
+                            {rows.toLocaleString("pt-BR")} registros
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-slate-400 italic pt-1 border-t border-slate-100">
+                        Nenhuma carga registrada
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
