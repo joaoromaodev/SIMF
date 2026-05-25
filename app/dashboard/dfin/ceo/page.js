@@ -43,6 +43,7 @@ function StatCard({ label, value, sub, icon: Icon, accent }) {
 export default async function CeoDashboardPage({ searchParams }) {
   const sp        = await searchParams;
   const ano       = sp?.ano    || "2026";
+  const aba       = sp?.aba    || "empenhos";
   const pagina    = Math.max(1, parseInt(sp?.pagina || "1", 10));
   const yearScope = anoToYearScope(ano);
   const offset    = (pagina - 1) * PAGE_SIZE;
@@ -112,7 +113,7 @@ export default async function CeoDashboardPage({ searchParams }) {
             {["2023", "2024", "2025", "2026"].map((a) => (
               <Link
                 key={a}
-                href={`/dashboard/dfin/ceo?ano=${a}`}
+                href={`/dashboard/dfin/ceo?aba=${aba}&ano=${a}`}
                 className={`flex items-center justify-between px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-colors ${
                   ano === a
                     ? "text-blue-600 bg-blue-50"
@@ -154,6 +155,7 @@ export default async function CeoDashboardPage({ searchParams }) {
         totalPages={totalPages}
         total={total}
         pageSize={PAGE_SIZE}
+        abaAtiva={aba}
       />
     </div>
   );

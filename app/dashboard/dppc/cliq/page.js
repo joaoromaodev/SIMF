@@ -1,7 +1,8 @@
 import { getSupabaseAdminClient } from "../../../../lib/supabase/server.js";
 import { CliqTabs } from "../../../../components/cliq-tabs.jsx";
+import CliqExportButtons from "../../../../components/cliq-export-buttons.jsx";
 import Link from "next/link";
-import { ChevronLeft, FileCheck2, Filter, X } from "lucide-react";
+import { ChevronLeft, FileCheck2, X } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -110,7 +111,8 @@ function buildHref(filters, pagina) {
 export default async function CliqDashboardPage({ searchParams }) {
   const sp = await searchParams;
   const filters = { fonte: sp.fonte || "", credor: sp.credor || "", processo: sp.processo || "" };
-  const ano     = sp.ano || "2026";
+  const ano     = sp.ano  || "2026";
+  const aba     = sp.aba  || "empenhos_liquidar";
   const pagina  = Math.max(1, parseInt(sp.pagina, 10) || 1);
   const supabase = getSupabaseAdminClient();
 
@@ -166,7 +168,7 @@ export default async function CliqDashboardPage({ searchParams }) {
             {ANOS.map((a) => (
               <Link
                 key={a}
-                href={`/dashboard/dppc/cliq?ano=${a}`}
+                href={`/dashboard/dppc/cliq?aba=${aba}&ano=${a}`}
                 className={`flex items-center justify-between px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-colors ${
                   ano === a
                     ? "text-para-blue bg-blue-50"
@@ -199,22 +201,7 @@ export default async function CliqDashboardPage({ searchParams }) {
         />
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-6 flex flex-col justify-center gap-1">
           <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Relatórios</p>
-          <div className="flex flex-col gap-2">
-            <a
-              href={`/api/cliq/export/xlsx?ano=${ano}`}
-              className="inline-flex items-center justify-between px-3 py-2 text-[11px] font-black uppercase tracking-widest text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
-            >
-              Exportar XLSX
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </a>
-            <a
-              href={`/api/cliq/export/pdf?ano=${ano}`}
-              className="inline-flex items-center justify-between px-3 py-2 text-[11px] font-black uppercase tracking-widest text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
-            >
-              Exportar PDF
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </a>
-          </div>
+          <CliqExportButtons />
         </div>
       </div>
 
@@ -228,6 +215,7 @@ export default async function CliqDashboardPage({ searchParams }) {
         fontes={fontes}
         hasActiveFilters={!!hasActiveFilters}
         ano={ano}
+        abaAtiva={aba}
       />
     </div>
   );
