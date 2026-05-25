@@ -147,12 +147,12 @@ Esta frente deve ser executada depois da etapa de planejamento documental. Os it
 
 ### AUTH-01 - Modelagem de perfis
 
-- [ ] Definir schema da tabela `profiles`.
-- [ ] Definir relacionamento entre `profiles.id` e usuarios do Supabase Auth.
-- [ ] Definir campo `role` com valores iniciais `admin` e `user`.
-- [ ] Definir comportamento para usuario autenticado sem perfil.
-- [ ] Planejar policies/RLS relacionadas a leitura e administracao de perfis.
-- [ ] Documentar procedimento manual para criacao do primeiro `admin`.
+- [x] Definir schema da tabela `profiles`.
+- [x] Definir relacionamento entre `profiles.id` e usuarios do Supabase Auth.
+- [x] Definir campo `role` com valores iniciais `admin` e `user`.
+- [x] Definir comportamento para usuario autenticado sem perfil.
+- [x] Planejar policies/RLS relacionadas a leitura e administracao de perfis.
+- [x] Documentar procedimento manual para criacao do primeiro `admin`.
 
 ### AUTH-02 - Login e sessao
 
