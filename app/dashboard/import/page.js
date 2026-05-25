@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { UploadForm } from "../../../components/upload-form";
 import { getSupabaseAdminClient } from "../../../lib/supabase/server.js";
+import { requireAdmin } from "../../../lib/auth/require-role.js";
 import { ChevronLeft, BookOpen, ArrowRightLeft, Plus } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,9 @@ function formatDateTime(ts) {
 }
 
 export default async function ImportPage() {
+  // Apenas admin pode acessar esta página
+  await requireAdmin();
+
   const supabase = getSupabaseAdminClient();
   const { data: statusRows } = await supabase
     .from("vw_status_carga_relatorios")

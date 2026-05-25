@@ -165,12 +165,12 @@ Esta frente deve ser executada depois da etapa de planejamento documental. Os it
 
 ### AUTH-03 - Autorizacao por perfil
 
-- [ ] Proteger dashboards para usuarios autenticados.
-- [ ] Permitir acesso de `user` e `admin` aos dashboards.
-- [ ] Restringir `/dashboard/import` a `admin`.
-- [ ] Ocultar acoes administrativas na UI para `user`.
-- [ ] Criar helper server-side reutilizavel para checagem de role.
-- [ ] Adicionar testes para acesso permitido e negado.
+- [x] Proteger dashboards para usuarios autenticados.
+- [x] Permitir acesso de `user` e `admin` aos dashboards.
+- [x] Restringir `/dashboard/import` a `admin`.
+- [x] Ocultar acoes administrativas na UI para `user`.
+- [x] Criar helper server-side reutilizavel para checagem de role.
+- [x] Adicionar testes para acesso permitido e negado.
 
 ### AUTH-04 - Protecao da API de importacao
 
