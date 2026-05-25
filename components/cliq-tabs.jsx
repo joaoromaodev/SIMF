@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { FileCheck2, Wrench, Search, X } from "lucide-react";
+import { FileCheck2, Wrench, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 function formatCurrency(value) {
@@ -383,6 +383,42 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
               <p className="text-slate-400 text-sm font-medium">
                 {hasLocalFilter ? "Nenhum registro para os filtros aplicados." : "Nenhuma liquidação encontrada."}
               </p>
+            </div>
+          )}
+
+          {/* ── Paginação (servidor) — apenas quando não há filtros locais ── */}
+          {!hasLocalFilter && totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <span className="text-[11px] text-slate-400 font-medium">
+                Página <span className="font-black text-slate-600">{pagina}</span> de{" "}
+                <span className="font-black text-slate-600">{totalPages}</span>
+                <span className="text-slate-300 mx-2">·</span>
+                {totalCount.toLocaleString("pt-BR")} registros no total
+              </span>
+              <div className="flex items-center gap-1">
+                <Link
+                  href={buildHref(filters, pagina - 1)}
+                  aria-disabled={pagina <= 1}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
+                    pagina <= 1
+                      ? "border-slate-100 text-slate-300 pointer-events-none"
+                      : "border-slate-200 text-slate-500 bg-white hover:bg-slate-50 hover:text-slate-700"
+                  }`}
+                >
+                  <ChevronLeft size={12} /> Anterior
+                </Link>
+                <Link
+                  href={buildHref(filters, pagina + 1)}
+                  aria-disabled={pagina >= totalPages}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
+                    pagina >= totalPages
+                      ? "border-slate-100 text-slate-300 pointer-events-none"
+                      : "border-slate-200 text-slate-500 bg-white hover:bg-slate-50 hover:text-slate-700"
+                  }`}
+                >
+                  Próxima <ChevronRight size={12} />
+                </Link>
+              </div>
             </div>
           )}
         </>
