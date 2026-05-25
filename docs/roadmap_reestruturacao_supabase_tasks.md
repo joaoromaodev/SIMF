@@ -31,83 +31,83 @@ O tracker antigo `docs/simf-evolucao-ingestao-tasks.md` foi arquivado em `docs/a
 
 ## Incremento 2 - Reestruturacao dos tipos e batches
 
-- [ ] Definir estrategia de compatibilidade entre `NE_DL`/`DL_OB` e `NE`/`NEDL`/`DLOB`.
-- [ ] Ajustar tipo/enum de relatorio no Supabase para aceitar `NE`, `NEDL` e `DLOB`.
-- [ ] Adaptar `import_batches.report_type` para os tres universos.
-- [ ] Preservar `year_scope` com `2023_2024`, `2025` e `2026`.
-- [ ] Preservar `status`, `is_active` e `replaced_batch_id`.
-- [ ] Garantir batch ativo unico por `report_type`/`year_scope` para `2026`.
-- [ ] Validar que a substituicao de um universo nao afeta os demais.
+- [x] Definir estrategia de compatibilidade entre `NE_DL`/`DL_OB` e `NE`/`NEDL`/`DLOB`.
+- [x] Ajustar tipo/enum de relatorio no Supabase para aceitar `NE`, `NEDL` e `DLOB`.
+- [x] Adaptar `import_batches.report_type` para os tres universos.
+- [x] Preservar `year_scope` com `2023_2024`, `2025` e `2026`.
+- [x] Preservar `status`, `is_active` e `replaced_batch_id`.
+- [x] Garantir batch ativo unico por `report_type`/`year_scope` para `2026`.
+- [x] Validar que a substituicao de um universo nao afeta os demais.
 
 ## Incremento 3 - Tabelas normalizadas dos 3 universos
 
-- [ ] Criar `normalized_ne_rows`.
-- [ ] Criar ou ajustar `normalized_nedl_rows`.
-- [ ] Criar ou ajustar `normalized_dlob_rows`.
-- [ ] Remover exigencia de `NUMERO_PROCESSO` do `DLOB`.
-- [ ] Mapear `DocumentodaLiquidacao` para `documento_liquidacao` em `DLOB`.
-- [ ] Preservar `raw_row` para rastreabilidade.
-- [ ] Adicionar indices para `import_batch_id`.
-- [ ] Adicionar indices para `year_scope`.
-- [ ] Adicionar indices para `codigo_nota_empenho`.
-- [ ] Adicionar indices para `documento_liquidacao`.
-- [ ] Adicionar indices para `ordem_bancaria`.
+- [x] Criar `normalized_ne_rows`.
+- [x] Criar ou ajustar `normalized_nedl_rows`.
+- [x] Criar ou ajustar `normalized_dlob_rows`.
+- [x] Remover exigencia de `NUMERO_PROCESSO` do `DLOB`.
+- [x] Mapear `DocumentodaLiquidacao` para `documento_liquidacao` em `DLOB`.
+- [x] Preservar `raw_row` para rastreabilidade.
+- [x] Adicionar indices para `import_batch_id`.
+- [x] Adicionar indices para `year_scope`.
+- [x] Adicionar indices para `codigo_nota_empenho`.
+- [x] Adicionar indices para `documento_liquidacao`.
+- [x] Adicionar indices para `ordem_bancaria`.
 
 ## Incremento 4 - Finalizacao atomica de importacao
 
-- [ ] Atualizar rotina de finalizacao de importacao para os tres universos.
-- [ ] Garantir substituicao integral de `2026_NE.csv` apenas em `NE`/`2026`.
-- [ ] Garantir substituicao integral de `2026_NEDL.csv` apenas em `NEDL`/`2026`.
-- [ ] Garantir substituicao integral de `2026_DLOB.csv` apenas em `DLOB`/`2026`.
-- [ ] Manter rastreabilidade de batches substituidos.
-- [ ] Definir comportamento de remocao/desativacao de linhas normalizadas antigas.
-- [ ] Permitir limpeza e recarga de historicos durante desenvolvimento.
+- [x] Atualizar rotina de finalizacao de importacao para os tres universos.
+- [x] Garantir substituicao integral de `2026_NE.csv` apenas em `NE`/`2026`.
+- [x] Garantir substituicao integral de `2026_NEDL.csv` apenas em `NEDL`/`2026`.
+- [x] Garantir substituicao integral de `2026_DLOB.csv` apenas em `DLOB`/`2026`.
+- [x] Manter rastreabilidade de batches substituidos.
+- [x] Definir comportamento de remocao/desativacao de linhas normalizadas antigas.
+- [x] Permitir limpeza e recarga de historicos durante desenvolvimento.
 
 ## Incremento 5 - Pipeline de ingestao Next.js
 
-- [ ] Atualizar schemas em `lib/siafe/`.
-- [ ] Atualizar validacao de tipo de relatorio.
-- [ ] Atualizar validacao de nome de arquivo para os 9 CSVs.
-- [ ] Atualizar normalizacao de `NE`.
-- [ ] Atualizar normalizacao de `NEDL`.
-- [ ] Atualizar normalizacao de `DLOB`.
-- [ ] Garantir que `DLOB` sem `NUMERO_PROCESSO` seja aceito.
-- [ ] Garantir parsing monetario no formato `R$ 6,092.04`.
-- [ ] Garantir parsing de datas.
-- [ ] Atualizar formulario de upload para `NE`, `NEDL` e `DLOB`.
-- [ ] Atualizar mensagens de erro e warnings.
-- [ ] Atualizar testes automatizados da ingestao.
+- [x] Atualizar schemas em `lib/siafe/`.
+- [x] Atualizar validacao de tipo de relatorio.
+- [x] Atualizar validacao de nome de arquivo para os 9 CSVs.
+- [x] Atualizar normalizacao de `NE`.
+- [x] Atualizar normalizacao de `NEDL`.
+- [x] Atualizar normalizacao de `DLOB`.
+- [x] Garantir que `DLOB` sem `NUMERO_PROCESSO` seja aceito.
+- [x] Garantir parsing monetario no formato `R$ 6,092.04`.
+- [x] Garantir parsing de datas.
+- [x] Atualizar formulario de upload para `NE`, `NEDL` e `DLOB`.
+- [x] Atualizar mensagens de erro e warnings.
+- [x] Atualizar testes automatizados da ingestao.
 
 ## Incremento 6 - Views ativas
 
-- [ ] Criar `vw_active_import_batches`.
-- [ ] Criar `vw_ne_active`.
-- [ ] Criar `vw_nedl_active`.
-- [ ] Criar `vw_dlob_active`.
-- [ ] Garantir que views ativas filtrem apenas batches validos.
-- [ ] Garantir que `2026` considere apenas batch ativo.
-- [ ] Garantir que historicos sigam a politica vigente.
+- [x] Criar `vw_active_import_batches`.
+- [x] Criar `vw_ne_active`.
+- [x] Criar `vw_nedl_active`.
+- [x] Criar `vw_dlob_active`.
+- [x] Garantir que views ativas filtrem apenas batches validos.
+- [x] Garantir que `2026` considere apenas batch ativo.
+- [x] Garantir que historicos sigam a politica vigente.
 
 ## Incremento 7 - Views de BI
 
-- [ ] Criar ou revisar `vw_execucao_financeira`.
-- [ ] Criar ou revisar `vw_liquidados_a_pagar`.
-- [ ] Criar ou revisar `vw_pagamentos`.
-- [ ] Criar ou revisar `vw_monitoramento_pagamentos`.
-- [ ] Aplicar regra de quitacao por soma de OBs contra `Valor Bruto`.
-- [ ] Derivar processo da OB por `DLOB -> NEDL -> NE`.
-- [ ] Integrar `marcacoes_pagamento` apenas como tabela auxiliar.
+- [x] Criar ou revisar `vw_execucao_financeira`.
+- [x] Criar ou revisar `vw_liquidados_a_pagar`.
+- [x] Criar ou revisar `vw_pagamentos`.
+- [x] Criar ou revisar `vw_monitoramento_pagamentos`.
+- [x] Aplicar regra de quitacao por soma de OBs contra `Valor Bruto`.
+- [x] Derivar processo da OB por `DLOB -> NEDL -> NE`.
+- [x] Integrar `marcacoes_pagamento` apenas como tabela auxiliar.
 
 ## Incremento 8 - Views de qualidade e auditoria
 
-- [ ] Criar `vw_status_carga_relatorios`.
-- [ ] Criar `vw_nedl_sem_ne`.
-- [ ] Criar `vw_dlob_sem_nedl`.
-- [ ] Criar `vw_divergencia_processo_ne_nedl`.
-- [ ] Validar que a view de status cobre os 9 relatorios.
-- [ ] Validar diagnostico de `NEDL` sem `NE`.
-- [ ] Validar diagnostico de `DLOB` sem `NEDL`.
-- [ ] Validar divergencia de processo entre `NE` e `NEDL`.
+- [x] Criar `vw_status_carga_relatorios`.
+- [x] Criar `vw_nedl_sem_ne`.
+- [x] Criar `vw_dlob_sem_nedl`.
+- [x] Criar `vw_divergencia_processo_ne_nedl`.
+- [x] Validar que a view de status cobre os 9 relatorios.
+- [x] Validar diagnostico de `NEDL` sem `NE`.
+- [x] Validar diagnostico de `DLOB` sem `NEDL`.
+- [x] Validar divergencia de processo entre `NE` e `NEDL`.
 
 ## Incremento 9 - Validacao operacional com os 9 CSVs
 
