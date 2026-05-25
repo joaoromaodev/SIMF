@@ -23,6 +23,23 @@ async function assertCallerIsAdmin() {
 }
 
 /**
+ * Registra uma entrada no audit_log via service role (sem RLS).
+ * Falha silenciosa — auditoria não deve bloquear a operação principal.
+ */
+async function writeAuditLog(adminSb, { action, actorId, targetId, payload = {} }) {
+  try {
+    await adminSb.from("audit_log").insert({
+      action,
+      actor_id:  actorId  ?? null,
+      target_id: targetId ?? null,
+      payload,
+    });
+  } catch {
+    // Nunca interrompe o fluxo principal
+  }
+}
+
+/**
  * Lista todos os usuários com seus perfis.
  *
  * @returns {{ users: Array<{ id, email, role, created_at }>, error: string|null }}
@@ -102,6 +119,13 @@ export async function createUser({ email, password, role }) {
       };
     }
 
+    await writeAuditLog(adminSb, {
+      action:   "user_created",
+      actorId:  caller.id,
+      targetId: userId,
+      payload:  { email, role },
+    });
+
     revalidatePath("/dashboard/admin/usuarios");
     return { ok: true, error: null };
   } catch (err) {
@@ -134,6 +158,14 @@ export async function updateUserRole({ userId, role }) {
     }
 
     const adminSb = getSupabaseAdminClient();
+
+    // Lê role anterior antes de atualizar (para auditoria)
+    const { data: oldProfile } = await adminSb
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle();
+
     const { error } = await adminSb
       .from("profiles")
       .update({ role, updated_at: new Date().toISOString() })
@@ -142,6 +174,13 @@ export async function updateUserRole({ userId, role }) {
     if (error) {
       return { ok: false, error: `Erro ao atualizar role: ${error.message}` };
     }
+
+    await writeAuditLog(adminSb, {
+      action:   "role_changed",
+      actorId:  caller.id,
+      targetId: userId,
+      payload:  { previous_role: oldProfile?.role ?? null, new_role: role },
+    });
 
     revalidatePath("/dashboard/admin/usuarios");
     return { ok: true, error: null };
@@ -170,11 +209,30 @@ export async function deleteUser({ userId }) {
     }
 
     const adminSb = getSupabaseAdminClient();
+
+    // Lê email e role antes de remover (para auditoria — o perfil será deletado em cascata)
+    const { data: targetProfile } = await adminSb
+      .from("profiles")
+      .select("email, role")
+      .eq("id", userId)
+      .maybeSingle();
+
     const { error } = await adminSb.auth.admin.deleteUser(userId);
 
     if (error) {
       return { ok: false, error: `Erro ao remover usuário: ${error.message}` };
     }
+
+    await writeAuditLog(adminSb, {
+      action:   "user_deleted",
+      actorId:  caller.id,
+      targetId: null,  // perfil já foi removido em cascata
+      payload:  {
+        deleted_user_id: userId,
+        email: targetProfile?.email ?? null,
+        role:  targetProfile?.role  ?? null,
+      },
+    });
 
     revalidatePath("/dashboard/admin/usuarios");
     return { ok: true, error: null };

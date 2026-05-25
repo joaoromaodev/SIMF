@@ -236,7 +236,49 @@ Documentos antigos da evolução de ingestão foram arquivados em `docs/archive/
 
 ---
 
-## 9. Pré-requisitos
+## 9. Autenticação — instruções operacionais
+
+O sistema usa Supabase Auth com controle de roles em `profiles`.
+
+### Primeiro admin
+
+Após aplicar as migrations, crie o primeiro admin manualmente:
+
+1. Crie o usuário em **Supabase Dashboard > Authentication > Users**.
+2. Aguarde o trigger `on_auth_user_created` criar o perfil com `role = 'user'`.
+3. Eleve o role no SQL Editor:
+
+```sql
+UPDATE public.profiles SET role = 'admin' WHERE email = 'seu@email.com';
+```
+
+### Criar usuários adicionais
+
+Acesse `/dashboard/admin/usuarios` com uma conta admin. A tela permite:
+- criar usuários com e-mail, senha inicial e role;
+- alterar role de outros usuários;
+- remover usuários.
+
+Usuários são criados com e-mail já confirmado. O usuário pode fazer login imediatamente com as credenciais definidas pelo admin.
+
+### Roles disponíveis
+
+| Role | Acesso |
+|---|---|
+| `user` | Dashboards (leitura) |
+| `admin` | Dashboards + importação + gestão de usuários |
+
+### Variável de ambiente obrigatória para auth
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...   # server-side apenas — nunca expor ao client
+```
+
+---
+
+## 10. Pré-requisitos
 
 Antes de rodar o projeto localmente, garanta que você possui:
 
@@ -249,7 +291,7 @@ Antes de rodar o projeto localmente, garanta que você possui:
 
 ---
 
-## 10. Instalação
+## 11. Instalação
 
 Na raiz do projeto:
 
@@ -265,7 +307,7 @@ npm install
 
 ---
 
-## 11. Variáveis de ambiente
+## 12. Variáveis de ambiente
 
 Crie um arquivo `.env.local` a partir de `.env.example`.
 
@@ -295,7 +337,7 @@ SUPABASE_SIAFE_IMPORTS_BUCKET=siafe-imports
 
 ---
 
-## 12. Banco e migrations
+## 13. Banco e migrations
 
 O projeto depende de migrations SQL presentes em:
 
@@ -309,7 +351,7 @@ Durante a transição, algumas migrations ou estruturas existentes podem ainda r
 
 ---
 
-## 13. Como rodar localmente
+## 14. Como rodar localmente
 
 Na raiz do projeto:
 
@@ -325,7 +367,7 @@ http://localhost:3000
 
 ---
 
-## 14. Como validar que a aplicação subiu
+## 15. Como validar que a aplicação subiu
 
 Sinais esperados:
 
@@ -337,7 +379,7 @@ Sinais esperados:
 
 ---
 
-## 15. Testes automatizados
+## 16. Testes automatizados
 
 Para executar os testes atuais:
 
@@ -353,7 +395,7 @@ npm run build
 
 ---
 
-## 16. Teste manual de upload
+## 17. Teste manual de upload
 
 ### 1. Suba a aplicação
 
@@ -431,7 +473,7 @@ Verifique se o arquivo foi salvo no bucket configurado.
 
 ---
 
-## 17. Evolução atual da ingestão
+## 18. Evolução atual da ingestão
 
 A frente atual é a reestruturação Supabase para os três universos `NE`, `NEDL` e `DLOB`.
 
@@ -452,17 +494,17 @@ O roadmap ativo está em:
 - `docs/roadmap_reestruturacao_supabase.md`
 - `docs/roadmap_reestruturacao_supabase_tasks.md`
 
-Há também uma frente planejada, ainda não implementada, para autenticação e controle de acesso com Supabase Auth, perfis `admin` e `user`, e validação de permissões no backend. O plano está em `docs/auth-access-control.md`.
+A frente de autenticação e controle de acesso com Supabase Auth está implementada (AUTH-01 a AUTH-05). O sistema exige login para acessar qualquer dashboard, restringe importações a admins e oferece tela de gestão de usuários em `/dashboard/admin/usuarios`. Detalhes em `docs/auth-access-control.md`.
 
 ---
 
-## 18. Restrições de escopo atuais
+## 19. Restrições de escopo atuais
 
 Salvo solicitação explícita, não considerar como parte do escopo atual:
 
 - consolidação canônica física completa;
 - materialized views como primeira estratégia;
-- implementação de autenticação fora dos incrementos planejados em `docs/auth-access-control.md`;
+- implementação de autenticação fora dos incrementos planejados (AUTH-01 a AUTH-05 já concluídos; AUTH-06 em andamento);
 - UI administrativa de schemas;
 - integração direta com sistemas externos;
 - troca de stack;
@@ -470,7 +512,7 @@ Salvo solicitação explícita, não considerar como parte do escopo atual:
 
 ---
 
-## 19. Boas práticas para continuidade
+## 20. Boas práticas para continuidade
 
 Ao continuar o projeto:
 
@@ -487,7 +529,7 @@ Ao continuar o projeto:
 
 ---
 
-## 20. Resumo rápido
+## 21. Resumo rápido
 
 ### Para instalar
 
@@ -516,6 +558,6 @@ npm run build
 
 ---
 
-## 21. Observação final
+## 22. Observação final
 
 Este README deve ser atualizado sempre que houver mudanças relevantes no estado do projeto, no fluxo de ingestão, na forma de execução local ou na estratégia de evolução documentada em `docs/`.

@@ -61,25 +61,60 @@ Durante a transicao, o codigo pode ainda conter nomes antigos. Novas alteracoes 
 
 ## Autenticacao e Autorizacao
 
-A frente planejada de autenticacao usara Supabase Auth para login e sessao.
+Implementado via Supabase Auth + `@supabase/ssr` para Next.js App Router.
 
-O perfil operacional do usuario sera controlado por tabela propria `profiles`, com campo `role`.
+### Componentes implementados
 
-Roles iniciais:
+| Arquivo | Funcao |
+|---|---|
+| `middleware.js` | Protege `/dashboard/*`; redireciona para `/login` se sem sessao |
+| `lib/supabase/session.js` | Cliente Supabase com cookie SSR (Server Components / Actions) |
+| `lib/supabase/browser.js` | Cliente Supabase browser (login UI) |
+| `lib/supabase/server.js` | Cliente com service role (operacoes administrativas) |
+| `lib/auth/require-role.js` | `requireAdmin()` e `getSessionRole()` para Server Components |
+| `app/login/page.js` | Formulario de login com `signInWithPassword` |
+| `app/actions/auth.js` | Server actions `logout` e `getSessionUser` |
+| `app/actions/admin.js` | Server actions de gestao de usuarios (apenas admin) |
+| `app/dashboard/layout.js` | Server Component: le sessao, passa role para DashboardShell |
+| `components/dashboard-shell.jsx` | Client Component: sidebar, topbar, badge Admin, logout |
 
-- `user` - pode acessar dashboards e consultar dados;
-- `admin` - pode acessar dashboards, subir relatorios CSV e gerenciar usuarios.
+### Roles
 
-Diretrizes:
+- `user` — acesso aos dashboards; sem importacao ou gestao de usuarios;
+- `admin` — acesso total: dashboards, importacao, gestao de usuarios.
 
-- dashboards devem exigir usuario autenticado;
-- `/dashboard/import` deve ser restrita a `admin`;
-- `POST /api/imports` deve validar permissao `admin` no backend;
-- a UI pode esconder acoes nao permitidas, mas nao deve ser a fonte de autorizacao;
-- o primeiro `admin` sera criado manualmente no Supabase;
-- roles desconhecidos ou usuarios sem perfil devem negar acesso por padrao.
+### Rotas protegidas
 
-A especificacao detalhada da frente esta em `docs/auth-access-control.md`.
+- `/dashboard/*` — exige sessao (middleware);
+- `/dashboard/import` — exige role `admin` (`requireAdmin()` no Server Component);
+- `/dashboard/admin/usuarios` — exige role `admin` (`requireAdmin()` no Server Component).
+
+### API protegida
+
+`POST /api/imports` verifica sessao (401) e role=admin lido de `profiles` (403) antes de processar.
+O role nunca e lido do corpo da requisicao.
+
+### Gestao de usuarios
+
+`/dashboard/admin/usuarios` permite a admins:
+- criar usuarios com email, senha inicial e role;
+- alterar role de outros usuarios;
+- remover usuarios.
+
+Usuarios nao podem alterar o proprio role nem se remover.
+
+### Auditoria minima
+
+- `import_batches.imported_by` — UUID do admin responsavel pela importacao;
+- `audit_log` — registra `user_created`, `role_changed`, `user_deleted` com actor, target e payload.
+
+### Primeiro admin
+
+```sql
+UPDATE public.profiles SET role = 'admin' WHERE email = '<email>';
+```
+
+A especificacao detalhada esta em `docs/auth-access-control.md`.
 
 ## Arquitetura de Dados
 

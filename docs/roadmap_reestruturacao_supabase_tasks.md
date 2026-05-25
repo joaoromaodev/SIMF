@@ -192,10 +192,10 @@ Esta frente deve ser executada depois da etapa de planejamento documental. Os it
 
 ### AUTH-06 - Auditoria e documentacao
 
-- [ ] Definir auditoria minima para importacoes autenticadas.
-- [ ] Definir auditoria minima para criacao de usuarios.
-- [ ] Definir auditoria minima para mudancas de role.
-- [ ] Atualizar `docs/auth-access-control.md` apos implementacao.
-- [ ] Atualizar `docs/TECHNICAL_SPECIFICATION.md` apos implementacao.
-- [ ] Atualizar README com instrucoes operacionais finais.
-- [ ] Registrar riscos residuais e decisoes humanas pendentes.
+- [x] Definir auditoria minima para importacoes autenticadas.
+- [x] Definir auditoria minima para criacao de usuarios.
+- [x] Definir auditoria minima para mudancas de role.
+- [x] Atualizar `docs/auth-access-control.md` apos implementacao.
+- [x] Atualizar `docs/TECHNICAL_SPECIFICATION.md` apos implementacao.
+- [x] Atualizar README com instrucoes operacionais finais.
+- [x] Registrar riscos residuais e decisoes humanas pendentes.

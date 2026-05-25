@@ -1,19 +1,25 @@
 # Autenticacao e Controle de Acesso - SIMF
 
+## Status
+
+Implementado. Todas as frentes AUTH-01 a AUTH-05 estao concluidas.
+Esta documentacao reflete o estado atual do sistema.
+
 ## Objetivo
 
-Esta frente define o planejamento para adicionar autenticacao e autorizacao ao SIMF usando Supabase Auth, com controle de perfil em tabela propria.
-
-O objetivo e proteger o acesso aos dashboards, restringir importacoes CSV e permitir gestao controlada de usuarios sem alterar, nesta rodada, rotas, APIs, UI, migrations ou codigo funcional.
+Proteger o acesso aos dashboards, restringir importacoes CSV a administradores,
+e permitir gestao controlada de usuarios. Autenticacao via Supabase Auth com
+controle de perfil em tabela propria (`profiles`).
 
 ## Premissas
 
-- Supabase Auth sera usado como provedor de login e sessao.
-- A tabela `profiles` armazenara metadados internos do usuario, incluindo `role`.
-- Os roles iniciais serao `admin` e `user`.
-- O primeiro usuario `admin` sera criado manualmente no Supabase.
-- A UI podera ocultar funcionalidades conforme o perfil, mas a autorizacao obrigatoria deve acontecer no backend.
-- Nenhuma permissao sensivel deve depender apenas de estado client-side.
+- Supabase Auth e o provedor de login e sessao.
+- A tabela `profiles` armazena metadados internos do usuario, incluindo `role`.
+- Os roles sao `admin` e `user` (enum `public.user_role`).
+- O primeiro usuario `admin` e criado manualmente no Supabase Dashboard.
+- A UI oculta funcionalidades conforme o perfil, mas a autorizacao real acontece no backend.
+- Nenhuma permissao sensivel depende apenas de estado client-side.
+- `SUPABASE_SERVICE_ROLE_KEY` permanece exclusivamente server-side.
 
 ## Perfis
 
@@ -41,17 +47,19 @@ Perfil administrativo do SIMF.
 Pode:
 
 - acessar dashboards;
-- subir relatorios CSV;
-- acionar a API de importacao;
+- subir relatorios CSV e acionar `POST /api/imports`;
 - substituir batches conforme a politica vigente;
-- adicionar usuarios ao sistema;
-- atribuir perfil inicial aos usuarios criados;
-- consultar telas administrativas futuras.
+- acessar `/dashboard/import` e `/dashboard/admin/usuarios`;
+- criar usuarios com role inicial definido;
+- alterar role de outros usuarios;
+- remover usuarios;
+- visualizar o audit_log.
 
-Nao deve:
+Nao pode:
 
-- ignorar validacoes de schema, arquivo ou escopo anual;
-- usar operacoes administrativas sem registro minimo de autoria quando a auditoria for implementada.
+- alterar o proprio role;
+- se remover do sistema;
+- ignorar validacoes de schema, arquivo ou escopo anual.
 
 ## Matriz de Permissoes
 
@@ -59,165 +67,157 @@ Nao deve:
 |---|---:|---:|---|
 | Fazer login | Sim | Sim | Via Supabase Auth |
 | Encerrar sessao | Sim | Sim | Via Supabase Auth |
-| Acessar dashboards | Sim | Sim | Exige sessao valida |
+| Acessar dashboards | Sim | Sim | Exige sessao valida (middleware) |
 | Consultar dados de BI | Sim | Sim | Conforme views autorizadas |
-| Acessar pagina de importacao | Nao | Sim | Deve ser protegido por rota |
-| Enviar CSV | Nao | Sim | Deve ser validado no backend |
-| Substituir batch ativo de `2026` | Nao | Sim | Mantem regra atual de importacao |
-| Adicionar usuario | Nao | Sim | Gestao administrativa |
-| Definir role de usuario | Nao | Sim | Roles iniciais: `admin`, `user` |
-| Alterar proprio role | Nao | Nao | Evitar escalada de privilegio |
-| Acessar logs/auditoria futura | Nao | Sim | Escopo de hardening |
+| Acessar `/dashboard/import` | Nao | Sim | `requireAdmin()` no Server Component |
+| Enviar CSV via `POST /api/imports` | Nao | Sim | Auth verificada na route handler |
+| Acessar `/dashboard/admin/usuarios` | Nao | Sim | `requireAdmin()` no Server Component |
+| Criar usuario | Nao | Sim | `createUser` server action |
+| Definir role de usuario | Nao | Sim | `updateUserRole` server action |
+| Remover usuario | Nao | Sim | `deleteUser` server action |
+| Alterar proprio role | Nao | Nao | Bloqueio explicito no server action |
+| Se remover | Nao | Nao | Bloqueio explicito no server action |
+| Ler audit_log | Nao | Sim | RLS restringe a admins |
+
+## Arquitetura
+
+### Middleware
+
+`middleware.js` usa `@supabase/ssr` para:
+- Redirecionar `/dashboard/*` para `/login?redirect=<path>` se sem sessao;
+- Redirecionar `/login` para `/dashboard/dppc` se ja autenticado.
+
+### Server Helpers
+
+`lib/auth/require-role.js`:
+- `requireAdmin()` — verifica sessao + role=admin, redireciona se negado;
+- `getSessionRole()` — retorna `{ id, email, role }` ou null, sem redirecionar.
+
+### Clientes Supabase
+
+- `lib/supabase/session.js` — cliente de sessao com cookies (Server Components / Actions);
+- `lib/supabase/browser.js` — cliente browser para UI de login;
+- `lib/supabase/server.js` — cliente com service role para operacoes administrativas.
+
+### Login
+
+`app/login/page.js` — formulario client-side com `signInWithPassword`.
+Apos login bem-sucedido, redireciona para o caminho original (`?redirect=`) ou `/dashboard/dppc`.
+
+### Dashboard Layout
+
+`app/dashboard/layout.js` — Server Component async que:
+1. Chama `getSessionRole()` para obter email e role;
+2. Renderiza `DashboardShell` com `userEmail` e `userRole`.
+
+`components/dashboard-shell.jsx` — Client Component que:
+- Exibe "Atualizar Base" e "Usuarios" apenas para `admin`;
+- Exibe badge "Admin" no topbar;
+- Contem o botao de logout.
 
 ## Rotas Protegidas
 
-Rotas publicas planejadas:
-
-- pagina de login futura;
-- eventuais telas de recuperacao de senha do Supabase Auth;
-- `/`, caso seja mantida como portal publico.
+Rotas publicas:
+- `/login`
+- `/` (portal publico, sem autenticacao obrigatoria)
 
 Rotas autenticadas para `user` e `admin`:
-
-- `/dashboard/dppc`;
-- `/dashboard/dppc/cpag`;
-- `/dashboard/dppc/cliq`;
-- `/dashboard/dfin`.
+- `/dashboard/dppc`
+- `/dashboard/dppc/cpag`
+- `/dashboard/dppc/cliq`
+- `/dashboard/dfin/ceo`
+- `/dashboard/dfin/cped`
+- `/dashboard/dfin/acont`
 
 Rotas restritas a `admin`:
-
-- `/dashboard/import`;
-- rotas futuras de administracao de usuarios.
-
-Observacao: a lista acima descreve a politica-alvo. Nenhuma rota deve ser alterada nesta rodada de documentacao.
+- `/dashboard/import`
+- `/dashboard/admin/usuarios`
 
 ## APIs Protegidas
 
-APIs que devem exigir sessao autenticada:
+`POST /api/imports`:
+1. Obtem `user` via `supabase.auth.getUser()`;
+2. Retorna 401 se sem sessao;
+3. Le `profiles.role` via query server-side;
+4. Retorna 403 se role != 'admin';
+5. Processa upload passando `importedBy: user.id`.
 
-- endpoints futuros de leitura, se expostos fora de Server Components;
-- endpoints futuros de perfil/sessao.
+## Auditoria Minima
 
-APIs que devem exigir `admin`:
+### Importacoes autenticadas
 
-- `POST /api/imports`;
-- endpoints futuros de criacao de usuarios;
-- endpoints futuros de alteracao de roles;
-- endpoints futuros de auditoria administrativa, se houver.
+Coluna `imported_by uuid` em `import_batches` registra o UUID do admin responsavel.
+Inclui batches de sucesso e falha.
 
-Regras obrigatorias:
+### Criacao de usuarios
 
-- `POST /api/imports` deve validar sessao e role no backend antes de processar arquivo, gravar Storage ou criar `import_batches`.
-- A chave `SUPABASE_SERVICE_ROLE_KEY` deve permanecer restrita ao servidor.
-- A API nao deve aceitar role enviado pelo client como fonte de verdade.
-- O perfil deve ser lido de `profiles` ou de mecanismo server-side equivalente.
+Tabela `audit_log` registra entrada com `action = 'user_created'`,
+`actor_id` (admin), `target_id` (novo usuario), `payload: { email, role }`.
 
-## Fluxo de Login
+### Mudancas de role
 
-Fluxo planejado:
+Tabela `audit_log` registra entrada com `action = 'role_changed'`,
+`actor_id`, `target_id`, `payload: { previous_role, new_role }`.
 
-1. Usuario acessa a pagina de login.
-2. Usuario informa credenciais.
-3. Supabase Auth valida credenciais e cria sessao.
-4. Aplicacao recupera o usuario autenticado.
-5. Backend ou server layer consulta `profiles` para obter `role`.
-6. Usuario e redirecionado conforme permissao:
-   - `user`: dashboards;
-   - `admin`: dashboards, com acesso adicional a importacao e administracao.
-7. A cada acesso protegido, sessao e role devem ser revalidados no servidor.
+### Remocao de usuarios
 
-Estados esperados:
+Tabela `audit_log` registra entrada com `action = 'user_deleted'`,
+`actor_id`, `target_id = null` (perfil removido em cascata),
+`payload: { deleted_user_id, email, role }`.
 
-- sem sessao: redirecionar para login;
-- sessao valida sem `profiles`: bloquear acesso e orientar correcao administrativa;
-- role desconhecido: bloquear acesso por padrao;
-- role valido: liberar apenas o escopo permitido.
+### RLS no audit_log
+
+Apenas admins podem ler o audit_log (policy `audit_log: admin le registros`).
+Escrita e feita exclusivamente via service role server-side.
 
 ## Fluxo de Criacao de Usuarios
 
-Fluxo planejado para administracao:
-
-1. Admin acessa a area futura de gestao de usuarios.
-2. Admin informa email e role inicial (`user` ou `admin`).
-3. Backend valida que o solicitante possui role `admin`.
-4. Backend cria o usuario no Supabase Auth pelo mecanismo administrativo apropriado.
-5. Backend cria o registro correspondente em `profiles`.
-6. Usuario criado recebe convite, senha temporaria ou fluxo de recuperacao definido para o ambiente.
-7. Auditoria futura registra quem criou o usuario, quando e com qual role.
-
-Regras:
-
-- apenas `admin` pode criar usuarios;
-- apenas `admin` pode atribuir role inicial;
-- usuarios nao podem alterar o proprio role;
-- criacao parcial entre Supabase Auth e `profiles` deve ser tratada como erro operacional a corrigir.
+1. Admin acessa `/dashboard/admin/usuarios`;
+2. Admin preenche email, senha inicial (min. 8 chars) e role (`admin` ou `user`);
+3. Server action `createUser` verifica sessao admin;
+4. `supabase.auth.admin.createUser` cria usuario com `email_confirm: true`;
+5. Upsert em `profiles` define o role correto;
+6. Em caso de falha no upsert, o usuario Auth e revertido (`deleteUser`);
+7. Entrada registrada em `audit_log`;
+8. Usuario pode fazer login imediatamente com as credenciais informadas pelo admin.
 
 ## Regra para Primeiro Admin
 
-O primeiro `admin` sera criado manualmente no Supabase.
+O primeiro `admin` deve ser criado manualmente no Supabase Dashboard:
 
-Procedimento esperado na implementacao:
-
-1. Criar usuario no Supabase Auth.
-2. Criar registro correspondente em `profiles`.
-3. Definir `profiles.role = 'admin'`.
-4. Confirmar que o usuario consegue acessar areas administrativas.
-
-Essa regra evita criar uma tela publica de bootstrap administrativo e reduz risco de escalada inicial de privilegio.
+```sql
+-- 1. Crie o usuario em Authentication > Users
+-- 2. Apos o trigger criar o perfil com role='user', eleve para admin:
+UPDATE public.profiles SET role = 'admin' WHERE email = '<email-do-admin>';
+```
 
 ## Decisoes de Seguranca
 
-- Backend deve validar todas as permissoes sensiveis.
-- UI pode esconder botoes e links, mas isso e apenas conveniencia de experiencia.
-- `role` deve viver em `profiles`, nao em payload enviado pelo client.
-- Roles desconhecidos devem negar acesso por padrao.
-- Usuarios autenticados sem perfil devem ser bloqueados ate correcao.
-- A importacao CSV deve exigir `admin` antes de qualquer efeito colateral.
-- Service role do Supabase deve ficar apenas em ambiente server-side.
-- RLS e policies do Supabase devem ser planejadas junto da modelagem de `profiles`.
-- Mudancas de role devem ser auditaveis em rodada futura.
-- O modelo inicial evita permissoes granulares ate haver necessidade real.
+- Backend valida todas as permissoes sensiveis (role lido de `profiles`, nunca do client).
+- UI oculta botoes e links como conveniencia, nao como controle de acesso.
+- `role` vive em `profiles`, nao em payload enviado pelo client.
+- Roles desconhecidos negam acesso por padrao.
+- Usuarios autenticados sem perfil sao bloqueados.
+- Importacao CSV exige `admin` antes de qualquer efeito colateral.
+- `SUPABASE_SERVICE_ROLE_KEY` permanece exclusivamente server-side.
+- Usuarios nao podem alterar o proprio role.
+- Usuarios nao podem se remover.
+- Auditoria gravada server-side com service role — nao pode ser forjada pelo client.
 
-## Itens Fora de Escopo
+## Riscos Residuais
 
-Fora do escopo desta rodada:
-
-- implementar login;
-- criar migrations;
-- criar tabela `profiles`;
-- alterar frontend funcional;
-- alterar backend funcional;
-- proteger rotas no codigo;
-- proteger `POST /api/imports` no codigo;
-- criar tela de gestao de usuarios;
-- criar auditoria operacional;
-- configurar provedores externos de identidade;
-- definir politicas finais de RLS.
-
-Fora do escopo inicial de produto, salvo decisao futura:
-
-- perfis adicionais alem de `admin` e `user`;
-- permissoes granulares por dashboard;
-- grupos, departamentos ou unidades gestoras;
-- SSO corporativo;
-- MFA obrigatorio;
-- aprovacao em multiplas etapas para importacao.
-
-## Dependencias para Implementacao Futura
-
-- Definir schema SQL de `profiles`.
-- Definir policies/RLS para leitura e escrita de perfis.
-- Definir estrategia de middleware ou verificacao server-side por rota.
-- Definir helper server-side para obter usuario autenticado e role.
-- Definir comportamento de redirecionamento pos-login.
-- Definir fluxo operacional de convite/recuperacao de senha.
-- Definir formato minimo de auditoria para importacoes e gestao de usuarios.
+- Nao ha protecao contra rebaixamento do ultimo admin — e possivel ficar sem nenhum admin.
+  Mitigacao manual: verificar antes de rebaixar ou remover.
+- Senha inicial definida pelo admin: o usuario deveria ser orientado a alterar no primeiro acesso.
+  Nao ha fluxo automatico de troca obrigatoria de senha — depende de orientacao operacional.
+- Nao ha MFA, SSO corporativo ou aprovacao em multiplas etapas — escopo de hardening futuro.
+- RLS nao cobre leitura de dados de BI por enquanto — as views sao publicas para autenticados.
+  Refinamento de RLS por view e escopo de hardening futuro (Incremento 10).
 
 ## Decisoes Humanas Pendentes
 
-- Confirmar se `/` permanecera como portal publico ou se redirecionara usuarios sem sessao para login.
-- Definir o fluxo operacional de criacao de senha: convite, senha temporaria ou recuperacao por email.
-- Definir se um `admin` podera rebaixar outro `admin`.
-- Definir se havera regra especial para impedir remocao/rebaixamento do ultimo `admin`.
-- Definir nivel minimo de auditoria exigido no primeiro incremento funcional.
-- Definir se RLS sera aplicada ja no primeiro ciclo de autenticacao ou em hardening posterior.
+- Confirmar se `/` permanecera como portal publico ou redirecionar para login.
+- Definir se um `admin` pode rebaixar outro `admin` (atualmente permitido).
+- Definir regra especial para impedir remocao/rebaixamento do ultimo `admin`.
+- Definir se o usuario deve ser obrigado a alterar a senha no primeiro acesso.
+- Definir politicas de RLS por view de BI em Incremento 10.
