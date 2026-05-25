@@ -25,7 +25,7 @@ export async function toggleMarcacaoPagamento(ordemBancaria, novoValor, confirma
   revalidatePath("/dashboard/dppc/cpag");
 }
 
-async function fetchAllRows(supabase, table, columns, order) {
+async function fetchAllRows(supabase, table, columns, order, filters = []) {
   const rows = [];
   let from = 0;
 
@@ -37,6 +37,13 @@ async function fetchAllRows(supabase, table, columns, order) {
 
     if (order) {
       query = query.order(order.column, order.options);
+    }
+
+    for (const f of filters) {
+      if      (f.op === "gte")   query = query.gte(f.column, f.value);
+      else if (f.op === "lte")   query = query.lte(f.column, f.value);
+      else if (f.op === "eq")    query = query.eq(f.column, f.value);
+      else if (f.op === "ilike") query = query.ilike(f.column, f.value);
     }
 
     const { data, error } = await query;
@@ -56,26 +63,68 @@ async function fetchAllRows(supabase, table, columns, order) {
   }
 }
 
-export async function fetchAllCpagExportData() {
+/**
+ * Exporta somente a aba ativa com os filtros em vigor.
+ *
+ * @param {{ tab?: string, ano?: string }} params
+ *   tab — "liquidados" | "monitoramento"  (padrão: "liquidados")
+ *   ano — ex. "2026"                      (padrão: "2026", usado para monitoramento)
+ */
+export async function fetchAllCpagExportData({ tab = "liquidados", ano = "2026" } = {}) {
   const supabase = getSupabaseAdminClient();
 
-  const [liquidados, monitoramento] = await Promise.all([
-    fetchAllRows(
-      supabase,
-      "vw_liquidados_a_pagar",
-      "numero_processo, codigo_nota_empenho, documento_liquidacao, data_liquidacao, credor, dl_documento_credor, fonte, valor_liquido, valor_bruto, valor_liquidado_a_pagar, valor_ja_pago_obs, updated_at",
-      { column: "data_liquidacao", options: { ascending: false, nullsFirst: false } }
-    ),
-    fetchAllRows(
+  if (tab === "monitoramento") {
+    const monitoramento = await fetchAllRows(
       supabase,
       "vw_monitoramento_pagamentos",
-      "numero_processo, documento_liquidacao, ordem_bancaria, credor, ob_credor_documento, data_liquidacao, data_pagamento, valor, fonte, codigo_unidade_gestora, confirmado_manualmente, confirmado_por, confirmado_em, observacao",
-      { column: "data_pagamento", options: { ascending: false } }
-    ),
-  ]);
+      [
+        "numero_processo",
+        "documento_liquidacao",
+        "ordem_bancaria",
+        "credor",
+        "ob_credor_documento",
+        "data_liquidacao",
+        "data_pagamento",
+        "valor",
+        "fonte",
+        "codigo_unidade_gestora",
+        "contrato_convenio",
+        "descricao",
+        "documento_credor",
+        "tem_vinculo_nedl",
+        "motivo_sem_vinculo",
+        "confirmado_manualmente",
+        "confirmado_por",
+        "confirmado_em",
+        "observacao",
+      ].join(", "),
+      { column: "data_pagamento", options: { ascending: false } },
+      [
+        { op: "gte", column: "data_pagamento", value: `${ano}-01-01` },
+        { op: "lte", column: "data_pagamento", value: `${ano}-12-31` },
+      ]
+    );
+    return { tab, monitoramento };
+  }
 
-  return {
-    liquidados,
-    monitoramento,
-  };
+  // tab === "liquidados" (default) — sem filtro de ano (todos os exercícios com saldo pendente)
+  const liquidados = await fetchAllRows(
+    supabase,
+    "vw_liquidados_a_pagar",
+    [
+      "numero_processo",
+      "codigo_nota_empenho",
+      "documento_liquidacao",
+      "data_liquidacao",
+      "credor",
+      "dl_documento_credor",
+      "fonte",
+      "valor_liquido",
+      "valor_bruto",
+      "valor_liquidado_a_pagar",
+      "valor_ja_pago_obs",
+    ].join(", "),
+    { column: "data_liquidacao", options: { ascending: false, nullsFirst: false } }
+  );
+  return { tab, liquidados };
 }

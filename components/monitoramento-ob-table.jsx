@@ -230,7 +230,7 @@ export function MonitoramentoOBTable({ monitoramento, ano, pagina = 1, totalPage
           </span>
           <div className="flex items-center gap-1">
             <Link
-              href={`/dashboard/dppc/cpag?ano=${ano}&paginaMon=${pagina - 1}`}
+              href={`/dashboard/dppc/cpag?aba=monitoramento&ano=${ano}&paginaMon=${pagina - 1}`}
               aria-disabled={pagina <= 1}
               className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                 pagina <= 1
@@ -241,7 +241,7 @@ export function MonitoramentoOBTable({ monitoramento, ano, pagina = 1, totalPage
               <ChevronLeft size={12} /> Anterior
             </Link>
             <Link
-              href={`/dashboard/dppc/cpag?ano=${ano}&paginaMon=${pagina + 1}`}
+              href={`/dashboard/dppc/cpag?aba=monitoramento&ano=${ano}&paginaMon=${pagina + 1}`}
               aria-disabled={pagina >= totalPages}
               className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                 pagina >= totalPages

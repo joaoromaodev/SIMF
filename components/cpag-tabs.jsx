@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Wrench, TrendingUp } from "lucide-react";
-import { LiquidadosTable } from "./liquidados-table.jsx";
+import { LiquidadosTable }    from "./liquidados-table.jsx";
 import { MonitoramentoOBTable } from "./monitoramento-ob-table.jsx";
 
 const TABS = [
@@ -13,11 +13,23 @@ const TABS = [
 
 export function CpagTabs({
   liquidados, monitoramento, ano,
+  abaAtiva = "liquidados",
   paginaLiq = 1, totalPagesLiq = 1, totalLiq = 0,
   paginaMon = 1, totalPagesMon = 1, totalMon = 0,
   pageSize = 50,
 }) {
-  const [activeTab, setActiveTab] = useState("liquidados");
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+
+  function switchTab(id) {
+    if (id === abaAtiva) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("aba", id);
+    // Volta para página 1 ao trocar de aba
+    params.delete("paginaLiq");
+    params.delete("paginaMon");
+    router.push(`/dashboard/dppc/cpag?${params.toString()}`);
+  }
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -25,11 +37,11 @@ export function CpagTabs({
       {/* ── Barra de abas ── */}
       <div className="flex border-b border-slate-200 bg-slate-50/60">
         {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
+          const isActive = abaAtiva === tab.id;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => switchTab(tab.id)}
               className={`
                 relative px-6 py-4 text-[11px] font-black uppercase tracking-widest
                 transition-colors duration-150 focus:outline-none
@@ -46,7 +58,7 @@ export function CpagTabs({
       </div>
 
       {/* ── Aba 1: Liquidados a Pagar ── */}
-      {activeTab === "liquidados" && (
+      {abaAtiva === "liquidados" && (
         <>
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <p className="text-[11px] text-slate-400 font-medium">
@@ -81,7 +93,7 @@ export function CpagTabs({
       )}
 
       {/* ── Aba 2: Monitoramento de OBs ── */}
-      {activeTab === "monitoramento" && (
+      {abaAtiva === "monitoramento" && (
         <MonitoramentoOBTable
           monitoramento={monitoramento}
           ano={ano}
@@ -92,7 +104,7 @@ export function CpagTabs({
       )}
 
       {/* ── Aba 3: Recursos (Saldo) — Em Construção ── */}
-      {activeTab === "recursos" && (
+      {abaAtiva === "recursos" && (
         <div className="px-8 py-20 flex flex-col items-center justify-center text-center">
           {/* Ícone animado */}
           <div className="relative mb-6">
