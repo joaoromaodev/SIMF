@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X, Wrench, Landmark, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
@@ -18,9 +19,18 @@ const TABS = [
   { id: "prds",     label: "Fila de PRDs (Aguardando NE)" },
 ];
 
-export function CeoTabs({ empenhos = [], ano, pagina = 1, totalPages = 1, total = 0, pageSize = 50 }) {
-  const [activeTab, setActiveTab] = useState("empenhos");
-  const [busca,     setBusca]     = useState("");
+export function CeoTabs({ empenhos = [], ano, pagina = 1, totalPages = 1, total = 0, pageSize = 50, abaAtiva = "empenhos" }) {
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const [busca, setBusca] = useState("");
+
+  function switchTab(id) {
+    if (id === abaAtiva) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("aba", id);
+    params.delete("pagina");
+    router.push(`/dashboard/dfin/ceo?${params.toString()}`);
+  }
 
   const empenhosFiltrados = useMemo(() => {
     const q = busca.toLowerCase().trim();
@@ -37,11 +47,11 @@ export function CeoTabs({ empenhos = [], ano, pagina = 1, totalPages = 1, total 
       {/* Barra de abas */}
       <div className="flex border-b border-slate-200 bg-slate-50/60">
         {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
+          const isActive = abaAtiva === tab.id;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => switchTab(tab.id)}
               className={`
                 relative px-6 py-4 text-[11px] font-black uppercase tracking-widest
                 transition-colors duration-150 focus:outline-none
@@ -58,7 +68,7 @@ export function CeoTabs({ empenhos = [], ano, pagina = 1, totalPages = 1, total 
       </div>
 
       {/* Aba 1: Empenhos Gerados */}
-      {activeTab === "empenhos" && (
+      {abaAtiva === "empenhos" && (
         <>
           {/* Barra de busca */}
           <div className="px-6 py-3 border-b border-slate-100 flex items-center gap-4 bg-slate-50/50">
@@ -156,7 +166,7 @@ export function CeoTabs({ empenhos = [], ano, pagina = 1, totalPages = 1, total 
               </span>
               <div className="flex items-center gap-1">
                 <Link
-                  href={`/dashboard/dfin/ceo?ano=${ano}&pagina=${pagina - 1}`}
+                  href={`/dashboard/dfin/ceo?aba=${abaAtiva}&ano=${ano}&pagina=${pagina - 1}`}
                   aria-disabled={pagina <= 1}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                     pagina <= 1
@@ -167,7 +177,7 @@ export function CeoTabs({ empenhos = [], ano, pagina = 1, totalPages = 1, total 
                   <ChevronLeft size={12} /> Anterior
                 </Link>
                 <Link
-                  href={`/dashboard/dfin/ceo?ano=${ano}&pagina=${pagina + 1}`}
+                  href={`/dashboard/dfin/ceo?aba=${abaAtiva}&ano=${ano}&pagina=${pagina + 1}`}
                   aria-disabled={pagina >= totalPages}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                     pagina >= totalPages
@@ -184,7 +194,7 @@ export function CeoTabs({ empenhos = [], ano, pagina = 1, totalPages = 1, total 
       )}
 
       {/* Aba 2: Fila de PRDs */}
-      {activeTab === "prds" && (
+      {abaAtiva === "prds" && (
         <div className="px-8 py-20 flex flex-col items-center justify-center text-center">
           <div className="relative mb-6">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-50 to-slate-100 border border-blue-100 flex items-center justify-center shadow-sm">

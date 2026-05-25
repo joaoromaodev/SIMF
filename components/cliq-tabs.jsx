@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FileCheck2, Wrench, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
@@ -13,8 +14,9 @@ function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("pt-BR");
 }
 
-function buildHref(filters, pagina) {
+function buildHref(filters, pagina, aba) {
   const params = new URLSearchParams();
+  if (aba)              params.set("aba",      aba);
   if (filters.fonte)    params.set("fonte",    filters.fonte);
   if (filters.credor)   params.set("credor",   filters.credor);
   if (filters.processo) params.set("processo", filters.processo);
@@ -153,8 +155,17 @@ function FonteMultiSelect({ fontes, selected, onChange }) {
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
-export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes, hasActiveFilters, ano }) {
-  const [activeTab, setActiveTab] = useState("empenhos_liquidar");
+export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes, hasActiveFilters, ano, abaAtiva = "empenhos_liquidar" }) {
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+
+  function switchTab(id) {
+    if (id === abaAtiva) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("aba", id);
+    params.delete("pagina");
+    router.push(`/dashboard/dppc/cliq?${params.toString()}`);
+  }
 
   // Filtros — Aba 1
   const [statusEmpenho, setStatusEmpenho] = useState("todos");
@@ -202,11 +213,11 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
       {/* ── Barra de abas ── */}
       <div className="flex border-b border-slate-200 bg-slate-50/60">
         {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
+          const isActive = abaAtiva === tab.id;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => switchTab(tab.id)}
               className={`
                 relative px-6 py-4 text-[11px] font-black uppercase tracking-widest
                 transition-colors duration-150 focus:outline-none
@@ -223,7 +234,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
       </div>
 
       {/* ── Aba 1: Empenhos a Liquidar ── */}
-      {activeTab === "empenhos_liquidar" && (
+      {abaAtiva === "empenhos_liquidar" && (
         <>
           {/* Barra de filtro de status */}
           <div className="px-6 py-3 border-b border-slate-100 flex items-center gap-4 bg-slate-50/50">
@@ -305,7 +316,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
               </span>
               <div className="flex items-center gap-1">
                 <Link
-                  href={buildHref(filters, pagina - 1)}
+                  href={buildHref(filters, pagina - 1, abaAtiva)}
                   aria-disabled={pagina <= 1}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                     pagina <= 1
@@ -316,7 +327,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
                   <ChevronLeft size={12} /> Anterior
                 </Link>
                 <Link
-                  href={buildHref(filters, pagina + 1)}
+                  href={buildHref(filters, pagina + 1, abaAtiva)}
                   aria-disabled={pagina >= totalPages}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                     pagina >= totalPages
@@ -333,7 +344,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
       )}
 
       {/* ── Aba 2: Liquidados a Pagar (Histórico) ── */}
-      {activeTab === "historico_liquidados" && (
+      {abaAtiva === "historico_liquidados" && (
         <>
           {/* Barra superior: filtros cruzados + exportação */}
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 space-y-3">
@@ -433,7 +444,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
               </span>
               <div className="flex items-center gap-1">
                 <Link
-                  href={buildHref(filters, pagina - 1)}
+                  href={buildHref(filters, pagina - 1, abaAtiva)}
                   aria-disabled={pagina <= 1}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                     pagina <= 1
@@ -444,7 +455,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
                   <ChevronLeft size={12} /> Anterior
                 </Link>
                 <Link
-                  href={buildHref(filters, pagina + 1)}
+                  href={buildHref(filters, pagina + 1, abaAtiva)}
                   aria-disabled={pagina >= totalPages}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                     pagina >= totalPages
@@ -461,7 +472,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
       )}
 
     {/* ── Aba 3: Recursos (Saldo) — Em Construção ── */}
-      {activeTab === "recursos" && (
+      {abaAtiva === "recursos" && (
         <div className="px-8 py-20 flex flex-col items-center justify-center text-center">
           <div className="relative mb-6">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-50 to-slate-100 border border-blue-100 flex items-center justify-center shadow-sm">
