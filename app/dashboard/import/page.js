@@ -192,10 +192,10 @@ export default async function ImportPage() {
             {/* Card de política */}
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <p className="text-[11px] font-black text-amber-700 uppercase tracking-widest mb-2">
-                Política de Importação 2026
+                Política de Importação
               </p>
               <p className="text-xs text-amber-700/80 leading-relaxed">
-                Uploads do ano de 2026 substituem integralmente os dados anteriores do mesmo tipo. Históricos de 2023/2024 e 2025 são imutáveis após o primeiro carregamento.
+                Novos uploads substituem integralmente os dados anteriores do mesmo tipo e período. O batch anterior é desativado e suas linhas removidas automaticamente.
               </p>
             </div>
           </div>
