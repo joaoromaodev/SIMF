@@ -131,13 +131,13 @@ O tracker antigo `docs/simf-evolucao-ingestao-tasks.md` foi arquivado em `docs/a
 
 ## Incremento 10 - Hardening pos-validacao
 
-- [ ] Revisar indices.
-- [ ] Avaliar performance das views comuns.
-- [ ] Avaliar necessidade real de materialized views.
-- [ ] Travar historicos apos carga validada.
-- [ ] Atualizar documentacao final pos-implementacao.
-- [ ] Isolar ou remover referencias legadas que nao forem mais necessarias.
-- [ ] Registrar riscos residuais e proximos ciclos.
+- [x] Revisar indices.
+- [x] Avaliar performance das views comuns.
+- [x] Avaliar necessidade real de materialized views.
+- [x] Travar historicos apos carga validada.
+- [x] Atualizar documentacao final pos-implementacao.
+- [x] Isolar ou remover referencias legadas que nao forem mais necessarias.
+- [x] Registrar riscos residuais e proximos ciclos.
 
 ## Frente AUTH - Autenticacao e controle de acesso
 
