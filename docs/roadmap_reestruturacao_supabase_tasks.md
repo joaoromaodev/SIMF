@@ -183,12 +183,12 @@ Esta frente deve ser executada depois da etapa de planejamento documental. Os it
 
 ### AUTH-05 - Gestao de usuarios
 
-- [ ] Definir tela ou fluxo administrativo para criacao de usuarios.
-- [ ] Permitir que apenas `admin` crie usuarios.
-- [ ] Permitir atribuicao inicial de `admin` ou `user`.
-- [ ] Impedir que usuario altere o proprio role.
-- [ ] Tratar erro parcial entre Supabase Auth e `profiles`.
-- [ ] Definir fluxo de convite, senha temporaria ou recuperacao.
+- [x] Definir tela ou fluxo administrativo para criacao de usuarios.
+- [x] Permitir que apenas `admin` crie usuarios.
+- [x] Permitir atribuicao inicial de `admin` ou `user`.
+- [x] Impedir que usuario altere o proprio role.
+- [x] Tratar erro parcial entre Supabase Auth e `profiles`.
+- [x] Definir fluxo de convite, senha temporaria ou recuperacao.
 
 ### AUTH-06 - Auditoria e documentacao
 

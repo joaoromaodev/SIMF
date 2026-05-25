@@ -15,6 +15,7 @@ import {
   Calculator,
   LogOut,
   User,
+  Users,
 } from "lucide-react";
 import { logout } from "../app/actions/auth.js";
 
@@ -143,21 +144,35 @@ export default function DashboardShell({ userEmail, userRole, children }) {
           ))}
         </nav>
 
-        {/* Rodapé — "Atualizar Base" visível apenas para admin */}
+        {/* Rodapé — itens administrativos visíveis apenas para admin */}
         <div className={`border-t border-slate-100 transition-all duration-300 ${isCollapsed ? "px-3 py-4" : "px-4 py-4"} space-y-1`}>
           {isAdmin && (
-            <Link
-              href="/dashboard/import"
-              title={isCollapsed ? "Atualizar Base" : undefined}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold transition-all duration-150 ${
-                pathname === "/dashboard/import"
-                  ? "bg-red-500 text-white"
-                  : "bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white"
-              }`}
-            >
-              <Database size={17} className="flex-shrink-0" />
-              {!isCollapsed && <span>Atualizar Base</span>}
-            </Link>
+            <>
+              <Link
+                href="/dashboard/admin/usuarios"
+                title={isCollapsed ? "Usuários" : undefined}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold transition-all duration-150 ${
+                  pathname === "/dashboard/admin/usuarios"
+                    ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                    : "bg-slate-100 text-slate-500 hover:bg-blue-600 hover:text-white"
+                }`}
+              >
+                <Users size={17} className="flex-shrink-0" />
+                {!isCollapsed && <span>Usuários</span>}
+              </Link>
+              <Link
+                href="/dashboard/import"
+                title={isCollapsed ? "Atualizar Base" : undefined}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold transition-all duration-150 ${
+                  pathname === "/dashboard/import"
+                    ? "bg-red-500 text-white"
+                    : "bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white"
+                }`}
+              >
+                <Database size={17} className="flex-shrink-0" />
+                {!isCollapsed && <span>Atualizar Base</span>}
+              </Link>
+            </>
           )}
         </div>
       </aside>
