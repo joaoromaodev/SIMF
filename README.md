@@ -221,6 +221,7 @@ Arquivos-chave da ingestão:
 A documentação principal da arquitetura atual está em:
 
 - `docs/estrutura_relatorios.md`
+- `docs/auth-access-control.md`
 - `docs/roadmap_reestruturacao_supabase.md`
 - `docs/roadmap_reestruturacao_supabase_tasks.md`
 - `docs/TECHNICAL_SPECIFICATION.md`
@@ -451,6 +452,8 @@ O roadmap ativo está em:
 - `docs/roadmap_reestruturacao_supabase.md`
 - `docs/roadmap_reestruturacao_supabase_tasks.md`
 
+Há também uma frente planejada, ainda não implementada, para autenticação e controle de acesso com Supabase Auth, perfis `admin` e `user`, e validação de permissões no backend. O plano está em `docs/auth-access-control.md`.
+
 ---
 
 ## 18. Restrições de escopo atuais
@@ -459,7 +462,7 @@ Salvo solicitação explícita, não considerar como parte do escopo atual:
 
 - consolidação canônica física completa;
 - materialized views como primeira estratégia;
-- autenticação avançada;
+- implementação de autenticação fora dos incrementos planejados em `docs/auth-access-control.md`;
 - UI administrativa de schemas;
 - integração direta com sistemas externos;
 - troca de stack;
@@ -473,6 +476,7 @@ Ao continuar o projeto:
 
 - leia `docs/AGENTS.md`;
 - leia `docs/estrutura_relatorios.md`;
+- leia `docs/auth-access-control.md` quando a rodada envolver autenticação ou permissões;
 - leia `docs/roadmap_reestruturacao_supabase.md`;
 - leia `docs/roadmap_reestruturacao_supabase_tasks.md`;
 - preserve a política de `2026`;

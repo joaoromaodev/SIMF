@@ -59,6 +59,28 @@ Direcao alvo para `yearScope`:
 
 Durante a transicao, o codigo pode ainda conter nomes antigos. Novas alteracoes devem convergir para os tipos oficiais.
 
+## Autenticacao e Autorizacao
+
+A frente planejada de autenticacao usara Supabase Auth para login e sessao.
+
+O perfil operacional do usuario sera controlado por tabela propria `profiles`, com campo `role`.
+
+Roles iniciais:
+
+- `user` - pode acessar dashboards e consultar dados;
+- `admin` - pode acessar dashboards, subir relatorios CSV e gerenciar usuarios.
+
+Diretrizes:
+
+- dashboards devem exigir usuario autenticado;
+- `/dashboard/import` deve ser restrita a `admin`;
+- `POST /api/imports` deve validar permissao `admin` no backend;
+- a UI pode esconder acoes nao permitidas, mas nao deve ser a fonte de autorizacao;
+- o primeiro `admin` sera criado manualmente no Supabase;
+- roles desconhecidos ou usuarios sem perfil devem negar acesso por padrao.
+
+A especificacao detalhada da frente esta em `docs/auth-access-control.md`.
+
 ## Arquitetura de Dados
 
 ### Hierarquia de Negocio
@@ -293,6 +315,7 @@ As proximas implementacoes devem seguir `docs/roadmap_reestruturacao_supabase.md
 Antes de implementar mudancas funcionais, revisar:
 
 - `docs/estrutura_relatorios.md`
+- `docs/auth-access-control.md`
 - `docs/roadmap_reestruturacao_supabase.md`
 - `docs/roadmap_reestruturacao_supabase_tasks.md`
 - `docs/CPAG_SPEC.md`, quando a mudanca afetar painel ou views de pagamento.

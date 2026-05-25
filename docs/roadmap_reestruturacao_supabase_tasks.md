@@ -138,3 +138,64 @@ O tracker antigo `docs/simf-evolucao-ingestao-tasks.md` foi arquivado em `docs/a
 - [ ] Atualizar documentacao final pos-implementacao.
 - [ ] Isolar ou remover referencias legadas que nao forem mais necessarias.
 - [ ] Registrar riscos residuais e proximos ciclos.
+
+## Frente AUTH - Autenticacao e controle de acesso
+
+Referencia principal: `docs/auth-access-control.md`.
+
+Esta frente deve ser executada depois da etapa de planejamento documental. Os itens abaixo nao implementam autenticacao nesta rodada; eles organizam os proximos incrementos funcionais.
+
+### AUTH-01 - Modelagem de perfis
+
+- [ ] Definir schema da tabela `profiles`.
+- [ ] Definir relacionamento entre `profiles.id` e usuarios do Supabase Auth.
+- [ ] Definir campo `role` com valores iniciais `admin` e `user`.
+- [ ] Definir comportamento para usuario autenticado sem perfil.
+- [ ] Planejar policies/RLS relacionadas a leitura e administracao de perfis.
+- [ ] Documentar procedimento manual para criacao do primeiro `admin`.
+
+### AUTH-02 - Login e sessao
+
+- [ ] Criar fluxo de login com Supabase Auth.
+- [ ] Criar fluxo de logout.
+- [ ] Definir redirecionamento para usuarios sem sessao.
+- [ ] Recuperar sessao no servidor para rotas protegidas.
+- [ ] Recuperar role a partir de `profiles`.
+- [ ] Tratar roles desconhecidos com negacao de acesso por padrao.
+
+### AUTH-03 - Autorizacao por perfil
+
+- [ ] Proteger dashboards para usuarios autenticados.
+- [ ] Permitir acesso de `user` e `admin` aos dashboards.
+- [ ] Restringir `/dashboard/import` a `admin`.
+- [ ] Ocultar acoes administrativas na UI para `user`.
+- [ ] Criar helper server-side reutilizavel para checagem de role.
+- [ ] Adicionar testes para acesso permitido e negado.
+
+### AUTH-04 - Protecao da API de importacao
+
+- [ ] Exigir sessao valida em `POST /api/imports`.
+- [ ] Exigir role `admin` em `POST /api/imports`.
+- [ ] Validar permissao antes de processar arquivo, Storage ou `import_batches`.
+- [ ] Garantir que role enviado pelo client seja ignorado.
+- [ ] Registrar usuario responsavel pela importacao quando houver coluna/auditoria definida.
+- [ ] Adicionar testes para bloqueio de usuario comum e anonimo.
+
+### AUTH-05 - Gestao de usuarios
+
+- [ ] Definir tela ou fluxo administrativo para criacao de usuarios.
+- [ ] Permitir que apenas `admin` crie usuarios.
+- [ ] Permitir atribuicao inicial de `admin` ou `user`.
+- [ ] Impedir que usuario altere o proprio role.
+- [ ] Tratar erro parcial entre Supabase Auth e `profiles`.
+- [ ] Definir fluxo de convite, senha temporaria ou recuperacao.
+
+### AUTH-06 - Auditoria e documentacao
+
+- [ ] Definir auditoria minima para importacoes autenticadas.
+- [ ] Definir auditoria minima para criacao de usuarios.
+- [ ] Definir auditoria minima para mudancas de role.
+- [ ] Atualizar `docs/auth-access-control.md` apos implementacao.
+- [ ] Atualizar `docs/TECHNICAL_SPECIFICATION.md` apos implementacao.
+- [ ] Atualizar README com instrucoes operacionais finais.
+- [ ] Registrar riscos residuais e decisoes humanas pendentes.
