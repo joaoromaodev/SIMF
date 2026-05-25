@@ -59,6 +59,7 @@ function StatCard({ label, value, sub, icon: Icon, accent }) {
 export default async function CpagDashboardPage({ searchParams }) {
   const sp        = await searchParams;
   const ano       = sp?.ano       || "2026";
+  const aba       = sp?.aba       || "liquidados";
   const paginaLiq = Math.max(1, parseInt(sp?.paginaLiq || "1", 10));
   const paginaMon = Math.max(1, parseInt(sp?.paginaMon || "1", 10));
   const offsetLiq = (paginaLiq - 1) * PAGE_SIZE;
@@ -170,7 +171,7 @@ export default async function CpagDashboardPage({ searchParams }) {
             {["2023", "2024", "2025", "2026"].map((a) => (
               <Link
                 key={a}
-                href={`/dashboard/dppc/cpag?ano=${a}`}
+                href={`/dashboard/dppc/cpag?aba=${aba}&ano=${a}`}
                 className={`flex items-center justify-between px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-colors ${
                   ano === a
                     ? "text-blue-600 bg-blue-50"
@@ -204,6 +205,7 @@ export default async function CpagDashboardPage({ searchParams }) {
         liquidados={liquidados}
         monitoramento={monitoramento}
         ano={ano}
+        abaAtiva={aba}
         paginaLiq={paginaLiq}
         totalPagesLiq={totalPagesLiq}
         totalLiq={totalLiq}

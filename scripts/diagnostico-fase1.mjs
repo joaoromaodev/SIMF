@@ -3,14 +3,27 @@
  * Executa as 7 tarefas do prompt de diagnóstico via REST API do Supabase.
  * Não altera nada no banco — somente leitura.
  *
- * Uso: node scripts/diagnostico-fase1.mjs
+ * Uso:
+ *   node --env-file=.env.local scripts/diagnostico-fase1.mjs
+ *
+ * Variáveis obrigatórias:
+ *   NEXT_PUBLIC_SUPABASE_URL      — URL do projeto Supabase
+ *   SUPABASE_SERVICE_ROLE_KEY     — service role key (nunca a anon key)
  */
 
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://kxvnotkxfyuscqouhacw.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4dm5vdGt4Znl1c2Nxb3VoYWN3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDg5NDY1OCwiZXhwIjoyMDkwNDcwNjU4fQ.H_vpotjq4qiNfsLEwMmWF4vSPsoMxak-cIHxglRnhaQ';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error('\n❌  Variáveis de ambiente obrigatórias não definidas.');
+  console.error('    NEXT_PUBLIC_SUPABASE_URL  :', SUPABASE_URL ? '✓' : 'AUSENTE');
+  console.error('    SUPABASE_SERVICE_ROLE_KEY :', SUPABASE_KEY ? '✓' : 'AUSENTE');
+  console.error('\n    Execute com:');
+  console.error('    node --env-file=.env.local scripts/diagnostico-fase1.mjs\n');
+  process.exit(1);
+}
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false },
