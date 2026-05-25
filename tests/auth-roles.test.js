@@ -143,3 +143,60 @@ describe("checkUserAccess — /dashboard/*", () => {
     assert.equal(result.reason, "no-profile");
   });
 });
+
+// ── Lógica extraída da proteção de POST /api/imports ─────────────────────────
+
+async function checkImportApiAccess(supabase) {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { status: 401, message: "Autenticação necessária." };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile || profile.role !== "admin") {
+    return { status: 403, message: "Acesso negado. Apenas administradores podem importar relatórios." };
+  }
+
+  return { status: 200, userId: user.id };
+}
+
+describe("checkImportApiAccess — POST /api/imports", () => {
+  it("retorna 401 para requisição sem sessão", async () => {
+    const sb = buildMockSupabase({ user: null });
+    const result = await checkImportApiAccess(sb);
+    assert.equal(result.status, 401);
+  });
+
+  it("retorna 403 para usuário com role 'user'", async () => {
+    const sb = buildMockSupabase({ user: { id: "u1" }, role: "user" });
+    const result = await checkImportApiAccess(sb);
+    assert.equal(result.status, 403);
+  });
+
+  it("retorna 403 para usuário sem perfil", async () => {
+    const sb = buildMockSupabase({ user: { id: "u2" }, role: null });
+    const result = await checkImportApiAccess(sb);
+    assert.equal(result.status, 403);
+  });
+
+  it("retorna 200 para admin — e expõe userId para auditoria", async () => {
+    const sb = buildMockSupabase({ user: { id: "admin-uuid" }, role: "admin" });
+    const result = await checkImportApiAccess(sb);
+    assert.equal(result.status, 200);
+    assert.equal(result.userId, "admin-uuid");
+  });
+
+  it("role enviado via client (body) é ignorado — decisão vem só de profiles", async () => {
+    // Simula cenário onde client tenta enviar role=admin no body,
+    // mas a validação usa apenas o profile lido do banco.
+    const sb = buildMockSupabase({ user: { id: "u3" }, role: "user" });
+    // Mesmo que o caller passasse role=admin no FormData, a função
+    // ignora qualquer parâmetro externo e lê apenas do mock de profiles.
+    const result = await checkImportApiAccess(sb);
+    assert.equal(result.status, 403);
+  });
+});

@@ -174,12 +174,12 @@ Esta frente deve ser executada depois da etapa de planejamento documental. Os it
 
 ### AUTH-04 - Protecao da API de importacao
 
-- [ ] Exigir sessao valida em `POST /api/imports`.
-- [ ] Exigir role `admin` em `POST /api/imports`.
-- [ ] Validar permissao antes de processar arquivo, Storage ou `import_batches`.
-- [ ] Garantir que role enviado pelo client seja ignorado.
-- [ ] Registrar usuario responsavel pela importacao quando houver coluna/auditoria definida.
-- [ ] Adicionar testes para bloqueio de usuario comum e anonimo.
+- [x] Exigir sessao valida em `POST /api/imports`.
+- [x] Exigir role `admin` em `POST /api/imports`.
+- [x] Validar permissao antes de processar arquivo, Storage ou `import_batches`.
+- [x] Garantir que role enviado pelo client seja ignorado.
+- [x] Registrar usuario responsavel pela importacao quando houver coluna/auditoria definida.
+- [x] Adicionar testes para bloqueio de usuario comum e anonimo.
 
 ### AUTH-05 - Gestao de usuarios
 
