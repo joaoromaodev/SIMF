@@ -156,12 +156,12 @@ Esta frente deve ser executada depois da etapa de planejamento documental. Os it
 
 ### AUTH-02 - Login e sessao
 
-- [ ] Criar fluxo de login com Supabase Auth.
-- [ ] Criar fluxo de logout.
-- [ ] Definir redirecionamento para usuarios sem sessao.
-- [ ] Recuperar sessao no servidor para rotas protegidas.
-- [ ] Recuperar role a partir de `profiles`.
-- [ ] Tratar roles desconhecidos com negacao de acesso por padrao.
+- [x] Criar fluxo de login com Supabase Auth.
+- [x] Criar fluxo de logout.
+- [x] Definir redirecionamento para usuarios sem sessao.
+- [x] Recuperar sessao no servidor para rotas protegidas.
+- [x] Recuperar role a partir de `profiles`.
+- [x] Tratar roles desconhecidos com negacao de acesso por padrao.
 
 ### AUTH-03 - Autorizacao por perfil
 
