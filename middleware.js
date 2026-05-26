@@ -51,6 +51,7 @@ export async function middleware(request) {
   }
 
   // Usuário já autenticado tentando acessar /login — redireciona para dashboard
+  // (permite /login/recuperar-senha e /login/redefinir-senha mesmo autenticado)
   if (user && pathname === "/login") {
     return NextResponse.redirect(new URL("/dashboard/dppc", request.url));
   }
@@ -59,6 +60,8 @@ export async function middleware(request) {
 }
 
 export const config = {
-  // Aplica o middleware em /dashboard e /login
-  matcher: ["/dashboard/:path*", "/login"],
+  // /dashboard → protegido
+  // /login e subpáginas → gerenciado (recuperar-senha, redefinir-senha)
+  // /auth → callback de recuperação de senha
+  matcher: ["/dashboard/:path*", "/login", "/login/:path*", "/auth/:path*"],
 };

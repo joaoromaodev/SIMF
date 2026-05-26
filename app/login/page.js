@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { createSupabaseBrowserClient } from "../../lib/supabase/browser.js";
 
 function LoginForm() {
@@ -52,9 +53,17 @@ function LoginForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400">
-          Senha
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400">
+            Senha
+          </label>
+          <Link
+            href="/login/recuperar-senha"
+            className="text-[11px] font-bold text-blue-500 hover:text-blue-700 transition-colors"
+          >
+            Esqueci minha senha
+          </Link>
+        </div>
         <input
           type="password"
           required
