@@ -66,14 +66,25 @@ async function fetchAllRows(supabase, table, columns, order, filters = []) {
 /**
  * Exporta somente a aba ativa com os filtros em vigor.
  *
- * @param {{ tab?: string, ano?: string }} params
- *   tab — "liquidados" | "monitoramento"  (padrão: "liquidados")
- *   ano — ex. "2026"                      (padrão: "2026", usado para monitoramento)
+ * @param {{ tab?: string, ano?: string, filters?: object }} params
+ *   tab     — "liquidados" | "monitoramento"  (padrão: "liquidados")
+ *   ano     — ex. "2026"
+ *   filters — { credor?, processo?, docCred?, vinculo? }
  */
-export async function fetchAllCpagExportData({ tab = "liquidados", ano = "2026" } = {}) {
+export async function fetchAllCpagExportData({ tab = "liquidados", ano = "2026", filters = {} } = {}) {
   const supabase = getSupabaseAdminClient();
 
   if (tab === "monitoramento") {
+    const monFilters = [
+      { op: "gte", column: "data_pagamento", value: `${ano}-01-01` },
+      { op: "lte", column: "data_pagamento", value: `${ano}-12-31` },
+    ];
+    if (filters.credor)   monFilters.push({ op: "ilike", column: "credor",          value: `%${filters.credor}%`   });
+    if (filters.processo) monFilters.push({ op: "ilike", column: "numero_processo",  value: `%${filters.processo}%` });
+    if (filters.docCred)  monFilters.push({ op: "ilike", column: "documento_credor", value: `%${filters.docCred}%`  });
+    if (filters.vinculo === "sem_vinculo") monFilters.push({ op: "eq", column: "tem_vinculo_nedl",       value: false });
+    if (filters.vinculo === "confirmados") monFilters.push({ op: "eq", column: "confirmado_manualmente", value: true  });
+
     const monitoramento = await fetchAllRows(
       supabase,
       "vw_monitoramento_pagamentos",
@@ -99,15 +110,16 @@ export async function fetchAllCpagExportData({ tab = "liquidados", ano = "2026" 
         "observacao",
       ].join(", "),
       { column: "data_pagamento", options: { ascending: false } },
-      [
-        { op: "gte", column: "data_pagamento", value: `${ano}-01-01` },
-        { op: "lte", column: "data_pagamento", value: `${ano}-12-31` },
-      ]
+      monFilters
     );
     return { tab, monitoramento };
   }
 
-  // tab === "liquidados" (default) — sem filtro de ano (todos os exercícios com saldo pendente)
+  // tab === "liquidados" — filtros opcionais de credor e processo
+  const liqFilters = [];
+  if (filters.credor)   liqFilters.push({ op: "ilike", column: "credor",          value: `%${filters.credor}%`   });
+  if (filters.processo) liqFilters.push({ op: "ilike", column: "numero_processo",  value: `%${filters.processo}%` });
+
   const liquidados = await fetchAllRows(
     supabase,
     "vw_liquidados_a_pagar",
@@ -124,7 +136,8 @@ export async function fetchAllCpagExportData({ tab = "liquidados", ano = "2026" 
       "valor_liquidado_a_pagar",
       "valor_ja_pago_obs",
     ].join(", "),
-    { column: "data_liquidacao", options: { ascending: false, nullsFirst: false } }
+    { column: "data_liquidacao", options: { ascending: false, nullsFirst: false } },
+    liqFilters
   );
   return { tab, liquidados };
 }

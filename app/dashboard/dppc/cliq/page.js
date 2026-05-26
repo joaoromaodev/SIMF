@@ -33,9 +33,11 @@ function StatCard({ label, quantidade, total }) {
         <p className="text-4xl font-black text-para-blue leading-none tracking-tight">
           {quantidade.toLocaleString("pt-BR")}
         </p>
-        <p className="text-sm font-bold text-slate-400 mt-2">
-          {formatCurrency(total)}
-        </p>
+        {total != null && (
+          <p className="text-sm font-bold text-slate-400 mt-2">
+            {formatCurrency(total)}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -55,9 +57,10 @@ async function fetchCliqData(supabase, filters, pagina) {
 
   let rowQuery = supabase.from("vw_liquidados_a_pagar").select("*", { count: "exact" }).order("data_liquidacao", { ascending: false, nullsFirst: false }).range(from, from + PAGE_SIZE - 1);
 
-  if (filters.fonte) { rowQuery = rowQuery.eq("fonte", filters.fonte); }
-  if (filters.credor) { rowQuery = rowQuery.ilike("credor", `%${filters.credor}%`); }
-  if (filters.processo) { rowQuery = rowQuery.ilike("numero_processo", `%${filters.processo}%`); }
+  if (filters.fonte)    { rowQuery = rowQuery.eq("fonte",                  filters.fonte); }
+  if (filters.credor)   { rowQuery = rowQuery.ilike("credor",               `%${filters.credor}%`); }
+  if (filters.processo) { rowQuery = rowQuery.ilike("numero_processo",       `%${filters.processo}%`); }
+  if (filters.empenho)  { rowQuery = rowQuery.ilike("codigo_nota_empenho",   `%${filters.empenho}%`); }
 
   const [kpisResult, sourceResult, statusResult, rowResult] = await Promise.all([
     supabase
@@ -110,7 +113,12 @@ function buildHref(filters, pagina) {
 
 export default async function CliqDashboardPage({ searchParams }) {
   const sp = await searchParams;
-  const filters = { fonte: sp.fonte || "", credor: sp.credor || "", processo: sp.processo || "" };
+  const filters = {
+    fonte:    sp.fonte    || "",
+    credor:   sp.credor   || "",
+    processo: sp.processo || "",
+    empenho:  sp.empenho  || "",
+  };
   const ano     = sp.ano  || "2026";
   const aba     = sp.aba  || "empenhos_liquidar";
   const pagina  = Math.max(1, parseInt(sp.pagina, 10) || 1);
@@ -122,7 +130,7 @@ export default async function CliqDashboardPage({ searchParams }) {
   ]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const hasActiveFilters = filters.fonte || filters.credor || filters.processo;
+  const hasActiveFilters = filters.fonte || filters.credor || filters.processo || filters.empenho;
 
   return (
     <div className="space-y-8">
@@ -197,7 +205,6 @@ export default async function CliqDashboardPage({ searchParams }) {
         <StatCard
           label="Liquidados a Pagar"
           quantidade={kpis.quantidadeLiquidadosAPagar}
-          total={kpis.totalAPagar}
         />
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-6 flex flex-col justify-center gap-1">
           <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Relatórios</p>

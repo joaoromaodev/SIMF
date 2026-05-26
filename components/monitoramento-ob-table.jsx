@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatCurrency } from "../lib/utils/formatters";
@@ -42,10 +43,28 @@ function FilterInput({ label, value, onChange }) {
 }
 
 export function MonitoramentoOBTable({ monitoramento, ano, pagina = 1, totalPages = 1, total = 0 }) {
-  const [filtroProcesso,  setFiltroProcesso]  = useState("");
-  const [filtroCredor,    setFiltroCredor]    = useState("");
-  const [filtroDocumento, setFiltroDocumento] = useState("");
-  const [filtroVinculo,   setFiltroVinculo]   = useState("todos");
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+
+  const [filtroProcesso,  setFiltroProcesso]  = useState(() => searchParams.get("processo")  || "");
+  const [filtroCredor,    setFiltroCredor]    = useState(() => searchParams.get("credor")    || "");
+  const [filtroDocumento, setFiltroDocumento] = useState(() => searchParams.get("doc_cred")  || "");
+  const [filtroVinculo,   setFiltroVinculo]   = useState(() => searchParams.get("vinculo")   || "todos");
+
+  // Sincroniza filtros com a URL (debounce 400 ms)
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const p = new URLSearchParams(searchParams.toString());
+      if (filtroCredor)              p.set("credor",   filtroCredor);    else p.delete("credor");
+      if (filtroProcesso)            p.set("processo", filtroProcesso);  else p.delete("processo");
+      if (filtroDocumento)           p.set("doc_cred", filtroDocumento); else p.delete("doc_cred");
+      if (filtroVinculo !== "todos") p.set("vinculo",  filtroVinculo);   else p.delete("vinculo");
+      p.delete("paginaMon");
+      router.replace(`?${p.toString()}`, { scroll: false });
+    }, 400);
+    return () => clearTimeout(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtroCredor, filtroProcesso, filtroDocumento, filtroVinculo]);
 
   const filtered = useMemo(() => {
     const normalize = (str) => (str ?? "").toLowerCase().trim();

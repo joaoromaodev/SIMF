@@ -43,12 +43,16 @@ function anoToYearScope(ano) {
 /**
  * Exporta os empenhos da CEO para o exercício selecionado.
  *
- * @param {{ ano?: string }} params
+ * @param {{ ano?: string, q?: string }} params
+ *   q — busca livre por processo ou NE
  */
-export async function fetchAllCeoExportData({ ano = "2026" } = {}) {
+export async function fetchAllCeoExportData({ ano = "2026", q = "" } = {}) {
   const supabase  = getSupabaseAdminClient();
   const yearScope = anoToYearScope(ano);
 
+  const baseFilters = [{ op: "eq", column: "year_scope", value: yearScope }];
+  // Nota: filtro OR (processo OU NE) aplicado via helper de texto
+  // fetchAllRows não suporta OR nativo; aplicamos pós-processamento se necessário
   const rows = await fetchAllRows(
     supabase,
     "vw_ne_active",
@@ -65,8 +69,19 @@ export async function fetchAllCeoExportData({ ano = "2026" } = {}) {
       "year_scope",
     ].join(", "),
     { column: "data_empenho", options: { ascending: false, nullsFirst: false } },
-    [{ op: "eq", column: "year_scope", value: yearScope }]
+    baseFilters
   );
 
-  return { rows, ano, yearScope };
+  // Filtro pós-consulta por busca livre (processo OU NE) quando `q` fornecido
+  const filtered = q
+    ? rows.filter((r) => {
+        const qn = q.toLowerCase().trim();
+        return (
+          (r.numero_processo      ?? "").toLowerCase().includes(qn) ||
+          (r.codigo_nota_empenho  ?? "").toLowerCase().includes(qn)
+        );
+      })
+    : rows;
+
+  return { rows: filtered, ano, yearScope };
 }

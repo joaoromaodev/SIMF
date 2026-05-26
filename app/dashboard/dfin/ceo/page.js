@@ -45,18 +45,26 @@ export default async function CeoDashboardPage({ searchParams }) {
   const ano       = sp?.ano    || "2026";
   const aba       = sp?.aba    || "empenhos";
   const pagina    = Math.max(1, parseInt(sp?.pagina || "1", 10));
+  const q         = sp?.q      || "";
   const yearScope = anoToYearScope(ano);
   const offset    = (pagina - 1) * PAGE_SIZE;
 
   const supabase = getSupabaseAdminClient();
 
   const [{ data: empenhos, error }, { data: totalReal }] = await Promise.all([
-    supabase
-      .from("vw_ne_active")
-      .select("codigo_nota_empenho, data_empenho, nome_usuario_criou, codigo_unidade_gestora, numero_processo, valor_original, valor_corrente, saldo_a_liquidar, quantidade, year_scope")
-      .eq("year_scope", yearScope)
-      .order("data_empenho", { ascending: false, nullsFirst: false })
-      .range(offset, offset + PAGE_SIZE - 1),
+    (() => {
+      let query = supabase
+        .from("vw_ne_active")
+        .select("codigo_nota_empenho, data_empenho, nome_usuario_criou, codigo_unidade_gestora, numero_processo, valor_original, valor_corrente, saldo_a_liquidar, quantidade, year_scope")
+        .eq("year_scope", yearScope)
+        .order("data_empenho", { ascending: false, nullsFirst: false })
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (q) {
+        // Supabase REST não suporta OR diretamente em .filter — usamos ilike no processo (campo principal de busca)
+        query = query.or(`numero_processo.ilike.%${q}%,codigo_nota_empenho.ilike.%${q}%`);
+      }
+      return query;
+    })(),
     supabase.rpc("count_ne_by_year_scope", { p_year_scope: yearScope }),
   ]);
 

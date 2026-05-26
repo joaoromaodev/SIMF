@@ -64,6 +64,10 @@ export default async function CpagDashboardPage({ searchParams }) {
   const paginaMon = Math.max(1, parseInt(sp?.paginaMon || "1", 10));
   const offsetLiq = (paginaLiq - 1) * PAGE_SIZE;
   const offsetMon = (paginaMon - 1) * PAGE_SIZE;
+  const credor    = sp?.credor    || "";
+  const processo  = sp?.processo  || "";
+  const docCred   = sp?.doc_cred  || "";
+  const vinculo   = sp?.vinculo   || "";
 
   const supabase = getSupabaseAdminClient();
 
@@ -78,26 +82,52 @@ export default async function CpagDashboardPage({ searchParams }) {
       .from("vw_cpag_kpis")
       .select("total_pago_confirmado, total_a_pagar, quantidade_obs_emitidas, quantidade_obs_confirmadas, quantidade_obs_pendentes, quantidade_dls_com_saldo")
       .maybeSingle(),
-    supabase
-      .from("vw_liquidados_a_pagar")
-      .select("numero_processo, codigo_nota_empenho, documento_liquidacao, data_liquidacao, credor, codigo_natureza_despesa, fonte, valor_liquido, valor_bruto, valor_liquidado_a_pagar, valor_ja_pago_obs")
-      .order("data_liquidacao", { ascending: false, nullsFirst: false })
-      .range(offsetLiq, offsetLiq + PAGE_SIZE - 1),
-    supabase
-      .from("vw_liquidados_a_pagar")
-      .select("*", { count: "exact", head: true }),
-    supabase
-      .from("vw_monitoramento_pagamentos")
-      .select("numero_processo, credor, fonte, documento_liquidacao, ordem_bancaria, data_liquidacao, data_pagamento, valor, codigo_unidade_gestora, contrato_convenio, descricao, documento_credor, confirmado_manualmente, confirmado_por, confirmado_em, observacao, tem_vinculo_nedl, motivo_sem_vinculo")
-      .gte("data_pagamento", `${ano}-01-01`)
-      .lte("data_pagamento", `${ano}-12-31`)
-      .order("data_pagamento", { ascending: false })
-      .range(offsetMon, offsetMon + PAGE_SIZE - 1),
-    supabase
-      .from("vw_monitoramento_pagamentos")
-      .select("*", { count: "exact", head: true })
-      .gte("data_pagamento", `${ano}-01-01`)
-      .lte("data_pagamento", `${ano}-12-31`),
+    (() => {
+      let q = supabase
+        .from("vw_liquidados_a_pagar")
+        .select("numero_processo, codigo_nota_empenho, documento_liquidacao, data_liquidacao, credor, codigo_natureza_despesa, fonte, valor_liquido, valor_bruto, valor_liquidado_a_pagar, valor_ja_pago_obs")
+        .order("data_liquidacao", { ascending: false, nullsFirst: false })
+        .range(offsetLiq, offsetLiq + PAGE_SIZE - 1);
+      if (credor)   q = q.ilike("credor",          `%${credor}%`);
+      if (processo) q = q.ilike("numero_processo",  `%${processo}%`);
+      return q;
+    })(),
+    (() => {
+      let q = supabase
+        .from("vw_liquidados_a_pagar")
+        .select("*", { count: "exact", head: true });
+      if (credor)   q = q.ilike("credor",         `%${credor}%`);
+      if (processo) q = q.ilike("numero_processo", `%${processo}%`);
+      return q;
+    })(),
+    (() => {
+      let q = supabase
+        .from("vw_monitoramento_pagamentos")
+        .select("numero_processo, credor, fonte, documento_liquidacao, ordem_bancaria, data_liquidacao, data_pagamento, valor, codigo_unidade_gestora, contrato_convenio, descricao, documento_credor, confirmado_manualmente, confirmado_por, confirmado_em, observacao, tem_vinculo_nedl, motivo_sem_vinculo")
+        .gte("data_pagamento", `${ano}-01-01`)
+        .lte("data_pagamento", `${ano}-12-31`)
+        .order("data_pagamento", { ascending: false })
+        .range(offsetMon, offsetMon + PAGE_SIZE - 1);
+      if (credor)   q = q.ilike("credor",          `%${credor}%`);
+      if (processo) q = q.ilike("numero_processo",  `%${processo}%`);
+      if (docCred)  q = q.ilike("documento_credor", `%${docCred}%`);
+      if (vinculo === "sem_vinculo") q = q.eq("tem_vinculo_nedl", false);
+      if (vinculo === "confirmados") q = q.eq("confirmado_manualmente", true);
+      return q;
+    })(),
+    (() => {
+      let q = supabase
+        .from("vw_monitoramento_pagamentos")
+        .select("*", { count: "exact", head: true })
+        .gte("data_pagamento", `${ano}-01-01`)
+        .lte("data_pagamento", `${ano}-12-31`);
+      if (credor)   q = q.ilike("credor",          `%${credor}%`);
+      if (processo) q = q.ilike("numero_processo",  `%${processo}%`);
+      if (docCred)  q = q.ilike("documento_credor", `%${docCred}%`);
+      if (vinculo === "sem_vinculo") q = q.eq("tem_vinculo_nedl", false);
+      if (vinculo === "confirmados") q = q.eq("confirmado_manualmente", true);
+      return q;
+    })(),
   ]);
 
   const queryErrors = [

@@ -178,8 +178,12 @@ async function exportPDF(tab, data, ano) {
 
 export default function CpagExportButtons() {
   const searchParams = useSearchParams();
-  const tab = searchParams.get("aba") || "liquidados";
-  const ano = searchParams.get("ano") || "2026";
+  const tab     = searchParams.get("aba")      || "liquidados";
+  const ano     = searchParams.get("ano")      || "2026";
+  const credor  = searchParams.get("credor")   || "";
+  const processo = searchParams.get("processo") || "";
+  const docCred = searchParams.get("doc_cred") || "";
+  const vinculo = searchParams.get("vinculo")  || "";
 
   const [loading, setLoading] = useState(null); // 'xlsx' | 'pdf' | null
   const [error,   setError  ] = useState(null);
@@ -190,7 +194,8 @@ export default function CpagExportButtons() {
     setLoading(format);
     setError(null);
     try {
-      const data = await fetchAllCpagExportData({ tab, ano });
+      const filters = { credor, processo, docCred, vinculo };
+      const data = await fetchAllCpagExportData({ tab, ano, filters });
       if (format === "xlsx") {
         await exportXLSX(tab, data, ano);
       } else {

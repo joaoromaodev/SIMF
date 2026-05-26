@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FileCheck2, Wrench, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -168,31 +168,52 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
   }
 
   // Filtros — Aba 1
-  const [statusEmpenho, setStatusEmpenho] = useState("todos");
+  const [statusEmpenho, setStatusEmpenho] = useState(() => searchParams.get("status") || "todos");
+
+  // Sincroniza status Aba 1 à URL
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const p = new URLSearchParams(searchParams.toString());
+      if (statusEmpenho !== "todos") p.set("status", statusEmpenho); else p.delete("status");
+      router.replace(`?${p.toString()}`, { scroll: false });
+    }, 100);
+    return () => clearTimeout(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusEmpenho]);
 
   const empenhosFiltrados = useMemo(() => {
     return rows.filter((row) => {
-      // Filtro de ano via prop
-      if (ano) {
-        const rowAno = row.data_empenho
-          ? String(new Date(row.data_empenho).getFullYear())
-          : null;
-        if (rowAno !== ano) return false;
-      }
-      // Filtro de status
-      const liquidado = parseFloat(row.valor_liquidado) || 0;
-      const empenhado = parseFloat(row.valor_empenho)   || 0;
-      if (statusEmpenho === "pendente") return liquidado === 0;
-      if (statusEmpenho === "parcial")  return liquidado > 0 && liquidado < empenhado;
+      // Filtro de status baseado em valor_ja_pago_obs (campo real da view)
+      const pago  = parseFloat(row.valor_ja_pago_obs) || 0;
+      if (statusEmpenho === "pendente") return pago === 0;       // sem nenhum pagamento
+      if (statusEmpenho === "parcial")  return pago > 0;         // pelo menos um pagamento parcial
       return true; // "todos"
     });
-  }, [rows, ano, statusEmpenho]);
+  }, [rows, statusEmpenho]);
 
   // Filtros cruzados — Aba 2
-  const [filtroProcesso,  setFiltroProcesso]  = useState("");
-  const [filtroCredor,    setFiltroCredor]    = useState("");
-  const [filtroEmpenho,   setFiltroEmpenho]   = useState("");
-  const [filtroFontes,    setFiltroFontes]    = useState([]);
+  const [filtroProcesso,  setFiltroProcesso]  = useState(() => searchParams.get("processo") || "");
+  const [filtroCredor,    setFiltroCredor]    = useState(() => searchParams.get("credor")   || "");
+  const [filtroEmpenho,   setFiltroEmpenho]   = useState(() => searchParams.get("empenho")  || "");
+  const [filtroFontes,    setFiltroFontes]    = useState(() => {
+    const raw = searchParams.get("fontes");
+    return raw ? raw.split(",").filter(Boolean) : [];
+  });
+
+  // Sincroniza filtros Aba 2 à URL (debounce 400 ms)
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const p = new URLSearchParams(searchParams.toString());
+      if (filtroCredor)          p.set("credor",   filtroCredor);                      else p.delete("credor");
+      if (filtroProcesso)        p.set("processo", filtroProcesso);                    else p.delete("processo");
+      if (filtroEmpenho)         p.set("empenho",  filtroEmpenho);                     else p.delete("empenho");
+      if (filtroFontes.length)   p.set("fontes",   filtroFontes.join(","));            else p.delete("fontes");
+      p.delete("pagina");
+      router.replace(`?${p.toString()}`, { scroll: false });
+    }, 400);
+    return () => clearTimeout(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtroCredor, filtroProcesso, filtroEmpenho, filtroFontes]);
 
   const filteredRows = useMemo(() => {
     const n = (s) => (s ?? "").toLowerCase().trim();
@@ -247,8 +268,8 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
               className="text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-para-blue/30 focus:border-para-blue cursor-pointer"
             >
               <option value="todos">Todos</option>
-              <option value="pendente">Pendente de Liquidação</option>
-              <option value="parcial">Liquidado Parcial</option>
+              <option value="pendente">Sem Pagamento</option>
+              <option value="parcial">Pagamento Parcial</option>
             </select>
             <span className="ml-auto text-[11px] text-slate-400 font-medium">
               {empenhosFiltrados.length}
@@ -288,7 +309,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
                       <td className="px-5 py-3.5 text-slate-600 text-xs">{row.codigo_natureza_despesa || "—"}</td>
                       <td className="px-5 py-3.5 text-slate-600 text-xs">{row.fonte || "—"}</td>
                       <td className="px-5 py-3.5 text-slate-500 text-xs">{formatDate(row.data_empenho)}</td>
-                      <td className="px-5 py-3.5 text-right font-mono font-bold text-para-blue text-xs">{formatCurrency(row.valor_empenho)}</td>
+                      <td className="px-5 py-3.5 text-right font-mono font-bold text-para-blue text-xs">{formatCurrency(row.valor_bruto)}</td>
                     </tr>
                   ))}
                 </tbody>
