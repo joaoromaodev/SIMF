@@ -11,16 +11,17 @@ async function fetchContas(supabase, banco) {
     .from("vw_acont_resumo_conta")
     .select("*")
     .eq("banco", banco)
-    .eq("ativo", true)
+    .order("ativo", { ascending: false })
     .order("numero_conta");
   if (error) return [];
   return data || [];
 }
 
 export default async function AcontCEFPage() {
-  const supabase = getSupabaseAdminClient();
-  const contas   = await fetchContas(supabase, "CEF");
-  const totalDisp = contas.reduce((s, c) => s + parseFloat(c.saldo_disponibilidade || 0), 0);
+  const supabase  = getSupabaseAdminClient();
+  const contas    = await fetchContas(supabase, "CEF");
+  const ativas    = contas.filter((c) => c.ativo);
+  const totalDisp = ativas.reduce((s, c) => s + parseFloat(c.saldo_disponibilidade || 0), 0);
 
   return (
     <div className="space-y-8">
@@ -36,7 +37,7 @@ export default async function AcontCEFPage() {
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Caixa Econômica Federal</h1>
             <p className="text-slate-400 text-sm font-medium mt-0.5">
-              {contas.length} contas ativas · {formatCurrency(totalDisp)} disponível
+              {contas.length} contas · {ativas.length} ativas · {formatCurrency(totalDisp)} disponível
             </p>
           </div>
         </div>
