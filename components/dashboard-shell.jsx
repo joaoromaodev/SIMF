@@ -26,7 +26,7 @@ const NAV_SECTIONS = [
     items: [
       { label: "CEO",   href: "/dashboard/dfin/ceo",  icon: TrendingUp  },
       { label: "CPED",  href: "/dashboard/dfin/cped", icon: BookOpen    },
-      { label: "ACONT", href: "/dashboard/dfin/acont",icon: Calculator  },
+      { label: "ACONT", href: "/dashboard/acont",      icon: Calculator  },
     ],
   },
   {
@@ -118,7 +118,7 @@ export default function DashboardShell({ userEmail, userRole, children }) {
               )}
               <ul className="space-y-0.5 px-3">
                 {section.items.map(({ label, href, icon: Icon }) => {
-                  const active = pathname === href;
+                  const active = pathname === href || pathname.startsWith(href + "/");
                   return (
                     <li key={href}>
                       <Link
