@@ -52,7 +52,7 @@ create index if not exists normalized_dlob_rows_data_pagamento_idx
 -- Lookup frequente: batch ativo por tipo e ano (getActiveBatch + vw_active_import_batches)
 create index if not exists idx_import_batches_active_lookup
   on public.import_batches (report_type, year_scope, is_active, status)
-  where is_active = true and status::text = 'success';
+  where is_active = true and status = 'success';
 
 -- ── Remoção de branches legados do finalize_siafe_active_import ──────────────
 -- As tabelas normalized_ne_dl_rows e normalized_dl_ob_rows foram removidas em
