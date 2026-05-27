@@ -179,21 +179,23 @@ export default async function CliqDashboardPage({ searchParams }) {
       </div>
 
       {/* KPI Cards + Exportação */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px] gap-4 items-stretch">
+      <div className="flex flex-wrap gap-4 items-stretch">
         <StatCard
           label="Em Liquidação"
           value={formatCurrency(kpis.totalEmLiquidacao)}
           sub={`${kpis.quantidadeEmLiquidacao.toLocaleString("pt-BR")} empenhos`}
           icon={FileCheck2}
+          className="w-60"
         />
         <StatCard
           label="Liquidados a Pagar"
           value={kpis.quantidadeLiquidadosAPagar.toLocaleString("pt-BR")}
           sub="DLs com saldo pendente"
           icon={FileCheck2}
+          className="w-60"
         />
         <div
-          className="bg-white rounded-card border border-slate-200 px-5 py-4 flex flex-col justify-center gap-1"
+          className="w-56 bg-white rounded-card border border-slate-200 px-5 py-4 flex flex-col justify-center gap-1"
           style={{ boxShadow: "var(--shadow-card)" }}
         >
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Relatórios</p>

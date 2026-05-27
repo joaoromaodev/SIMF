@@ -120,15 +120,16 @@ export default async function CeoDashboardPage({ searchParams }) {
       </div>
 
       {/* KPI + Exportação */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-4 items-stretch">
+      <div className="flex flex-wrap gap-4 items-stretch">
         <StatCard
           label="Empenhos Gerados"
           value={kpis.quantidadeEmpenhos.toLocaleString("pt-BR")}
           sub={`${totalPages} páginas · ${PAGE_SIZE} registros por página`}
           icon={Landmark}
+          className="w-60"
         />
         <div
-          className="bg-white rounded-card border border-slate-200 px-5 py-4 flex flex-col justify-center gap-1"
+          className="w-56 bg-white rounded-card border border-slate-200 px-5 py-4 flex flex-col justify-center gap-1"
           style={{ boxShadow: "var(--shadow-card)" }}
         >
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Relatórios</p>

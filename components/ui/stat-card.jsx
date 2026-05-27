@@ -15,12 +15,12 @@ const ACCENT = {
   amber: { icon: "text-amber-600",    bg: "bg-amber-50"         },
 };
 
-export default function StatCard({ label, value, sub, icon: Icon, accent = "blue" }) {
+export default function StatCard({ label, value, sub, icon: Icon, accent = "blue", className = "" }) {
   const { icon: iconColor, bg: iconBg } = ACCENT[accent] ?? ACCENT.blue;
 
   return (
     <div
-      className="bg-white rounded-card border border-slate-200 px-5 py-4 flex items-center gap-3.5"
+      className={`bg-white rounded-card border border-slate-200 px-5 py-4 flex items-center gap-3.5 ${className}`}
       style={{ boxShadow: "var(--shadow-card)" }}
     >
       <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>

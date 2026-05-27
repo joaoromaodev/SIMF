@@ -201,11 +201,11 @@ export default async function CpagDashboardPage({ searchParams }) {
       </div>
 
       {/* KPI Cards + Exportação */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px] gap-4 items-stretch">
-        <StatCard label="Total Efetivamente Pago" value={formatCurrency(kpis.totalPago)} sub={`${kpis.quantidadeObsConfirmadas.toLocaleString("pt-BR")} OBs confirmadas`} icon={TrendingUp} accent="green" />
-        <StatCard label="Total a Pagar" value={formatCurrency(kpis.totalAPagar)} sub={`${kpis.quantidadeDlsComSaldo.toLocaleString("pt-BR")} DLs com saldo pendente`} icon={Clock} accent="amber" />
+      <div className="flex flex-wrap gap-4 items-stretch">
+        <StatCard label="Total Efetivamente Pago" value={formatCurrency(kpis.totalPago)} sub={`${kpis.quantidadeObsConfirmadas.toLocaleString("pt-BR")} OBs confirmadas`} icon={TrendingUp} accent="green" className="w-60" />
+        <StatCard label="Total a Pagar" value={formatCurrency(kpis.totalAPagar)} sub={`${kpis.quantidadeDlsComSaldo.toLocaleString("pt-BR")} DLs com saldo pendente`} icon={Clock} accent="amber" className="w-60" />
         <div
-          className="bg-white rounded-card border border-slate-200 px-5 py-4 flex flex-col justify-center gap-1"
+          className="w-56 bg-white rounded-card border border-slate-200 px-5 py-4 flex flex-col justify-center gap-1"
           style={{ boxShadow: "var(--shadow-card)" }}
         >
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Relatórios</p>
