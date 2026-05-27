@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   ChevronRight,
   TrendingUp,
-  BookOpen,
   Calculator,
   LogOut,
   User,
@@ -24,9 +23,8 @@ const NAV_SECTIONS = [
     label: "Diretoria de Finanças",
     abbr: "DFIN",
     items: [
-      { label: "CEO",   href: "/dashboard/dfin/ceo",  icon: TrendingUp  },
-      { label: "CPED",  href: "/dashboard/dfin/cped", icon: BookOpen    },
-      { label: "ACONT", href: "/dashboard/acont",      icon: Calculator  },
+      { label: "CEO",   href: "/dashboard/dfin/ceo", icon: TrendingUp  },
+      { label: "ACONT", href: "/dashboard/acont",     icon: Calculator  },
     ],
   },
   {
