@@ -71,8 +71,14 @@ async function fetchAllRows(supabase, table, columns, order, filters = []) {
  *   ano     — ex. "2026"
  *   filters — { credor?, processo?, docCred?, vinculo? }
  */
+function anoToYearScope(ano) {
+  if (ano === "2023" || ano === "2024") return "2023_2024";
+  return ano;
+}
+
 export async function fetchAllCpagExportData({ tab = "liquidados", ano = "2026", filters = {} } = {}) {
-  const supabase = getSupabaseAdminClient();
+  const supabase   = getSupabaseAdminClient();
+  const yearScope  = anoToYearScope(ano);
 
   if (tab === "monitoramento") {
     const monFilters = [
@@ -115,8 +121,8 @@ export async function fetchAllCpagExportData({ tab = "liquidados", ano = "2026",
     return { tab, monitoramento };
   }
 
-  // tab === "liquidados" — filtros opcionais de credor e processo
-  const liqFilters = [];
+  // tab === "liquidados" — filtro obrigatório por ano + filtros opcionais
+  const liqFilters = [{ op: "eq", column: "year_scope", value: yearScope }];
   if (filters.credor)   liqFilters.push({ op: "ilike", column: "credor",          value: `%${filters.credor}%`   });
   if (filters.processo) liqFilters.push({ op: "ilike", column: "numero_processo",  value: `%${filters.processo}%` });
 

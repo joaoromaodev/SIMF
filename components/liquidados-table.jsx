@@ -176,7 +176,7 @@ export function LiquidadosTable({ liquidados, pagina = 1, totalPages = 1, total 
           </span>
           <div className="flex items-center gap-1">
             <Link
-              href={`/dashboard/dppc/cpag?aba=liquidados&ano=${ano}&paginaLiq=${pagina - 1}`}
+              href={(() => { const p = new URLSearchParams(searchParams.toString()); p.set("aba", "liquidados"); p.set("paginaLiq", String(pagina - 1)); return `/dashboard/dppc/cpag?${p.toString()}`; })()}
               aria-disabled={pagina <= 1}
               className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                 pagina <= 1
@@ -187,7 +187,7 @@ export function LiquidadosTable({ liquidados, pagina = 1, totalPages = 1, total 
               <ChevronLeft size={12} /> Anterior
             </Link>
             <Link
-              href={`/dashboard/dppc/cpag?aba=liquidados&ano=${ano}&paginaLiq=${pagina + 1}`}
+              href={(() => { const p = new URLSearchParams(searchParams.toString()); p.set("aba", "liquidados"); p.set("paginaLiq", String(pagina + 1)); return `/dashboard/dppc/cpag?${p.toString()}`; })()}
               aria-disabled={pagina >= totalPages}
               className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                 pagina >= totalPages

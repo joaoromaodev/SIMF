@@ -38,6 +38,8 @@ export async function fetchAcontExtratoExport({ contaId, exercicio = "2026" } = 
       .from("acont_extrato")
       .select("data_ob, data_transacao, tipo, tipo_despesa, descricao, valor")
       .eq("conta_id", contaId)
+      .gte("data_ob", `${exercicio}-01-01`)
+      .lte("data_ob", `${exercicio}-12-31`)
       .order("data_ob", { ascending: false }),
   ]);
 
@@ -68,6 +70,8 @@ export async function fetchAcontExtratoConsolidadoExport({ banco, exercicio = "2
     .from("acont_extrato")
     .select("conta_id, data_ob, data_transacao, tipo, tipo_despesa, descricao, valor")
     .in("conta_id", contaIds)
+    .gte("data_ob", `${exercicio}-01-01`)
+    .lte("data_ob", `${exercicio}-12-31`)
     .order("conta_id")
     .order("data_ob", { ascending: false });
 

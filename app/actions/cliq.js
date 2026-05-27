@@ -4,6 +4,11 @@ import { getSupabaseAdminClient } from "../../lib/supabase/server.js";
 
 const EXPORT_PAGE_SIZE = 1000;
 
+function anoToYearScope(ano) {
+  if (ano === "2023" || ano === "2024") return "2023_2024";
+  return ano;
+}
+
 async function fetchAllRows(supabase, table, columns, order, filters = []) {
   const rows = [];
   let from = 0;
@@ -50,7 +55,8 @@ export async function fetchAllCliqExportData({
 } = {}) {
   const supabase = getSupabaseAdminClient();
 
-  const activeFilters = [];
+  const yearScope     = anoToYearScope(ano);
+  const activeFilters = [{ op: "eq", column: "year_scope", value: yearScope }];
   if (filters.fonte)    activeFilters.push({ op: "eq",    column: "fonte",                value: filters.fonte });
   if (filters.credor)   activeFilters.push({ op: "ilike", column: "credor",               value: `%${filters.credor}%` });
   if (filters.processo) activeFilters.push({ op: "ilike", column: "numero_processo",      value: `%${filters.processo}%` });

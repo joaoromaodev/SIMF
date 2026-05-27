@@ -14,9 +14,10 @@ function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("pt-BR");
 }
 
-function buildHref(filters, pagina, aba) {
+function buildHref(filters, pagina, aba, ano) {
   const params = new URLSearchParams();
   if (aba)              params.set("aba",      aba);
+  if (ano)              params.set("ano",      ano);
   if (filters.fonte)    params.set("fonte",    filters.fonte);
   if (filters.credor)   params.set("credor",   filters.credor);
   if (filters.processo) params.set("processo", filters.processo);
@@ -337,7 +338,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
               </span>
               <div className="flex items-center gap-1">
                 <Link
-                  href={buildHref(filters, pagina - 1, abaAtiva)}
+                  href={buildHref(filters, pagina - 1, abaAtiva, ano)}
                   aria-disabled={pagina <= 1}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                     pagina <= 1
@@ -348,7 +349,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
                   <ChevronLeft size={12} /> Anterior
                 </Link>
                 <Link
-                  href={buildHref(filters, pagina + 1, abaAtiva)}
+                  href={buildHref(filters, pagina + 1, abaAtiva, ano)}
                   aria-disabled={pagina >= totalPages}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                     pagina >= totalPages
@@ -465,7 +466,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
               </span>
               <div className="flex items-center gap-1">
                 <Link
-                  href={buildHref(filters, pagina - 1, abaAtiva)}
+                  href={buildHref(filters, pagina - 1, abaAtiva, ano)}
                   aria-disabled={pagina <= 1}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                     pagina <= 1
@@ -476,7 +477,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
                   <ChevronLeft size={12} /> Anterior
                 </Link>
                 <Link
-                  href={buildHref(filters, pagina + 1, abaAtiva)}
+                  href={buildHref(filters, pagina + 1, abaAtiva, ano)}
                   aria-disabled={pagina >= totalPages}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border transition-colors ${
                     pagina >= totalPages
