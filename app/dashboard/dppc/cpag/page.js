@@ -4,6 +4,7 @@ import ErrorBanner from "../../../../components/error-banner.jsx";
 import { CpagTabs } from "../../../../components/cpag-tabs.jsx";
 import Link from "next/link";
 import { ChevronLeft, TrendingUp, Clock } from "lucide-react";
+import StatCard from "../../../../components/ui/stat-card.jsx";
 
 export const dynamic = "force-dynamic";
 
@@ -30,34 +31,6 @@ function formatCurrency(value) {
   }).format(value ?? 0);
 }
 
-function StatCard({ label, value, sub, icon: Icon, accent }) {
-  const iconColor = {
-    green: "text-emerald-600",
-    amber: "text-amber-600",
-    blue:  "text-para-blue",
-  }[accent];
-  const iconBg = {
-    green: "bg-emerald-50",
-    amber: "bg-amber-50",
-    blue:  "bg-para-blue-light",
-  }[accent];
-
-  return (
-    <div
-      className="bg-white rounded-card border border-slate-200 px-5 py-4 flex items-center gap-4"
-      style={{ boxShadow: "var(--shadow-card)" }}
-    >
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-        <Icon size={18} className={iconColor} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
-        <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight tabular-nums">{value}</p>
-        {sub && <p className="text-[11px] text-slate-500 mt-1 font-medium">{sub}</p>}
-      </div>
-    </div>
-  );
-}
 
 export default async function CpagDashboardPage({ searchParams }) {
   const sp        = await searchParams;

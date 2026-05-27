@@ -3,6 +3,7 @@ import { CliqTabs } from "../../../../components/cliq-tabs.jsx";
 import CliqExportButtons from "../../../../components/cliq-export-buttons.jsx";
 import Link from "next/link";
 import { ChevronLeft, FileCheck2, X } from "lucide-react";
+import StatCard from "../../../../components/ui/stat-card.jsx";
 
 export const dynamic = "force-dynamic";
 
@@ -28,30 +29,6 @@ const ANOS = ["2021","2022","2023", "2024", "2025", "2026"];
 function anoToYearScope(ano) {
   if (ano === "2023" || ano === "2024") return "2023_2024";
   return ano;
-}
-
-function StatCard({ label, quantidade, total, icon: Icon = FileCheck2 }) {
-  return (
-    <div
-      className="bg-white rounded-card border border-slate-200 px-5 py-4 flex items-center gap-4"
-      style={{ boxShadow: "var(--shadow-card)" }}
-    >
-      <div className="w-10 h-10 rounded-lg bg-para-blue-light flex items-center justify-center flex-shrink-0">
-        <Icon size={18} className="text-para-blue" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
-        <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight tabular-nums">
-          {quantidade.toLocaleString("pt-BR")}
-        </p>
-        {total != null && (
-          <p className="text-[11px] font-medium text-slate-500 mt-1 tabular-nums">
-            {formatCurrency(total)}
-          </p>
-        )}
-      </div>
-    </div>
-  );
 }
 
 async function fetchFontes(supabase, yearScope) {
@@ -204,13 +181,16 @@ export default async function CliqDashboardPage({ searchParams }) {
       {/* KPI Cards + Exportação */}
       <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px] gap-4 items-stretch">
         <StatCard
-          label="Empenhos em Liquidação"
-          quantidade={kpis.quantidadeEmLiquidacao}
-          total={kpis.totalEmLiquidacao}
+          label="Em Liquidação"
+          value={formatCurrency(kpis.totalEmLiquidacao)}
+          sub={`${kpis.quantidadeEmLiquidacao.toLocaleString("pt-BR")} empenhos`}
+          icon={FileCheck2}
         />
         <StatCard
           label="Liquidados a Pagar"
-          quantidade={kpis.quantidadeLiquidadosAPagar}
+          value={kpis.quantidadeLiquidadosAPagar.toLocaleString("pt-BR")}
+          sub="DLs com saldo pendente"
+          icon={FileCheck2}
         />
         <div
           className="bg-white rounded-card border border-slate-200 px-5 py-4 flex flex-col justify-center gap-1"

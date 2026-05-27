@@ -4,39 +4,15 @@ import CeoExportButtons from "../../../../components/ceo-export-buttons.jsx";
 import ErrorBanner from "../../../../components/error-banner.jsx";
 import Link from "next/link";
 import { ChevronLeft, Landmark } from "lucide-react";
+import StatCard from "../../../../components/ui/stat-card.jsx";
 
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 50;
 
-function formatCurrency(value) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value ?? 0);
-}
-
 function anoToYearScope(ano) {
   if (ano === "2023" || ano === "2024") return "2023_2024";
   return ano;
-}
-
-function StatCard({ label, value, sub, icon: Icon }) {
-  return (
-    <div
-      className="bg-white rounded-card border border-slate-200 px-5 py-4 flex items-center gap-4"
-      style={{ boxShadow: "var(--shadow-card)" }}
-    >
-      <div className="w-10 h-10 rounded-lg bg-para-blue-light flex items-center justify-center flex-shrink-0">
-        <Icon size={18} className="text-para-blue" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
-        <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight tabular-nums">{value}</p>
-        {sub && <p className="text-[11px] text-slate-500 mt-1 font-medium">{sub}</p>}
-      </div>
-    </div>
-  );
 }
 
 export default async function CeoDashboardPage({ searchParams }) {
