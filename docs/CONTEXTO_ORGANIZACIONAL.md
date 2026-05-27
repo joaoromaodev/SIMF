@@ -31,13 +31,13 @@ Unidade gestora do SIMF. Subdividida em:
 
 **DFIN — Diretoria de Finanças**
 - Módulos do SIMF: CEO (Execução Orçamentária) e ACONT (Contas Bancárias)
-- [PREENCHER: nome do(a) diretor(a) da DFIN]
-- **Franz** — [PREENCHER: cargo exato] — responsável por assinar e encaminhar o
-  memorando de solicitação de integração com o SIAFE para Sandro (TI/SETIC)
+- [FRANZ]
+- **Franz** — [DIRETOR DA DFIN] — responsável por assinar e encaminhar o
+  memorando de solicitação de integração com o SIAFE para Sandro (SIAFE)
 
 **DPPC — Diretoria de Pagamento e Prestação de Contas**
 - Módulos do SIMF: CLIQ (Liquidações) e CPAG (Pagamentos)
-- **Cláudia** — [PREENCHER: cargo exato] — diretora da DPPC, co-signatária do memorando
+- **Cláudia** — [DIRETORA DA DPPC] — diretora da DPPC, co-signatária do memorando
   para integração SIAFE
 
 ---
@@ -48,9 +48,9 @@ Unidade gestora do SIMF. Subdividida em:
 |----------|---------------|-----------------------------------------------------------------------|
 | Franz    | DFIN/SAPF     | Solicitante formal da integração SIAFE; validação das funcionalidades |
 | Cláudia  | DPPC/SAPF     | Co-gestora do sistema; módulos CLIQ e CPAG                            |
-| Sandro   | TI/SETIC      | Acesso ao banco de dados do SIAFE; responsável por criar a view/query integrada |
-| Ricardo  | TI/SETIC      | Infraestrutura da VM (Ubuntu 24.04, IP 192.168.200.74)                |
-| [PREENCHER] | [PREENCHER] | [PREENCHER]                                                          |
+| Sandro   | SIAFE      | Acesso ao banco de dados do SIAFE; responsável por criar a view/query integrada |
+| Ricardo  | MONTREAL      | Infraestrutura da VM (Ubuntu 24.04, IP 192.168.200.74)                |
+| [MAX] | MONTREAL | REPRESENTANTE DA MONTREAL CHEFE                                                        |
 
 ---
 
@@ -69,8 +69,7 @@ SIAFE (banco de dados) → View/Query criada por Sandro → Supabase → SIMF (t
 ### Status atual
 - Memorando formal foi redigido (Franz + Cláudia → Sandro via chefia)
 - O documento está em `MEMORANDO_SIMF_SIAFE_2026.docx`
-- [PREENCHER: memorando já foi enviado? qual o retorno de Sandro? há prazo?]
-- [PREENCHER: existem impedimentos técnicos ou políticos conhecidos?]
+- AINDA EM PROCEDIMENTO DE ENVIO
 
 ### O que Sandro precisaria fazer
 - Criar uma view/query consolidada no banco do SIAFE (PostgreSQL ou Oracle)
@@ -82,17 +81,13 @@ SIAFE (banco de dados) → View/Query criada por Sandro → Supabase → SIMF (t
 
 ## 5. Montreal
 
-[PREENCHER: descreva o contexto Montreal aqui — o que é, qual o relacionamento com o
-SIMF, o que está pendente, quais emails/comunicações existem, qual o problema ou
-oportunidade envolvendo essa empresa/sistema]
+MONTREAL É A EMPRESA NA QUAL SOU CONTRATADO E TRABALHA TERCEIRIZADA PRA SEDUC. EU FICO NO SETOR DA SEDUC DA DPPC ATENTENDO TODA A SECRETARIA ADJUNTA SAPF
 
 ---
 
 ## 6. Situação dos Diretores e Chefias
 
-[PREENCHER: o que as chefias (Franz, Cláudia e outros) já sabem sobre o SIMF?
-Já fizeram demonstração? Qual foi a recepção? Há alguma demanda específica deles?
-Há alguma resistência ou ceticismo a endereçar?]
+PRECISAM ENTENDER MELHOR ESPECIFICAMENTE O SISTEMA MAS JÁ ENTENDEM Q É UMA FORMA DE VISUALIZAÇÃO QUE VAI DAR MAIS AGILIDADE NA TOMADA DE DECISÃO DOS COORDENADORES DELES
 
 ---
 
@@ -138,8 +133,7 @@ cd ~/simf && git pull origin main && npm run build && pm2 restart simf
 
 ## 9. Pendências e decisões abertas
 
-[PREENCHER: liste aqui qualquer decisão pendente, problema em aberto ou ponto que
-precisa de definição — técnica, política ou organizacional]
+TER Q DAR UM JEITO DE MELHORAR A ALIMENTAÇÃO DO SISTEMA, TALVEZ MANDANDO O SANDRO IMPUTAR DIRETAMENTE OS RELATÓRIOS NECESSÁRIOS PRO SISTEMA
 
 Exemplos de formato:
 - [ ] Memorando para Sandro: aguardando envio formal pela chefia
