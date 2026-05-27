@@ -30,16 +30,22 @@ function anoToYearScope(ano) {
   return ano;
 }
 
-function StatCard({ label, quantidade, total }) {
+function StatCard({ label, quantidade, total, icon: Icon = FileCheck2 }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-7 py-6 flex flex-col justify-between gap-3">
-      <p className="text-xs font-black uppercase tracking-widest text-slate-400">{label}</p>
-      <div>
-        <p className="text-4xl font-black text-para-blue leading-none tracking-tight">
+    <div
+      className="bg-white rounded-card border border-slate-200 px-5 py-4 flex items-center gap-4"
+      style={{ boxShadow: "var(--shadow-card)" }}
+    >
+      <div className="w-10 h-10 rounded-lg bg-para-blue-light flex items-center justify-center flex-shrink-0">
+        <Icon size={18} className="text-para-blue" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
+        <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight tabular-nums">
           {quantidade.toLocaleString("pt-BR")}
         </p>
         {total != null && (
-          <p className="text-sm font-bold text-slate-400 mt-2">
+          <p className="text-[11px] font-medium text-slate-500 mt-1 tabular-nums">
             {formatCurrency(total)}
           </p>
         )}
@@ -146,15 +152,10 @@ export default async function CliqDashboardPage({ searchParams }) {
           <ChevronLeft size={13} />
           Hub DPPC
         </Link>
-        <div className="flex items-end justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <FileCheck2 size={20} className="text-para-blue" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">Dashboard CLIQ</h1>
-              <p className="text-slate-400 text-sm font-medium mt-0.5">Controle de Liquidações</p>
-            </div>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Dashboard CLIQ</h1>
+            <p className="text-slate-500 text-sm font-medium mt-1">Controle de Liquidações</p>
           </div>
           {hasActiveFilters && (
             <Link href="/dashboard/dppc/cliq" className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-para-red uppercase tracking-widest transition-colors">
@@ -184,7 +185,7 @@ export default async function CliqDashboardPage({ searchParams }) {
                 href={`/dashboard/dppc/cliq?aba=${aba}&ano=${a}`}
                 className={`flex items-center justify-between px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-colors ${
                   ano === a
-                    ? "text-para-blue bg-blue-50"
+                    ? "text-para-blue bg-para-blue-light"
                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                 }`}
               >
@@ -201,7 +202,7 @@ export default async function CliqDashboardPage({ searchParams }) {
       </div>
 
       {/* KPI Cards + Exportação */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px] gap-5 items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px] gap-4 items-stretch">
         <StatCard
           label="Empenhos em Liquidação"
           quantidade={kpis.quantidadeEmLiquidacao}
@@ -211,8 +212,11 @@ export default async function CliqDashboardPage({ searchParams }) {
           label="Liquidados a Pagar"
           quantidade={kpis.quantidadeLiquidadosAPagar}
         />
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-6 flex flex-col justify-center gap-1">
-          <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Relatórios</p>
+        <div
+          className="bg-white rounded-card border border-slate-200 px-5 py-4 flex flex-col justify-center gap-1"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Relatórios</p>
           <CliqExportButtons />
         </div>
       </div>

@@ -31,31 +31,29 @@ function formatCurrency(value) {
 }
 
 function StatCard({ label, value, sub, icon: Icon, accent }) {
-  const accents = {
-    green: "border-emerald-500",
-    amber: "border-amber-400",
-    blue: "border-blue-600",
-  };
-  const textAccents = {
+  const iconColor = {
     green: "text-emerald-600",
     amber: "text-amber-600",
-    blue: "text-blue-600",
-  };
-  const bgAccents = {
+    blue:  "text-para-blue",
+  }[accent];
+  const iconBg = {
     green: "bg-emerald-50",
     amber: "bg-amber-50",
-    blue: "bg-blue-50",
-  };
+    blue:  "bg-para-blue-light",
+  }[accent];
 
   return (
-    <div className={`bg-white rounded-xl border border-slate-200 shadow-sm border-l-4 ${accents[accent]} px-7 py-6 flex items-center gap-5`}>
-      <div className={`p-3.5 rounded-xl ${bgAccents[accent]} flex-shrink-0`}>
-        <Icon size={24} className={textAccents[accent]} />
+    <div
+      className="bg-white rounded-card border border-slate-200 px-5 py-4 flex items-center gap-4"
+      style={{ boxShadow: "var(--shadow-card)" }}
+    >
+      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+        <Icon size={18} className={iconColor} />
       </div>
       <div className="min-w-0">
-        <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">{label}</p>
-        <p className={`text-4xl font-black ${textAccents[accent]} leading-none tracking-tight`}>{value}</p>
-        {sub && <p className="text-xs text-slate-400 mt-2 font-medium">{sub}</p>}
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
+        <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight tabular-nums">{value}</p>
+        {sub && <p className="text-[11px] text-slate-500 mt-1 font-medium">{sub}</p>}
       </div>
     </div>
   );
@@ -170,7 +168,7 @@ export default async function CpagDashboardPage({ searchParams }) {
       <div>
         <Link
           href="/dashboard/dppc"
-          className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-widest mb-5 transition-colors"
+          className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-para-blue uppercase tracking-widest mb-5 transition-colors"
         >
           <ChevronLeft size={13} />
           Hub DPPC
@@ -180,11 +178,15 @@ export default async function CpagDashboardPage({ searchParams }) {
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">
               Dashboard CPAG
             </h1>
-            <p className="text-slate-400 text-sm font-medium mt-1">
+            <p className="text-slate-500 text-sm font-medium mt-1">
               Controle de Pagamentos
             </p>
           </div>
-          <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-emerald-700 uppercase tracking-widest bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
+            <span className="relative flex w-1.5 h-1.5">
+              <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-75 animate-ping" />
+              <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            </span>
             Dados em tempo real
           </span>
         </div>
@@ -196,7 +198,7 @@ export default async function CpagDashboardPage({ searchParams }) {
           Ano de Exercício
         </span>
         <details className="relative group">
-          <summary className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm text-[11px] font-black uppercase tracking-widest text-blue-600 cursor-pointer select-none hover:border-blue-400 transition-colors list-none">
+          <summary className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm text-[11px] font-black uppercase tracking-widest text-para-blue cursor-pointer select-none hover:border-para-blue transition-colors list-none">
             {ano}
             <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-180">
               <polyline points="6 9 12 15 18 9" />
@@ -209,7 +211,7 @@ export default async function CpagDashboardPage({ searchParams }) {
                 href={`/dashboard/dppc/cpag?aba=${aba}&ano=${a}`}
                 className={`flex items-center justify-between px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-colors ${
                   ano === a
-                    ? "text-blue-600 bg-blue-50"
+                    ? "text-para-blue bg-para-blue-light"
                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                 }`}
               >
@@ -226,11 +228,14 @@ export default async function CpagDashboardPage({ searchParams }) {
       </div>
 
       {/* KPI Cards + Exportação */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px] gap-5 items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_220px] gap-4 items-stretch">
         <StatCard label="Total Efetivamente Pago" value={formatCurrency(kpis.totalPago)} sub={`${kpis.quantidadeObsConfirmadas.toLocaleString("pt-BR")} OBs confirmadas`} icon={TrendingUp} accent="green" />
         <StatCard label="Total a Pagar" value={formatCurrency(kpis.totalAPagar)} sub={`${kpis.quantidadeDlsComSaldo.toLocaleString("pt-BR")} DLs com saldo pendente`} icon={Clock} accent="amber" />
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-6 flex flex-col justify-center gap-1">
-          <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Relatórios</p>
+        <div
+          className="bg-white rounded-card border border-slate-200 px-5 py-4 flex flex-col justify-center gap-1"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Relatórios</p>
           <CpagExportButtons />
         </div>
       </div>
