@@ -1,2 +1,14 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
+
+:root {
+  --radius-card: 0.75rem;
+  --radius-panel: 1rem;
+  --radius-xl2: 1.25rem;
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
+  --shadow-panel: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+  --color-para-blue: #0071CE;
+  --color-para-blue-dark: #0058a3;
+  --color-para-blue-light: #e8f2fc;
+  --color-para-red: #EB2939;
+}

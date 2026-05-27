@@ -42,7 +42,7 @@ O SIMF é um sistema interno de gestão financeira da SEDUC/PA (Secretaria de Es
   }
   ```
 
-- [ ] **Concluído**
+- [x] **Concluído**
 
 ---
 
@@ -63,7 +63,7 @@ Crie um componente `<SimfLogo />` com duas variantes via prop `variant: "full" |
 
 Exporte como default. Props: `variant` (default `"full"`), `className`.
 
-- [ ] **Concluído**
+- [x] **Concluído**
 
 ---
 
@@ -81,7 +81,7 @@ Layout desejado:
 - Rodapé abaixo do card: "Acesso restrito · SEDUC/PA" em texto `slate-300`
 - Preservar `<Suspense>` em volta do `<LoginForm />`
 
-- [ ] **Concluído**
+- [x] **Concluído**
 
 ---
 
@@ -90,7 +90,7 @@ Layout desejado:
 
 Aplicar o mesmo layout e estilo da Task 03 (fundo, card, logo), mantendo toda a lógica existente.
 
-- [ ] **Concluído**
+- [x] **Concluído**
 
 ---
 
@@ -114,7 +114,7 @@ Este é o componente visual mais importante. Redesenhe mantendo toda a lógica e
 - Manter badge "Admin" no canto direito se `isAdmin`
 - Fundo branco, border-bottom `border-slate-100`
 
-- [ ] **Concluído**
+- [x] **Concluído**
 
 ---
 
@@ -133,7 +133,7 @@ Layout:
 - **Grid de módulos:** 4 cards (CEO, CLIQ, CPAG, ACONT) com ícone Lucide, nome, diretoria e descrição de 1 linha. Não linkam para lugar nenhum (acesso exige login)
 - **Footer:** `"© 2025 SEDUC/PA · Secretaria Adjunta de Planejamento e Finanças"` em texto pequeno cinza
 
-- [ ] **Concluído**
+- [x] **Concluído**
 
 ---
 
@@ -147,7 +147,7 @@ Redesenhe mantendo os dados e estrutura de seções (DFIN e DPPC).
 - Mini-módulos dentro de cada card: usar os ícones Lucide existentes, fundo `para-blue-light` (`#e8f2fc`), ícone em `para-blue`
 - Badge "DFIN" / "DPPC": pill com `bg-para-blue-light text-para-blue`
 
-- [ ] **Concluído**
+- [x] **Concluído**
 
 ---
 
@@ -161,7 +161,7 @@ Redesenhe mantendo os links (CEO → `/dashboard/dfin/ceo`, ACONT → `/dashboar
 - Badge "Operacional": `bg-emerald-50 text-emerald-700 border border-emerald-200`
 - Footer com nota de dados mantida
 
-- [ ] **Concluído**
+- [x] **Concluído**
 
 ---
 
@@ -173,7 +173,7 @@ Redesenhe mantendo os links (CLIQ → `/dashboard/dppc/cliq`, CPAG → `/dashboa
 - Mesma linguagem visual da Task 08
 - Cards CLIQ e CPAG com ícones, badges e layout equivalente ao DFIN
 
-- [ ] **Concluído**
+- [x] **Concluído**
 
 ---
 

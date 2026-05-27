@@ -2,19 +2,17 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionRole } from "../lib/auth/require-role.js";
 import {
-  LayoutDashboard,
   TrendingUp,
   FileCheck2,
   CreditCard,
   Calculator,
   ArrowRight,
-  Shield,
-  Globe,
 } from "lucide-react";
+import SimfLogo from "../components/ui/simf-logo.jsx";
 
 /**
  * Página raiz.
- * - Com sessão  → redireciona para /dashboard/dppc
+ * - Com sessão  → redireciona para /dashboard
  * - Sem sessão  → exibe landing page institucional com link para /login
  */
 export default async function HomePage() {
@@ -28,133 +26,121 @@ export default async function HomePage() {
     {
       icon: TrendingUp,
       label: "CEO",
-      desc: "Coord. de Execução Orçamentária — acompanhamento de empenhos gerados por exercício.",
+      dir: "DFIN",
+      desc: "Execução orçamentária e empenhos por exercício.",
     },
     {
       icon: FileCheck2,
       label: "CLIQ",
-      desc: "Controle de Liquidações — empenhos a liquidar e histórico de documentos.",
+      dir: "DPPC",
+      desc: "Controle de liquidações e histórico de documentos.",
     },
     {
       icon: CreditCard,
       label: "CPAG",
-      desc: "Controle de Pagamentos — monitoramento de OBs e liquidados a pagar.",
+      dir: "DPPC",
+      desc: "Monitoramento de OBs e liquidados a pagar.",
     },
     {
       icon: Calculator,
       label: "ACONT",
-      desc: "Contas Bancárias — saldos, conferência e extrato por banco e exercício.",
+      dir: "DFIN",
+      desc: "Saldos, conferência e extrato por banco.",
     },
   ];
 
   return (
     <div className="min-h-screen bg-white font-sans text-slate-800 flex flex-col">
 
-      {/* ── Header ────────────────────────────────────────────────────────── */}
+      {/* ── Header fixo ───────────────────────────────────────────────────── */}
       <header className="border-b border-slate-100 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-              <LayoutDashboard size={15} className="text-white" />
-            </div>
-            <div>
-              <span className="text-base font-black tracking-tight text-slate-900">SIMF</span>
-              <span className="hidden sm:inline text-slate-300 mx-2">·</span>
-              <span className="hidden sm:inline text-xs font-medium text-slate-400">
-                Sistema de Inteligência e Monitoramento Financeiro
-              </span>
-            </div>
-          </div>
-
-          {/* URL oficial + Entrar */}
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-slate-400">
-              <Globe size={12} />
-              simf.seduc.pa.gov.br
-            </div>
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-black uppercase tracking-widest rounded-lg shadow-sm transition-colors"
-            >
-              Entrar
-              <ArrowRight size={12} />
-            </Link>
-          </div>
+          <SimfLogo variant="full" />
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-para-blue hover:bg-para-blue-dark text-white text-[11px] font-black uppercase tracking-widest rounded-lg shadow-sm transition-colors"
+          >
+            Entrar
+            <ArrowRight size={12} />
+          </Link>
         </div>
       </header>
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="flex-1 flex flex-col items-center justify-center text-center px-6 py-24 bg-gradient-to-b from-slate-50 to-white">
-
-        {/* Badge governamental */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 border border-blue-200 rounded-full text-[11px] font-black uppercase tracking-widest text-blue-600 mb-8">
-          <Shield size={11} />
-          Governo do Estado do Pará · SEDUC
+      <section
+        className="flex-1 flex flex-col items-center justify-center text-center px-6 py-28 bg-slate-50"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, rgb(15 23 42 / 0.06) 1px, transparent 0)",
+          backgroundSize: "24px 24px",
+        }}
+      >
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-para-blue-light border border-para-blue/15 rounded-full text-[11px] font-black uppercase tracking-widest text-para-blue mb-8">
+          Sistema Interno · SEDUC/PA
         </div>
 
-        <h1 className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight leading-none mb-4">
-          SIMF
+        {/* Título */}
+        <h1 className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight leading-[1.05] mb-5 text-balance max-w-3xl">
+          Monitoramento Financeiro
         </h1>
-        <p className="text-lg sm:text-xl font-medium text-slate-500 max-w-xl mb-3">
-          Sistema de Inteligência e Monitoramento Financeiro
-        </p>
-        <p className="text-sm text-slate-400 max-w-lg mb-10">
-          Plataforma operacional da Secretaria Adjunta de Planejamento e Finanças —
-          SAPF/SEDUC/PA — para acompanhamento da execução orçamentária, pagamentos e
-          contas bancárias em tempo real.
+
+        {/* Subtítulo */}
+        <p className="text-base sm:text-lg text-slate-500 max-w-xl mb-10 leading-relaxed">
+          Acompanhamento de execução orçamentária, pagamentos e contas bancárias da SAPF.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-md hover:shadow-lg transition-all"
-          >
-            Acessar o Sistema
-            <ArrowRight size={14} />
-          </Link>
-          <span className="text-[11px] font-medium text-slate-300 select-none">
-            Acesso restrito a servidores autorizados
-          </span>
-        </div>
+        {/* CTA */}
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-para-blue hover:bg-para-blue-dark text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-md hover:shadow-lg transition-all"
+        >
+          Acessar o Sistema
+          <ArrowRight size={14} />
+        </Link>
+        <p className="mt-4 text-[11px] uppercase tracking-widest font-medium text-slate-300">
+          Acesso restrito · servidores autorizados
+        </p>
       </section>
 
       {/* ── Módulos ───────────────────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto w-full px-6 pb-20">
-        <p className="text-[11px] font-black uppercase tracking-widest text-slate-300 text-center mb-8">
-          Módulos disponíveis
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {MODULES.map(({ icon: Icon, label, desc }) => (
-            <div
-              key={label}
-              className="bg-white rounded-xl border border-slate-100 shadow-sm px-6 py-6 flex flex-col gap-3 hover:border-blue-200 hover:shadow-md transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                  <Icon size={16} className="text-blue-600" />
+      <section className="bg-white border-t border-slate-100">
+        <div className="max-w-6xl mx-auto w-full px-6 py-16">
+          <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 text-center mb-10">
+            Módulos disponíveis
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {MODULES.map(({ icon: Icon, label, dir, desc }) => (
+              <div
+                key={label}
+                className="bg-white rounded-card border border-slate-200 px-6 py-6 flex flex-col gap-3 transition-all hover:-translate-y-0.5 hover:border-para-blue/30"
+                style={{ boxShadow: "var(--shadow-card)" }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 rounded-lg bg-para-blue-light flex items-center justify-center flex-shrink-0">
+                    <Icon size={17} className="text-para-blue" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    {dir}
+                  </span>
                 </div>
-                <span className="text-sm font-black text-slate-900 tracking-tight">{label}</span>
+                <div>
+                  <p className="text-base font-black text-slate-900 tracking-tight">{label}</p>
+                  <p className="mt-1.5 text-xs text-slate-500 font-medium leading-relaxed">
+                    {desc}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-slate-400 font-medium leading-relaxed">{desc}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── Footer ────────────────────────────────────────────────────────── */}
       <footer className="border-t border-slate-100 bg-slate-50">
-        <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
-            <Globe size={12} />
-            <span className="font-black text-slate-500">simf.seduc.pa.gov.br</span>
-          </div>
-          <p className="text-[11px] text-slate-300 font-medium text-center">
-            Secretaria de Estado de Educação do Pará · SEDUC/PA
-          </p>
-          <p className="text-[11px] text-slate-300 font-medium">
-            SAPF · DFIN · DPPC · {new Date().getFullYear()}
+        <div className="max-w-6xl mx-auto px-6 py-6">
+          <p className="text-[11px] text-slate-400 font-medium text-center">
+            © {new Date().getFullYear()} SEDUC/PA · Secretaria Adjunta de Planejamento e Finanças
           </p>
         </div>
       </footer>

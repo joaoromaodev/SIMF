@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
   FileCheck2,
   CreditCard,
   Database,
@@ -13,10 +12,10 @@ import {
   TrendingUp,
   Calculator,
   LogOut,
-  User,
   Users,
 } from "lucide-react";
 import { logout } from "../app/actions/auth.js";
+import SimfLogo from "./ui/simf-logo.jsx";
 
 const NAV_SECTIONS = [
   {
@@ -24,7 +23,7 @@ const NAV_SECTIONS = [
     abbr: "DFIN",
     items: [
       { label: "CEO",   href: "/dashboard/dfin/ceo", icon: TrendingUp  },
-      { label: "ACONT", href: "/dashboard/acont",     icon: Calculator  },
+      { label: "ACONT", href: "/dashboard/acont",    icon: Calculator  },
     ],
   },
   {
@@ -42,6 +41,36 @@ function userInitials(email) {
   const parts = email.split("@")[0].split(".");
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
   return email.slice(0, 2).toUpperCase();
+}
+
+/**
+ * Item de navegação da sidebar.
+ * Mostra barra branca de 3px à esquerda quando ativo.
+ */
+function NavItem({ href, label, icon: Icon, active, collapsed }) {
+  return (
+    <Link
+      href={href}
+      title={collapsed ? label : undefined}
+      className={`group relative flex items-center gap-3 rounded-lg text-sm font-medium transition-colors ${
+        collapsed ? "px-3 py-2.5 justify-center" : "px-3 py-2.5"
+      } ${
+        active
+          ? "bg-white/15 text-white"
+          : "text-white/70 hover:bg-white/10 hover:text-white"
+      }`}
+    >
+      {/* Barra ativa de 3px à esquerda */}
+      <span
+        aria-hidden="true"
+        className={`absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-white transition-opacity ${
+          active ? "opacity-100" : "opacity-0"
+        }`}
+      />
+      <Icon size={17} className="flex-shrink-0" />
+      {!collapsed && <span className="truncate">{label}</span>}
+    </Link>
+  );
 }
 
 /**
@@ -79,38 +108,51 @@ export default function DashboardShell({ userEmail, userRole, children }) {
       <aside
         className={`${
           isCollapsed ? "w-[72px]" : "w-64"
-        } bg-white border-r border-slate-200 text-slate-700 flex flex-col shadow-sm transition-all duration-300 ease-in-out flex-shrink-0`}
+        } bg-para-blue text-white flex flex-col transition-all duration-300 ease-in-out flex-shrink-0`}
       >
-        {/* Logo */}
-        <div className={`flex items-center border-b border-slate-100 transition-all duration-300 ${isCollapsed ? "px-4 py-5 justify-center" : "px-6 py-5 justify-between"}`}>
-          {!isCollapsed && (
-            <Link href="/" className="hover:opacity-75 transition-opacity cursor-pointer">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center flex-shrink-0">
-                  <LayoutDashboard size={14} className="text-white" />
-                </div>
-                <span className="text-base font-black tracking-tight text-slate-900">SIMF</span>
-              </div>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1 font-medium pl-9">
-                SEDUC · Pará
-              </p>
+        {/* Logo + toggle */}
+        <div
+          className={`flex items-center border-b border-white/10 transition-all duration-300 ${
+            isCollapsed ? "px-3 py-5 justify-center" : "px-5 py-5 justify-between"
+          }`}
+        >
+          {!isCollapsed ? (
+            <Link href="/" className="hover:opacity-90 transition-opacity">
+              <SimfLogo variant="full" tone="light" />
+            </Link>
+          ) : (
+            <Link href="/" className="hover:opacity-90 transition-opacity" aria-label="SIMF">
+              <SimfLogo variant="icon" tone="light" />
             </Link>
           )}
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-1.5 rounded-md hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600 flex-shrink-0"
-            aria-label="Toggle sidebar"
-          >
-            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
+          {!isCollapsed && (
+            <button
+              onClick={() => setIsCollapsed(true)}
+              className="p-1.5 rounded-md text-white/60 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
+              aria-label="Recolher sidebar"
+            >
+              <ChevronLeft size={16} />
+            </button>
+          )}
         </div>
 
+        {/* Botão expandir (modo recolhido) */}
+        {isCollapsed && (
+          <button
+            onClick={() => setIsCollapsed(false)}
+            className="mx-3 mt-3 p-1.5 rounded-md text-white/60 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center"
+            aria-label="Expandir sidebar"
+          >
+            <ChevronRight size={16} />
+          </button>
+        )}
+
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-4 space-y-6 scrollbar-none">
+        <nav className="flex-1 overflow-y-auto py-5 space-y-6 scrollbar-none">
           {NAV_SECTIONS.map((section) => (
             <div key={section.abbr}>
               {!isCollapsed && (
-                <p className="px-6 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <p className="px-5 mb-2 text-[10px] font-black uppercase tracking-widest text-white/40">
                   {section.abbr}
                 </p>
               )}
@@ -119,58 +161,99 @@ export default function DashboardShell({ userEmail, userRole, children }) {
                   const active = pathname === href || pathname.startsWith(href + "/");
                   return (
                     <li key={href}>
-                      <Link
+                      <NavItem
                         href={href}
-                        title={isCollapsed ? label : undefined}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
-                          active
-                            ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
-                            : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-                        }`}
-                      >
-                        <Icon size={17} className="flex-shrink-0" />
-                        {!isCollapsed && <span>{label}</span>}
-                        {!isCollapsed && active && (
-                          <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white/80" />
-                        )}
-                      </Link>
+                        label={label}
+                        icon={Icon}
+                        active={active}
+                        collapsed={isCollapsed}
+                      />
                     </li>
                   );
                 })}
               </ul>
             </div>
           ))}
+
+          {/* Admin section (visível só para admins) */}
+          {isAdmin && (
+            <div>
+              {!isCollapsed && (
+                <p className="px-5 mb-2 text-[10px] font-black uppercase tracking-widest text-white/40">
+                  Administração
+                </p>
+              )}
+              <ul className="space-y-0.5 px-3">
+                <li>
+                  <NavItem
+                    href="/dashboard/admin/usuarios"
+                    label="Usuários"
+                    icon={Users}
+                    active={pathname === "/dashboard/admin/usuarios"}
+                    collapsed={isCollapsed}
+                  />
+                </li>
+                <li>
+                  <NavItem
+                    href="/dashboard/import"
+                    label="Atualizar Base"
+                    icon={Database}
+                    active={pathname === "/dashboard/import"}
+                    collapsed={isCollapsed}
+                  />
+                </li>
+              </ul>
+            </div>
+          )}
         </nav>
 
-        {/* Rodapé — itens administrativos visíveis apenas para admin */}
-        <div className={`border-t border-slate-100 transition-all duration-300 ${isCollapsed ? "px-3 py-4" : "px-4 py-4"} space-y-1`}>
-          {isAdmin && (
-            <>
-              <Link
-                href="/dashboard/admin/usuarios"
-                title={isCollapsed ? "Usuários" : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold transition-all duration-150 ${
-                  pathname === "/dashboard/admin/usuarios"
-                    ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
-                    : "bg-slate-100 text-slate-500 hover:bg-blue-600 hover:text-white"
-                }`}
+        {/* Rodapé — usuário + logout */}
+        <div className="border-t border-white/10 p-3">
+          <div
+            className={`flex items-center gap-3 rounded-lg bg-white/5 ${
+              isCollapsed ? "p-2 justify-center" : "p-2.5"
+            }`}
+          >
+            <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center flex-shrink-0">
+              <span className="text-[10px] font-black text-white tracking-wider">
+                {userInitials(userEmail)}
+              </span>
+            </div>
+            {!isCollapsed && (
+              <>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-bold text-white truncate" title={userEmail || ""}>
+                    {userEmail || "—"}
+                  </p>
+                  {isAdmin && (
+                    <p className="text-[10px] uppercase tracking-widest text-white/50 font-medium">
+                      Administrador
+                    </p>
+                  )}
+                </div>
+                <form action={logout}>
+                  <button
+                    type="submit"
+                    title="Sair"
+                    className="p-1.5 rounded-md text-white/60 hover:text-white hover:bg-white/15 transition-colors"
+                  >
+                    <LogOut size={15} />
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+          {/* Logout dedicado quando recolhido */}
+          {isCollapsed && (
+            <form action={logout} className="mt-2 flex justify-center">
+              <button
+                type="submit"
+                title="Sair"
+                className="p-1.5 rounded-md text-white/60 hover:text-white hover:bg-white/15 transition-colors"
               >
-                <Users size={17} className="flex-shrink-0" />
-                {!isCollapsed && <span>Usuários</span>}
-              </Link>
-              <Link
-                href="/dashboard/import"
-                title={isCollapsed ? "Atualizar Base" : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold transition-all duration-150 ${
-                  pathname === "/dashboard/import"
-                    ? "bg-red-500 text-white"
-                    : "bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white"
-                }`}
-              >
-                <Database size={17} className="flex-shrink-0" />
-                {!isCollapsed && <span>Atualizar Base</span>}
-              </Link>
-            </>
+                <LogOut size={15} />
+              </button>
+            </form>
           )}
         </div>
       </aside>
@@ -178,46 +261,21 @@ export default function DashboardShell({ userEmail, userRole, children }) {
       {/* ── Conteúdo ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
-              Secretaria Adjunta de Planejamento e Finanças
-            </span>
-            <span className="text-slate-300">·</span>
-            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+        <header className="bg-white border-b border-slate-100 px-8 py-4 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-baseline gap-3">
+            <span className="text-sm font-black text-slate-900 tracking-tight">
               SAPF
+            </span>
+            <span className="text-[11px] font-medium uppercase tracking-widest text-slate-400 hidden md:inline">
+              Secretaria Adjunta de Planejamento e Finanças
             </span>
           </div>
           <div className="flex items-center gap-3">
-            {/* Badge de role */}
             {isAdmin && (
-              <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-2.5 py-0.5">
+              <span className="text-[10px] font-black uppercase tracking-widest text-para-blue bg-para-blue-light border border-para-blue/20 rounded-full px-2.5 py-0.5">
                 Admin
               </span>
             )}
-            {/* Avatar + email */}
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center">
-                <span className="text-[10px] font-black text-slate-500">
-                  {userInitials(userEmail)}
-                </span>
-              </div>
-              {userEmail && (
-                <span className="text-xs font-medium text-slate-500 hidden sm:block max-w-[160px] truncate">
-                  {userEmail}
-                </span>
-              )}
-            </div>
-            {/* Logout */}
-            <form action={logout}>
-              <button
-                type="submit"
-                title="Sair"
-                className="p-1.5 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-              >
-                <LogOut size={15} />
-              </button>
-            </form>
           </div>
         </header>
 

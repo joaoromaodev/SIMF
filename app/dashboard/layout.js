@@ -9,7 +9,6 @@
 
 import DashboardShell from "../../components/dashboard-shell.jsx";
 import { getSessionRole } from "../../lib/auth/require-role.js";
-import "/app/globals.css";
 
 export default async function DashboardLayout({ children }) {
   const session = await getSessionRole();

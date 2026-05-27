@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "../../../lib/supabase/browser.js";
 import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
+import SimfLogo from "../../../components/ui/simf-logo.jsx";
 
 export default function RecuperarSenhaPage() {
   const [email,   setEmail]   = useState("");
@@ -34,20 +35,26 @@ export default function RecuperarSenhaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4">
+    <div
+      className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-slate-50"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 1px 1px, rgb(15 23 42 / 0.06) 1px, transparent 0)",
+        backgroundSize: "24px 24px",
+      }}
+    >
       <div className="w-full max-w-sm">
 
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-600 shadow-lg mb-4">
-            <span className="text-white font-black text-xl tracking-tight">S</span>
-          </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">SIMF</h1>
-          <p className="text-sm text-slate-400 font-medium mt-1">Recuperação de senha</p>
+        <div className="flex justify-center mb-8">
+          <SimfLogo variant="full" />
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-8 py-8">
+        <div
+          className="bg-white rounded-2xl border border-slate-200 px-8 py-9"
+          style={{ boxShadow: "var(--shadow-panel)" }}
+        >
 
           {sent ? (
             /* Estado: e-mail enviado */
@@ -68,17 +75,17 @@ export default function RecuperarSenhaPage() {
           ) : (
             /* Formulário */
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">
+              <div className="mb-1">
+                <h2 className="text-lg font-black text-slate-900 tracking-tight">
                   Redefinir senha
                 </h2>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <p className="text-xs text-slate-500 leading-relaxed mt-1">
                   Informe seu e-mail cadastrado. Você receberá um link para criar uma nova senha.
                 </p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400">
+                <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">
                   E-mail
                 </label>
                 <input
@@ -87,7 +94,7 @@ export default function RecuperarSenhaPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu@email.gov.br"
-                  className="w-full px-4 py-2.5 text-sm text-slate-800 bg-white border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 placeholder:text-slate-300 transition-colors"
+                  className="w-full px-4 py-2.5 text-sm text-slate-800 bg-white border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-para-blue/25 focus:border-para-blue placeholder:text-slate-300 transition-colors"
                 />
               </div>
 
@@ -100,7 +107,7 @@ export default function RecuperarSenhaPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-black uppercase tracking-widest rounded-lg shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 bg-para-blue hover:bg-para-blue-dark text-white text-[11px] font-black uppercase tracking-widest rounded-lg shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Mail size={13} />
                 {loading ? "Enviando…" : "Enviar link de recuperação"}
@@ -113,7 +120,7 @@ export default function RecuperarSenhaPage() {
         <div className="text-center mt-5">
           <Link
             href="/login"
-            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest transition-colors"
+            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-slate-700 uppercase tracking-widest transition-colors"
           >
             <ArrowLeft size={11} />
             Voltar ao login
