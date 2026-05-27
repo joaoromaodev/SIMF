@@ -25,6 +25,11 @@ function formatDate(dateString) {
 
 const ANOS = ["2021","2022","2023", "2024", "2025", "2026"];
 
+function anoToYearScope(ano) {
+  if (ano === "2023" || ano === "2024") return "2023_2024";
+  return ano;
+}
+
 function StatCard({ label, quantidade, total }) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-7 py-6 flex flex-col justify-between gap-3">
@@ -43,60 +48,59 @@ function StatCard({ label, quantidade, total }) {
   );
 }
 
-async function fetchFontes(supabase) {
+async function fetchFontes(supabase, yearScope) {
   const { data, error } = await supabase
-    .from("vw_cliq_por_fonte")
-    .select("fonte");
+    .rpc("fn_cliq_por_fonte", { p_year_scope: yearScope });
   if (error) return [];
-  return [...new Set((data || []).map((r) => r.fonte).filter((fonte) => fonte && fonte !== "Sem fonte"))].sort();
+  return (data || [])
+    .map((r) => r.fonte)
+    .filter((f) => f && f !== "Sem fonte")
+    .sort();
 }
 
-async function fetchCliqData(supabase, filters, pagina) {
+async function fetchCliqData(supabase, filters, pagina, yearScope) {
   const page = Math.max(1, parseInt(pagina, 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
 
-  let rowQuery = supabase.from("vw_liquidados_a_pagar").select("*", { count: "exact" }).order("data_liquidacao", { ascending: false, nullsFirst: false }).range(from, from + PAGE_SIZE - 1);
+  let rowQuery = supabase
+    .from("vw_liquidados_a_pagar")
+    .select("*", { count: "exact" })
+    .eq("year_scope", yearScope)
+    .order("data_liquidacao", { ascending: false, nullsFirst: false })
+    .range(from, from + PAGE_SIZE - 1);
 
   if (filters.fonte)    { rowQuery = rowQuery.eq("fonte",                  filters.fonte); }
   if (filters.credor)   { rowQuery = rowQuery.ilike("credor",               `%${filters.credor}%`); }
   if (filters.processo) { rowQuery = rowQuery.ilike("numero_processo",       `%${filters.processo}%`); }
   if (filters.empenho)  { rowQuery = rowQuery.ilike("codigo_nota_empenho",   `%${filters.empenho}%`); }
 
-  const [kpisResult, sourceResult, statusResult, rowResult] = await Promise.all([
-    supabase
-      .from("vw_cliq_kpis")
-      .select("total_em_liquidacao, quantidade_em_liquidacao, quantidade_liquidados_a_pagar")
-      .maybeSingle(),
-    supabase
-      .from("vw_cliq_por_fonte")
-      .select("fonte, total_valor_bruto, quantidade")
-      .order("total_valor_bruto", { ascending: false }),
-    supabase
-      .from("vw_cliq_status")
-      .select("status, quantidade"),
+  const [kpisResult, sourceResult, rowResult] = await Promise.all([
+    supabase.rpc("fn_cliq_kpis",      { p_year_scope: yearScope }),
+    supabase.rpc("fn_cliq_por_fonte", { p_year_scope: yearScope }),
     rowQuery,
   ]);
 
-  const kpisData = kpisResult.data || {};
+  const kpisRow  = (kpisResult.data  || [])[0] || {};
   const kpis = {
-    totalEmLiquidacao: parseFloat(kpisData.total_em_liquidacao) || DEFAULT_KPIS.totalEmLiquidacao,
-    quantidadeEmLiquidacao: Number(kpisData.quantidade_em_liquidacao) || DEFAULT_KPIS.quantidadeEmLiquidacao,
-    quantidadeLiquidadosAPagar: Number(kpisData.quantidade_liquidados_a_pagar) || DEFAULT_KPIS.quantidadeLiquidadosAPagar,
+    totalEmLiquidacao:         parseFloat(kpisRow.total_em_liquidacao)           || DEFAULT_KPIS.totalEmLiquidacao,
+    quantidadeEmLiquidacao:    Number(kpisRow.quantidade_em_liquidacao)          || DEFAULT_KPIS.quantidadeEmLiquidacao,
+    quantidadeLiquidadosAPagar: Number(kpisRow.quantidade_liquidados_a_pagar)   || DEFAULT_KPIS.quantidadeLiquidadosAPagar,
   };
   const sourceData = (sourceResult.data || []).map((row) => ({
-    name: row.fonte || "Sem fonte",
+    name:  row.fonte || "Sem fonte",
     value: Math.round((parseFloat(row.total_valor_bruto) || 0) * 100) / 100,
   }));
-  const statusOrder = { "Em Liquidação": 0, "Liquidados a Pagar": 1 };
-  const statusData = (statusResult.data || [])
-    .map((row) => ({ name: row.status, value: Number(row.quantidade) || 0 }))
-    .sort((a, b) => (statusOrder[a.name] ?? 99) - (statusOrder[b.name] ?? 99));
+  // Status derivado dos próprios KPIs (view vw_cliq_status não tem year filter)
+  const statusData = [
+    { name: "Em Liquidação",       value: 0 },
+    { name: "Liquidados a Pagar",  value: kpis.quantidadeLiquidadosAPagar },
+  ];
 
   return {
     kpis,
     sourceData,
     statusData,
-    rows: rowResult.data || [],
+    rows:       rowResult.data  || [],
     totalCount: rowResult.count || 0,
   };
 }
@@ -119,14 +123,15 @@ export default async function CliqDashboardPage({ searchParams }) {
     processo: sp.processo || "",
     empenho:  sp.empenho  || "",
   };
-  const ano     = sp.ano  || "2026";
-  const aba     = sp.aba  || "empenhos_liquidar";
-  const pagina  = Math.max(1, parseInt(sp.pagina, 10) || 1);
-  const supabase = getSupabaseAdminClient();
+  const ano       = sp.ano  || "2026";
+  const aba       = sp.aba  || "empenhos_liquidar";
+  const pagina    = Math.max(1, parseInt(sp.pagina, 10) || 1);
+  const yearScope = anoToYearScope(ano);
+  const supabase  = getSupabaseAdminClient();
 
   const [fontes, { kpis, sourceData, statusData, rows, totalCount }] = await Promise.all([
-    fetchFontes(supabase),
-    fetchCliqData(supabase, filters, pagina),
+    fetchFontes(supabase, yearScope),
+    fetchCliqData(supabase, filters, pagina, yearScope),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
