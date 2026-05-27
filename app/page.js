@@ -21,7 +21,7 @@ export default async function HomePage() {
   const session = await getSessionRole();
 
   if (session) {
-    redirect("/dashboard/dppc");
+    redirect("/dashboard");
   }
 
   const MODULES = [
