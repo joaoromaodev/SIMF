@@ -14,10 +14,10 @@ export default function DashboardHubPage() {
       abbr:  "DFIN",
       label: "Diretoria de Finanças",
       href:  "/dashboard/dfin",
-      desc:  "Execução orçamentária, contabilidade e tesouraria.",
+      desc:  "Execução orçamentária e controle de contas bancárias.",
       modules: [
-        { icon: TrendingUp, label: "CEO", desc: "Coord. de Execução Orçamentária" },
-        { icon: Calculator,  label: "ACONT", desc: "Controle de Contas Bancárias"  },
+        { icon: TrendingUp, label: "CEO",   desc: "Coord. de Execução Orçamentária" },
+        { icon: Calculator,  label: "ACONT", desc: "Controle de Contas Bancárias"   },
       ],
     },
     {
