@@ -59,6 +59,63 @@ Direcao alvo para `yearScope`:
 
 Durante a transicao, o codigo pode ainda conter nomes antigos. Novas alteracoes devem convergir para os tipos oficiais.
 
+## Autenticacao e Autorizacao
+
+Implementado via Supabase Auth + `@supabase/ssr` para Next.js App Router.
+
+### Componentes implementados
+
+| Arquivo | Funcao |
+|---|---|
+| `middleware.js` | Protege `/dashboard/*`; redireciona para `/login` se sem sessao |
+| `lib/supabase/session.js` | Cliente Supabase com cookie SSR (Server Components / Actions) |
+| `lib/supabase/browser.js` | Cliente Supabase browser (login UI) |
+| `lib/supabase/server.js` | Cliente com service role (operacoes administrativas) |
+| `lib/auth/require-role.js` | `requireAdmin()` e `getSessionRole()` para Server Components |
+| `app/login/page.js` | Formulario de login com `signInWithPassword` |
+| `app/actions/auth.js` | Server actions `logout` e `getSessionUser` |
+| `app/actions/admin.js` | Server actions de gestao de usuarios (apenas admin) |
+| `app/dashboard/layout.js` | Server Component: le sessao, passa role para DashboardShell |
+| `components/dashboard-shell.jsx` | Client Component: sidebar, topbar, badge Admin, logout |
+
+### Roles
+
+- `user` — acesso aos dashboards; sem importacao ou gestao de usuarios;
+- `admin` — acesso total: dashboards, importacao, gestao de usuarios.
+
+### Rotas protegidas
+
+- `/dashboard/*` — exige sessao (middleware);
+- `/dashboard/import` — exige role `admin` (`requireAdmin()` no Server Component);
+- `/dashboard/admin/usuarios` — exige role `admin` (`requireAdmin()` no Server Component).
+
+### API protegida
+
+`POST /api/imports` verifica sessao (401) e role=admin lido de `profiles` (403) antes de processar.
+O role nunca e lido do corpo da requisicao.
+
+### Gestao de usuarios
+
+`/dashboard/admin/usuarios` permite a admins:
+- criar usuarios com email, senha inicial e role;
+- alterar role de outros usuarios;
+- remover usuarios.
+
+Usuarios nao podem alterar o proprio role nem se remover.
+
+### Auditoria minima
+
+- `import_batches.imported_by` — UUID do admin responsavel pela importacao;
+- `audit_log` — registra `user_created`, `role_changed`, `user_deleted` com actor, target e payload.
+
+### Primeiro admin
+
+```sql
+UPDATE public.profiles SET role = 'admin' WHERE email = '<email>';
+```
+
+A especificacao detalhada esta em `docs/auth-access-control.md`.
+
 ## Arquitetura de Dados
 
 ### Hierarquia de Negocio
@@ -293,6 +350,7 @@ As proximas implementacoes devem seguir `docs/roadmap_reestruturacao_supabase.md
 Antes de implementar mudancas funcionais, revisar:
 
 - `docs/estrutura_relatorios.md`
+- `docs/auth-access-control.md`
 - `docs/roadmap_reestruturacao_supabase.md`
 - `docs/roadmap_reestruturacao_supabase_tasks.md`
 - `docs/CPAG_SPEC.md`, quando a mudanca afetar painel ou views de pagamento.

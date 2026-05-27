@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X, Wrench, Landmark, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -22,7 +22,19 @@ const TABS = [
 export function CeoTabs({ empenhos = [], ano, pagina = 1, totalPages = 1, total = 0, pageSize = 50, abaAtiva = "empenhos" }) {
   const router       = useRouter();
   const searchParams = useSearchParams();
-  const [busca, setBusca] = useState("");
+  const [busca, setBusca] = useState(() => searchParams.get("q") || "");
+
+  // Sincroniza busca à URL (debounce 400 ms)
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const p = new URLSearchParams(searchParams.toString());
+      if (busca) p.set("q", busca); else p.delete("q");
+      p.delete("pagina");
+      router.replace(`?${p.toString()}`, { scroll: false });
+    }, 400);
+    return () => clearTimeout(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busca]);
 
   function switchTab(id) {
     if (id === abaAtiva) return;

@@ -97,6 +97,7 @@ export default function CeoExportButtons() {
   const searchParams = useSearchParams();
   const ano = searchParams.get("ano") || "2026";
   const aba = searchParams.get("aba") || "empenhos";
+  const q   = searchParams.get("q")   || "";
 
   const [loading, setLoading] = useState(null);
   const [error,   setError  ] = useState(null);
@@ -108,7 +109,7 @@ export default function CeoExportButtons() {
     setLoading(format);
     setError(null);
     try {
-      const { rows } = await fetchAllCeoExportData({ ano });
+      const { rows } = await fetchAllCeoExportData({ ano, q });
       if (format === "xlsx") {
         await exportXLSX(rows, ano);
       } else {

@@ -57,8 +57,10 @@ async function exportXLSX(tab, rows, ano) {
         Credor:            r.credor                  ?? "—",
         Natureza:          r.codigo_natureza_despesa ?? "—",
         "Fonte de Recurso": r.fonte                  ?? "—",
-        "Data Empenho":    fmtDate(r.data_empenho),
-        "Valor Empenho":   r.valor_empenho           ?? 0,
+        "Data Liquidacao": fmtDate(r.data_liquidacao),
+        "Valor Bruto":     r.valor_bruto             ?? 0,
+        "Ja Pago (OBs)":   r.valor_ja_pago_obs       ?? 0,
+        "A Pagar":         r.valor_liquidado_a_pagar ?? 0,
       }))
     );
     XLSX.utils.book_append_sheet(wb, ws, "Empenhos a Liquidar");
@@ -124,21 +126,23 @@ async function exportPDF(tab, rows, ano) {
 
     autoTable(doc, {
       startY: 40,
-      head: [["Processo", "Empenho", "Credor", "Natureza", "Fonte", "Data Empenho", "Valor"]],
+      head: [["Processo", "Empenho", "Credor", "Natureza", "Fonte", "Dt. Liquidacao", "Vl. Bruto", "Ja Pago", "A Pagar"]],
       body: rows.map((r) => [
         r.numero_processo         ?? "—",
         r.codigo_nota_empenho     ?? "—",
         r.credor                  ?? "—",
         r.codigo_natureza_despesa ?? "—",
         r.fonte                   ?? "—",
-        fmtDate(r.data_empenho),
-        fmtCurrency(r.valor_empenho),
+        fmtDate(r.data_liquidacao),
+        fmtCurrency(r.valor_bruto),
+        fmtCurrency(r.valor_ja_pago_obs),
+        fmtCurrency(r.valor_liquidado_a_pagar),
       ]),
       headStyles: { fillColor: HEADER_COLOR, textColor: 255, fontStyle: "bold", fontSize: 7 },
       bodyStyles: { fontSize: 7, textColor: 50 },
       alternateRowStyles: { fillColor: [245, 247, 250] },
       styles: { cellPadding: 2, overflow: "linebreak" },
-      columnStyles: { 6: { halign: "right" } },
+      columnStyles: { 6: { halign: "right" }, 7: { halign: "right" }, 8: { halign: "right" } },
     });
 
     doc.save(`CLIQ_EMPENHOS_${todayFilename()}.pdf`);
@@ -149,11 +153,14 @@ async function exportPDF(tab, rows, ano) {
 
 export default function CliqExportButtons() {
   const searchParams = useSearchParams();
-  const tab     = searchParams.get("aba")      || "empenhos_liquidar";
-  const ano     = searchParams.get("ano")      || "2026";
-  const fonte   = searchParams.get("fonte")    || "";
-  const credor  = searchParams.get("credor")   || "";
+  const tab      = searchParams.get("aba")      || "empenhos_liquidar";
+  const ano      = searchParams.get("ano")      || "2026";
+  const fonte    = searchParams.get("fonte")    || "";
+  const fontes   = searchParams.get("fontes")   || "";
+  const credor   = searchParams.get("credor")   || "";
   const processo = searchParams.get("processo") || "";
+  const empenho  = searchParams.get("empenho")  || "";
+  const status   = searchParams.get("status")   || "";
 
   const [loading, setLoading] = useState(null);
   const [error,   setError  ] = useState(null);
@@ -169,7 +176,7 @@ export default function CliqExportButtons() {
       const data = await fetchAllCliqExportData({
         tab,
         ano,
-        filters: { fonte, credor, processo },
+        filters: { fonte, fontes, credor, processo, empenho, status },
       });
       if (format === "xlsx") {
         await exportXLSX(tab, data.rows, ano);

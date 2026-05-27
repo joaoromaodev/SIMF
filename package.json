@@ -10,6 +10,7 @@
     "test": "node --test tests/siafe-import.test.js tests/consolidation.test.js"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.101.0",
     "@tailwindcss/postcss": "^4.2.2",
     "init": "^0.1.2",
