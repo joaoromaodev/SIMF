@@ -138,7 +138,7 @@ export function CeoTabs({ empenhos = [], ano, pagina = 1, totalPages = 1, total 
                 <tbody className="divide-y divide-slate-100">
                   {empenhosFiltrados.map((row, index) => (
                     <tr
-                      key={row.codigo_nota_empenho ?? `row-${index}`}
+                      key={`${row.codigo_nota_empenho}-${index}`}
                       className={`transition-colors hover:bg-slate-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
                     >
                       <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{row.codigo_unidade_gestora || "—"}</td>

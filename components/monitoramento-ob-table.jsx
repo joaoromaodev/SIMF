@@ -181,7 +181,7 @@ export function MonitoramentoOBTable({ monitoramento, ano, pagina = 1, totalPage
             <tbody className="divide-y divide-slate-100">
               {filtered.map((item, index) => (
                 <tr
-                  key={item.ordem_bancaria ?? `row-${index}`}
+                  key={`${item.ordem_bancaria}-${index}`}
                   className={`transition-colors hover:bg-slate-50 ${
                     index % 2 === 0 ? "bg-white" : "bg-slate-50/50"
                   }`}

@@ -143,7 +143,7 @@ export function LiquidadosTable({ liquidados, pagina = 1, totalPages = 1, total 
               const vlImposto = (parseFloat(item.valor_bruto) || 0) - (parseFloat(item.valor_liquido) || 0);
               return (
                 <tr
-                  key={item.documento_liquidacao ?? `row-${index}`}
+                  key={`${item.documento_liquidacao}-${index}`}
                   className={`transition-colors ${index % 2 === 0 ? "bg-white hover:bg-slate-50" : "bg-slate-50/50 hover:bg-slate-100"}`}
                 >
                   <td className="px-5 py-3.5 text-slate-800 font-semibold text-xs">{item.numero_processo || "—"}</td>

@@ -303,7 +303,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {empenhosFiltrados.map((row, index) => (
-                    <tr key={row.codigo_nota_empenho ?? `row-${index}`} className={`transition-colors hover:bg-slate-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}>
+                    <tr key={`${row.codigo_nota_empenho}-${index}`} className={`transition-colors hover:bg-slate-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}>
                       <td className="px-5 py-3.5 text-slate-800 font-semibold text-xs">{row.numero_processo || "—"}</td>
                       <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{row.codigo_nota_empenho || "—"}</td>
                       <td className="px-5 py-3.5 text-slate-600 text-xs max-w-[160px] truncate">{row.credor || "—"}</td>
@@ -427,7 +427,7 @@ export function CliqTabs({ rows, totalCount, filters, pagina, totalPages, fontes
                   {filteredRows.map((row, index) => {
                     const vlImposto = (parseFloat(row.valor_bruto) || 0) - (parseFloat(row.valor_liquido) || 0);
                     return (
-                      <tr key={row.documento_liquidacao ?? `row-${index}`} className={`transition-colors hover:bg-slate-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}>
+                      <tr key={`${row.documento_liquidacao}-${index}`} className={`transition-colors hover:bg-slate-50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}>
                         <td className="px-5 py-3.5 text-slate-800 font-semibold text-xs">{row.numero_processo || "—"}</td>
                         <td className="px-5 py-3.5 font-mono text-[11px] text-slate-500">{row.codigo_nota_empenho || "—"}</td>
                         <td className="px-5 py-3.5 text-slate-600 text-xs max-w-[160px] truncate">{row.credor || "—"}</td>
